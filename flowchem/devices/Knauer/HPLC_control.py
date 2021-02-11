@@ -27,17 +27,18 @@ class ClarityInterface:
 
     def execute_command(self, command_string):
         if self.remote:
-            self.command_executor(self.command_executor, command_string)
+            self.command_executor(command_string)
         else:
             self.command_executor(self.command_executor, command_string, self.path_to_executable)
 
     # bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
     # TODO remove if published
-    def switch_lamp_on(self, address, port):
+    def switch_lamp_on(self, address='192.168.10.107', port=10001):
         # send the  respective two commands and check return. Send to socket
-        MessageSender(address, port).open_socket_and_send('LAMP_D2 1')
+        message_sender=MessageSender(address, port)
+        message_sender.open_socket_and_send('LAMP_D2 1\n\r')
         sleep(0.1)
-        MessageSender(address, port).open_socket_and_send('LAMP_HAL 1')
+        message_sender.open_socket_and_send('LAMP_HAL 1\n\r')
 
     # define relevant strings
     def open_clarity_chrom(self, user: str, password: str = None):
@@ -49,7 +50,7 @@ class ClarityInterface:
     def load_file(self, path_to_file: str):
         """has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
          Sending Options dialog in System Configuration."""
-        self.execute_command(path_to_file)
+        self.execute_command(f"i={self.instrument} {path_to_file}")
 
     def set_sample_name(self, sample_name):
         """Sets the sample name for the next single run"""
@@ -57,7 +58,7 @@ class ClarityInterface:
 
     def run(self):
         """Runs the instrument. Care should be taken to activate automatic data export on HPLC. (can be done via command,
-         but that only makes it more complicated)"""
+         but that only makes it more complicated). Takes at least 2 sec until run starts"""
         self.execute_command(f'run={self.instrument}')
 
 
@@ -86,8 +87,9 @@ class ClarityExecutioner:
         self.port = port
         self.allowed_client = allowed_client
         self.host_ip = host_ip
+        # think that should also go in thread, otherwise blocks
         self.server_socket = self.open_server()
-        self.executioner = Thread(target=self.get_commands_and_execute())
+        self.executioner = Thread(target=self.get_commands_and_execute, daemon=True)
         self.executioner.start()
 
     def open_server(self):
@@ -116,10 +118,13 @@ class ClarityExecutioner:
         if command.split(' ')[0] != prefix:
             command = folder_of_executable + prefix + ' ' + command
             print(command)
-        x = subprocess.run(command, shell=True)
-        return x
+        try:
+            x = subprocess.run(command, shell=True, capture_output=False, timeout=3)
+        except subprocess.TimeoutExpired:
+            print('Damn, Subprocess')
 
     def get_commands_and_execute(self):
         while True:
-            self.execute_command(self.accept_new_connection())
+            request=self.accept_new_connection()
+            self.execute_command(request)
             sleep(1)
