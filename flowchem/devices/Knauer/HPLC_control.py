@@ -61,6 +61,11 @@ class ClarityInterface:
          but that only makes it more complicated). Takes at least 2 sec until run starts"""
         self.execute_command(f'run={self.instrument}')
 
+    def exit(self):
+        """Exit Clarity Chrom"""
+        self.execute_command('exit')
+
+
 
 class MessageSender:
     def __init__(self, host, port):
