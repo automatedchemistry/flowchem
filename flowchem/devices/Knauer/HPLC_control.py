@@ -58,7 +58,7 @@ class ClarityInterface:
             self.execute_command(f"i={self.instrument} {config_file} u={user} p={password} {start_method}")
 
     # TODO should be OS agnostic
-    def slow_flowrate_ramp(self, path: str, method_list=tuple):
+    def slow_flowrate_ramp(self, path: str, method_list: tuple = ()):
         """
         path: path where the methods are located
         method list
@@ -116,8 +116,10 @@ class ClarityExecutioner:
         self.host_ip = host_ip
         # think that should also go in thread, otherwise blocks
         self.server_socket = self.open_server()
-        self.executioner = Thread(target=self.get_commands_and_execute, daemon=True)
+        self.executioner = Thread(target=self.get_commands_and_execute, daemon=False)
+        print('a')
         self.executioner.start()
+        print('b')
 
     def open_server(self):
         s = socket.socket()
@@ -158,6 +160,30 @@ class ClarityExecutioner:
             request=self.accept_new_connection()
             self.execute_command(request)
             sleep(1)
+            print('listening')
 
 ###TODO: also dsk or k for opening with specific desktop could be helpful-.
 # TODO Export results can be specified -> exports result, rewrite to a nicer interface
+
+if __name__ == "__main__":
+    computer_w_Clarity = True
+    if computer_w_Clarity  == True:
+        analyser = ClarityExecutioner(10014)
+    elif computer_w_Clarity == False:
+        commander = ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2)
+        commander.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ", start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
+        commander.switch_lamp_on() #address and port hardcoded
+        commander.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
+                                     method_list= ("autostartup_01_Sugar-c18_shortened.MET",
+                                                   "autostartup_015_Sugar-c18_shortened.MET",
+                                                   "autostartup_02_Sugar-c18_shortened.MET",
+                                                   "autostartup_025_Sugar-c18_shortened.MET",
+                                                   "autostartup_03_Sugar-c18_shortened.MET",
+                                                   "autostartup_035_Sugar-c18_shortened.MET",
+                                                   "autostartup_04_Sugar-c18_shortened.MET",
+                                                   "autostartup_045_Sugar-c18_shortened.MET",
+                                                   "autostartup_05_Sugar-c18_shortened.MET",))
+        commander.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
+        #commander.load_file("opendedicatedproject") # open a project for measurements
+        commander.set_sample_name("test123")
+        commander.run()
