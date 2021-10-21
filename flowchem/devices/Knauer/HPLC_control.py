@@ -37,25 +37,34 @@ class ClarityInterface:
 
     #bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
     # TODO remove if published
-    def switch_lamp_on(self, address='192.168.10.107', port=10001):
+    def switch_lamp_on(self, address='192.168.10.111', port=10001):
+        """
+        Has to be performed BEFORE starting clarity, otherwise sockets get blocked
+        Args:
+            address:
+            port:
+
+        Returns:
+
+        """
         # send the  respective two commands and check return. Send to socket
         message_sender=MessageSender(address, port)
         message_sender.open_socket_and_send('LAMP_D2 1\n\r')
-        sleep(0.1)
+        sleep(1)
         message_sender.open_socket_and_send('LAMP_HAL 1\n\r')
+        sleep(15)
 
     # define relevant strings
-    def open_clarity_chrom(self, user: str, password: str = None, config_file: str = '', start_method: str = ''):
+    def open_clarity_chrom(self, user: str,  config_file: str, password: str = None, start_method: str = ''):
         """
         start_method: supply the path to the method to start with, this is important for a soft column start
         config file: if you want to start with specific instrumment configuration, specify location of config file here
         """
-        if config_file == "":
-            config_file += "bla"
         if not password:
-            self.execute_command(f"i={self.instrument} {config_file} u={user} {start_method}")
+            self.execute_command(f"i={self.instrument} cfg={config_file} u={user} {start_method}")
         else:
-            self.execute_command(f"i={self.instrument} {config_file} u={user} p={password} {start_method}")
+            self.execute_command(f"i={self.instrument} cfg={config_file} u={user} p={password} {start_method}")
+        sleep(20)
 
     # TODO should be OS agnostic
     def slow_flowrate_ramp(self, path: str, method_list: tuple = ()):
@@ -73,10 +82,12 @@ class ClarityInterface:
         """has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
          Sending Options dialog in System Configuration."""
         self.execute_command(f"i={self.instrument} {path_to_file}")
+        sleep(10)
 
     def set_sample_name(self, sample_name):
         """Sets the sample name for the next single run"""
         self.execute_command(f"i={self.instrument} set_sample_name={sample_name}")
+        sleep(1)
 
     def run(self):
         """Runs the instrument. Care should be taken to activate automatic data export on HPLC. (can be done via command,
@@ -86,6 +97,7 @@ class ClarityInterface:
     def exit(self):
         """Exit Clarity Chrom"""
         self.execute_command('exit')
+        sleep(10)
 
 
 
@@ -166,15 +178,17 @@ class ClarityExecutioner:
 # TODO Export results can be specified -> exports result, rewrite to a nicer interface
 
 if __name__ == "__main__":
-    computer_w_Clarity = True
+    computer_w_Clarity = False
     if computer_w_Clarity  == True:
         analyser = ClarityExecutioner(10014)
     elif computer_w_Clarity == False:
         commander = ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2)
-        commander.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ", start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
+        commander.exit()
         commander.switch_lamp_on() #address and port hardcoded
+        commander.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ", start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
         commander.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-                                     method_list= ("autostartup_01_Sugar-c18_shortened.MET",
+                                     method_list= ("autostartup_005_Sugar-c18_shortened.MET",
+                                                   "autostartup_01_Sugar-c18_shortened.MET",
                                                    "autostartup_015_Sugar-c18_shortened.MET",
                                                    "autostartup_02_Sugar-c18_shortened.MET",
                                                    "autostartup_025_Sugar-c18_shortened.MET",
