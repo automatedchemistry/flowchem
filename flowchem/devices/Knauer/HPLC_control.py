@@ -1,6 +1,9 @@
 # This could become a mess...
 # what needs to be done is switch the lamps on, which works over serial.
 # the rest is just sending commands to the console, possibly also to another machine
+
+#https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
+
 import tenacity
 import subprocess
 import socket
@@ -9,6 +12,7 @@ from typing import Union
 from time import sleep
 from pathlib import Path
 
+# Todo should have a command constructor dataclass, would be more neat. For now, will do without to get it running asap
 
 class ClarityInterface:
     def __init__(self, remote: bool = False, host: str = None, port: int = None, path_to_executable: str = None,
@@ -24,14 +28,14 @@ class ClarityInterface:
             self.command_executor = ClarityExecutioner.execute_command
 
     # if remote execute everything on other PC, else on this
-
+    # Todo doesn't make sense here, done other way
     def execute_command(self, command_string):
         if self.remote:
             self.command_executor(command_string)
         else:
             self.command_executor(self.command_executor, command_string, self.path_to_executable)
 
-    # bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
+    #bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
     # TODO remove if published
     def switch_lamp_on(self, address='192.168.10.107', port=10001):
         # send the  respective two commands and check return. Send to socket
@@ -41,11 +45,29 @@ class ClarityInterface:
         message_sender.open_socket_and_send('LAMP_HAL 1\n\r')
 
     # define relevant strings
-    def open_clarity_chrom(self, user: str, password: str = None):
+    def open_clarity_chrom(self, user: str, password: str = None, config_file: str = '', start_method: str = ''):
+        """
+        start_method: supply the path to the method to start with, this is important for a soft column start
+        config file: if you want to start with specific instrumment configuration, specify location of config file here
+        """
+        if config_file == "":
+            config_file += "bla"
         if not password:
-            self.execute_command(f"i={self.instrument} u={user}")
+            self.execute_command(f"i={self.instrument} {config_file} u={user} {start_method}")
         else:
-            self.execute_command(f"i={self.instrument} u={user} p={password}")
+            self.execute_command(f"i={self.instrument} {config_file} u={user} p={password} {start_method}")
+
+    # TODO should be OS agnostic
+    def slow_flowrate_ramp(self, path: str, method_list=tuple):
+        """
+        path: path where the methods are located
+        method list
+        """
+        for current_method in method_list:
+            self.execute_command(f"i={self.instrument} {path}\\{current_method}")
+            # not very elegant, but sending and setting method takes at least 10 seconds, only has to run during platform startup and can't see more elegant way how to do that
+            sleep(20)
+
 
     def load_file(self, path_to_file: str):
         """has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
@@ -117,6 +139,8 @@ class ClarityExecutioner:
             print(request)
             return request
 
+
+    # TODO: instrument number has to go into command execution
     def execute_command(self, command: str, folder_of_executable: Union[Path, str] = r'C:\claritychrom\bin\\'):
         prefix = 'claritychrom.exe'
         # sanitize input a bit
@@ -124,8 +148,9 @@ class ClarityExecutioner:
             command = folder_of_executable + prefix + ' ' + command
             print(command)
         try:
-            x = subprocess.run(command, shell=True, capture_output=False, timeout=3)
-        except subprocess.TimeoutExpired:
+            x = subprocess
+            x.run(command, shell=True, capture_output=False, timeout=3)
+        except x.TimeoutExpired:
             print('Damn, Subprocess')
 
     def get_commands_and_execute(self):
@@ -133,3 +158,6 @@ class ClarityExecutioner:
             request=self.accept_new_connection()
             self.execute_command(request)
             sleep(1)
+
+###TODO: also dsk or k for opening with specific desktop could be helpful-.
+# TODO Export results can be specified -> exports result, rewrite to a nicer interface
