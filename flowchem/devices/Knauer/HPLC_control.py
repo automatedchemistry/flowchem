@@ -14,6 +14,8 @@ from pathlib import Path
 
 # Todo should have a command constructor dataclass, would be more neat. For now, will do without to get it running asap
 
+# TODO Verz weird, when starting from synthesis, fractioning valve is blocked. no idea why, it's ip is not used.
+
 class ClarityInterface:
     def __init__(self, remote: bool = False, host: str = None, port: int = None, path_to_executable: str = None,
                  instrument_number: int = 1):
