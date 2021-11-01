@@ -35,7 +35,7 @@ class ClarityInterface:
         if self.remote:
             self.command_executor(command_string)
         else:
-            self.command_executor(self.command_executor, command_string, self.path_to_executable)
+            self.command_executor(command_string, self.path_to_executable)
 
     #bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
     # TODO remove if published
