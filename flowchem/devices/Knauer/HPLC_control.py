@@ -63,9 +63,9 @@ class ClarityInterface:
         config file: if you want to start with specific instrumment configuration, specify location of config file here
         """
         if not password:
-            self.execute_command(f"i={self.instrument} cfg={config_file} u={user} {start_method}")
+            self.execute_command(f"cfg={config_file} i={self.instrument} u={user} {start_method}")
         else:
-            self.execute_command(f"i={self.instrument} cfg={config_file} u={user} p={password} {start_method}")
+            self.execute_command(f"cfg={config_file} i={self.instrument} u={user} p={password} {start_method}")
         sleep(20)
 
     # TODO should be OS agnostic
