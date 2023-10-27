@@ -22,10 +22,15 @@ except ImportError:
     HAS_AS_COMMANDS = False
 
 # from pint import UnitRegistry
-
 # finding the AS is not trivial with autodiscover, it also only is one device
 
+
 class ASError(Exception):
+    pass
+
+
+class CommunicationError(ASError):
+    """Command is unknown, value is unknown or out of range, transmission failed"""
     pass
 
 
