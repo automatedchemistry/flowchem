@@ -79,7 +79,7 @@ class ASEthernetDevice:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.settimeout(5)
                 s.bind(("", self.port))
-                reply = s.recv(1024).decode()
+                reply = s.recv(1024)
 
         except socket.timeout:
             logging.error(f"No reply received from device with IP {self.ip_address}")
@@ -102,7 +102,7 @@ class KnauerAS(ASEthernetDevice):
 
     """
     AS_ID = 61
-    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
+    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.UDP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
 
         super().__init__(ip_address, port, buffersize)
         # get statuses, that is basically syringe syize, volumes, platetype
