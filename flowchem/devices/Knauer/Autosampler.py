@@ -9,7 +9,10 @@ Module for communication with Autosampler.
 import logging
 import socket
 import time
-import binascii
+
+import NDA_knauer_AS.knauer_AS
+from NDA_knauer_AS import *
+
 try:
     # noinspection PyUnresolvedReferences
     from NDA_knauer_AS import *
@@ -46,13 +49,12 @@ class ASBusyError(ASError):
 
 
 class ASEthernetDevice:
-
     UDP_PORT = 2101
     BUFFER_SIZE = 1024
 
-    def __init__(self, ip_address, buffersize=None):
+    def __init__(self, ip_address, buffersize=None, udp_port=None):
         self.ip_address = str(ip_address)
-        self.port = ASEthernetDevice.UDP_PORT
+        self.port = udp_port if udp_port else ASEthernetDevice.UDP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
 
         logging.basicConfig(
@@ -61,109 +63,79 @@ class ASEthernetDevice:
             level=logging.DEBUG,
         )
 
-    def __del__(self):
-        self.sock.close()
-
-    def _open_client_socket(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # set timeout to 5s
-        sock.settimeout(5)
+    def _open_and_send(self, message: str):
         try:
-            sock.connect((self.ip_address, self.port))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(5)
+                s.connect((self.ip_address, self.port))
+                print("connected")
+                s.send(message.encode())
+
         except socket.timeout:
             logging.error(f"No connection possible to device with IP {self.ip_address}")
             raise ConnectionError(
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
 
-        return sock
-
-    def _try_open_listening(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # set timeout to 5s
-        sock.settimeout(5)
+    def _open_and_receive(self):
         try:
-            sock.bind(("", self.port))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(5)
+                s.bind(("", self.port))
+                reply = s.recv(1024).decode()
+
         except socket.timeout:
-            logging.error(f"No connection possible to device with IP {self.ip_address}")
+            logging.error(f"No reply received from device with IP {self.ip_address}")
             raise ConnectionError(
-                f"No Connection possible to device with ip_address {self.ip_address}"
+                f"No reply received from device with ip_address {self.ip_address}"
             )
 
-        return sock
+        return reply
 
     def _send_and_receive(self, message):
         # send hex encoded string
-        self.sock.send(message.encode())
-        time.sleep(0.01)
-        reply = ""
-        while True:
-            chunk = self.listening_soc.recv(self.buffersize).decode()
-            reply += chunk
-            if "\x03" in chunk:
-                break
-        return reply.strip("\r").rstrip()
-
-    # idea is: try to send message, when reply is received return that. returned reply can be checked against expected
-    def _send_and_receive_handler(self, message):
-        try:
-            reply = self._send_and_receive(message)
-        # use other error. if socket ceased to exist, try to reestablish connection. if not possible, raise error
-        except socket.timeout:
-            try:
-                # logger: tell response received, might be good to resend
-                # try to reestablish connection, send and receive afterwards
-                self.sock = self._try_connection()
-                self.listening_soc = self._try_open_listening()
-                reply = self._send_and_receive(message)
-            # no further handling necessary, if this does not work there is a serious problem. Powercycle/check hardware
-            except OSError:
-                raise ConnectionError(
-                    f"Failed to reestablish connection to {self.ip_address}"
-                )
+        self._open_and_send(message)
+        reply = self._open_and_receive()
         return reply
 
 
-class KnauerValve(KnauerEthernetDevice):
+class KnauerAS(ASEthernetDevice):
     """
-    Class to control Knauer multi position valves.
+    Class to control Knauer or basically any Spark Holland AS.
 
-    Valve type can be 6, 12, 16
-    or it can be 6 ports, two positions, which will be simply 2 (two states)
-    in this case,response for T is LI. load and inject can be switched by sending log or i
-    maybe valves should have an initial state which is set during init and updated, if no  change don't schedule command
-    https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
-    dip switch for valve selection
     """
 
-    def __init__(self, ip_address, port=KnauerEthernetDevice.TCP_PORT, buffersize=KnauerEthernetDevice.BUFFER_SIZE):
+    def __init__(self, ip_address, port=ASEthernetDevice.UDP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
 
         super().__init__(ip_address, port, buffersize)
+        # get statuses, that is basically syringe syize, volumes, platetype
 
-        self._valve_state = self.get_current_position()
-        # this gets the valve type as valve [type] and strips away valve_
-        self.valve_type = self.get_valve_type()  # checks against allowed valve types
-
-    def communicate(self, message: str or int):
+    def communicate(self, message: str):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
         :param message:
         :return: reply: str
         """
-        reply = super()._send_and_receive_handler(str(message) + "\r\n")
-        if reply == "?":
+        reply = super()._send_and_receive(message)
+        # reply digest
+
+        # verify that reply start and end are alright
+
+        # verify that reply is present in
+        if reply in NDA_knauer_AS.knauer_AS.ASReplies:
             # retry once
-            reply = super()._send_and_receive_handler(str(message) + "\r\n")
-            if reply == "?":
-                CommandError(
-                    f"Command not supported, your valve is of type {self.valve_type}"
-                )
-        try:
-            reply = int(reply)
-        except ValueError:
+
+            if reply == NDA_knauer_AS.knauer_AS.ASReplies.NOT_ACKNOWLEDGE:
+                ASError()
+        elif 1:
+            # do true message digest
             pass
-        return reply
+        else:
+            # message is neither simple reply nor an extended one -> bullshit reply
+            raise ASError
+            pass
+            return reply
 
     def get_current_position(self):
         curr_pos = self.communicate("P")
