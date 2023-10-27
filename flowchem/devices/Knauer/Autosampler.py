@@ -39,15 +39,7 @@ class ASBusyError(ASError):
     pass
 
 
-
-
-
-
-
-
-
-
-
+#TODO do not decode reply before digestion, leave in binary
 class ASEthernetDevice:
     UDP_PORT = 2101
     BUFFER_SIZE = 1024
@@ -471,46 +463,10 @@ class KnauerPump(KnauerEthernetDevice):
         else:
             logging.warning("Supply binary value")
 
-    # no idea what this exactly does...
-    def set_errio(self, param: int):
-        if param in (0, 1):
-            logging.info(f"Pump {self.ip_address} set errio {param}")
-            self.communicate(ERRIO + ":" + str(param))
-        else:
-            logging.warning("Supply binary value")
-
-    def set_extcontrol(self, param: int):
-        if param in (0, 1):
-            logging.info(f"Pump {self.ip_address} set extcontrol {param}")
-            self.communicate(EXTCONTR + ":" + str(param))
-        else:
-            logging.warning("Supply binary value")
-
-    def close_connection(self):
-        self.sock.close()
-        logging.info(f"Connection with {self.ip_address} closed")
 
 
-# Valve
 
-# send number to move to
-# returns '?' for out of range and 'OK' für done
-# E für Error
-# return E0: ventilposition wurde nicht geändert
-# return E1: Motorstrom zu hoch
-# V für Version,
-# H für unbekannt, maybe HOME?
-# N returns E1,
-# P positions returns actual position
-# R returns OK, maybe Reverse?,
-# S retunrs S:0000002D,
-# T returns VALVE TYPE, TYPE is LI, 6, 12, 16
-
-# ALWAYS APPEND NEWLINE r\n\, answer will be answer\n
-
-# TODO pump needs a way to delete ERROR
 
 
 if __name__ == "__main__":
-    p = KnauerPump.from_mac("00:80:a3:ba:c3:4a")
-    p.stop_flow()
+    pass
