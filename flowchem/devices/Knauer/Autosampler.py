@@ -123,7 +123,7 @@ class KnauerAS(ASEthernetDevice):
                f"{CommunicationFlags.MESSAGE_END.value.decode()}"
 
 
-    def autosampler_set(self, message: str or int):
+    def _set(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
@@ -134,7 +134,7 @@ class KnauerAS(ASEthernetDevice):
         # this only checks that it was acknowledged
         self._parse_setting_reply(reply)
 
-    def autosampler_query(self, message: str or int):
+    def _query(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
