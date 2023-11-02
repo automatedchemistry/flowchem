@@ -181,13 +181,28 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
-    def tubing_volume(self, volume: None or int = None):
 
-        NDA_knauer_AS.knauer_AS.TubingVolumeCommand
-    def tray_temperature(self):
-        NDA_knauer_AS.knauer_AS.TrayTemperatureCommand
-    def tray_cooling(self):
-        NDA_knauer_AS.knauer_AS.TrayCoolingCommand
+
+    def measure_tray_temperature(self):
+        command_string = self._construct_communication_string(TrayTemperatureCommand, "GET_ACTUAL")
+        return int(self.autosampler_query(command_string))
+
+    def get_setpoint_tray_temperature(self):
+        command_string = self._construct_communication_string(TrayTemperatureCommand, "GET_PROGRAMMED")
+        return int(self.autosampler_query(command_string))
+
+    def set_tray_temperature(self, setpoint: int):
+        command_string = self._construct_communication_string(TrayTemperatureCommand, "SET", setpoint)
+        return self.autosampler_set(command_string)
+
+
+    def tubing_volume(self, volume: None or int = None):
+        TubingVolumeCommand
+
+    def tray_cooling(self, onoff: str):
+        command_string = self._construct_communication_string(TrayCoolingCommand, "SET", onoff)
+        return self.autosampler_set(command_string)
+
 
     def syringe_volume(self):
         SyringeVolumeCommand
