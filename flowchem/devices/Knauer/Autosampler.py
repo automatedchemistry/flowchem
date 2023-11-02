@@ -166,7 +166,7 @@ class KnauerAS(ASEthernetDevice):
                                                            reply[
                                                            ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value], \
                                                            reply[ReplyStructure.ETX_START.value:]
-        if reply_start_char != ReplyStructure.MESSAGE_START.value or reply_end_char != ReplyStructure.MESSAGE_END.value:
+        if reply_start_char != CommunicationFlags.MESSAGE_START.value or reply_end_char != CommunicationFlags.MESSAGE_END.value:
             raise CommunicationError
 
 
