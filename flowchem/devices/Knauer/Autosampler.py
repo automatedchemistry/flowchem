@@ -190,7 +190,17 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
-
+    def _set_get_value(self, command:CommandStructure, parameter:int or None=None, reply_mapping: None or Enum = None)->int:
+        if parameter:
+            command_string = self._construct_communication_string(command, "SET", parameter)
+            return self._set(command_string)
+        else:
+            command_string = self._construct_communication_string(command, "GET_PROGRAMMED")
+            reply = self._query(command_string)
+            if reply_mapping:
+                return reply_mapping(reply).name
+            else:
+                return reply
 
     def measure_tray_temperature(self):
         command_string = self._construct_communication_string(TrayTemperatureCommand, "GET_ACTUAL")
