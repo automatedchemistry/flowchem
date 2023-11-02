@@ -41,6 +41,11 @@ class ASBusyError(ASError):
     pass
 
 
+class CommandModus(Enum):
+    SET = auto()
+    GET_PROGRAMMED = auto()
+    GET_ACTUAL = auto()
+
 #TODO do not decode reply before digestion, leave in binary
 class ASEthernetDevice:
     TCP_PORT = 2101
@@ -91,15 +96,28 @@ class KnauerAS(ASEthernetDevice):
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
 
-    def _construct_communication_string(self, command: NDA_knauer_AS.knauer_AS.CommandStructure, *args, **kwargs):
+    def _construct_communication_string(self, command: CommandStructure, modus: str, *args: int or str, **kwargs: str)->str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
         # if value cant be translated to enum, just through error with the available options
-        command_class = NDA_knauer_AS.knauer_AS.MoveTrayCommand()
-        #command_class = command()
-        command_class.query_actual()
-        command_class.query_programmed()
-        command_class.return_setting_string()
-        command_class.set_values(*args)
+        command_class = command()
+        modus = modus.upper()
+
+        if modus == CommandModus.SET.name:
+            command_class.set_values(*args, **kwargs)
+            communication_string = command_class.return_setting_string()
+
+        elif modus == CommandModus.GET_PROGRAMMED.name:
+            communication_string = command_class.query_programmed()
+
+        elif modus == CommandModus.GET_ACTUAL.name:
+            communication_string = command_class.query_actual()
+
+        else:
+            raise CommandOrValueError(f"You set {modus} as command modus, however modus should be {CommandModus.SET.name}, {CommandModus.GET_ACTUAL.name}, {CommandModus.GET_PROGRAMMED.name} ")
+        return f"{CommunicationFlags.MESSAGE_START.value.decode()}{self.autosampler_id}" \
+               f"{ADDITIONAL_INFO}{communication_string}" \
+               f"{CommunicationFlags.MESSAGE_END.value.decode()}"
+
 
     def autosampler_set(self, message: str or int):
         """
