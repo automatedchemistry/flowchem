@@ -46,12 +46,12 @@ class ASBusyError(ASError):
 
 #TODO do not decode reply before digestion, leave in binary
 class ASEthernetDevice:
-    UDP_PORT = 2101
+    TCP_PORT = 2101
     BUFFER_SIZE = 1024
 
     def __init__(self, ip_address, buffersize=None, udp_port=None):
         self.ip_address = str(ip_address)
-        self.port = udp_port if udp_port else ASEthernetDevice.UDP_PORT
+        self.port = udp_port if udp_port else ASEthernetDevice.TCP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
 
         logging.basicConfig(
@@ -60,40 +60,25 @@ class ASEthernetDevice:
             level=logging.DEBUG,
         )
 
-    def _open_and_send(self, message: str):
+    def _send_and_receive(self, message: str):
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(5)
                 s.connect((self.ip_address, self.port))
-                print("connected")
-                s.send(message.encode())
 
+                s.send(message.encode())
+                reply = b""
+                while True:
+                    chunk = s.recv(1024)
+                    reply += chunk
+                    if chunk in NDA_knauer_AS.knauer_AS.CommunicationFlags.__dict__.values() or NDA_knauer_AS.knauer_AS.ReplyStructure.MESSAGE_END.value in chunk:
+                        break
+            return reply
         except socket.timeout:
             logging.error(f"No connection possible to device with IP {self.ip_address}")
             raise ConnectionError(
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
-
-    def _open_and_receive(self):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.settimeout(5)
-                s.bind(("", self.port))
-                reply = s.recv(1024)
-
-        except socket.timeout:
-            logging.error(f"No reply received from device with IP {self.ip_address}")
-            raise ConnectionError(
-                f"No reply received from device with ip_address {self.ip_address}"
-            )
-
-        return reply
-
-    def _send_and_receive(self, message):
-        # send hex encoded string
-        self._open_and_send(message)
-        reply = self._open_and_receive()
-        return reply
 
 
 class KnauerAS(ASEthernetDevice):
@@ -102,9 +87,9 @@ class KnauerAS(ASEthernetDevice):
 
     """
     AS_ID = 61
-    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.UDP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
+    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
 
-        super().__init__(ip_address, port, buffersize)
+        super().__init__(ip_address, buffersize, port)
         # get statuses, that is basically syringe syize, volumes, platetype
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
@@ -116,7 +101,7 @@ class KnauerAS(ASEthernetDevice):
         :param message:
         :return: reply: str
         """
-        reply = super()._send_and_receive(message)
+        reply = self._send_and_receive(message)
 
         # this only checks that it was acknowledged
         self._parse_setting_reply(reply)
@@ -128,7 +113,7 @@ class KnauerAS(ASEthernetDevice):
         :param message:
         :return: reply: str
         """
-        reply = super()._send_and_receive(message)
+        reply = self._send_and_receive(message)
 
         query_reply = self._parse_query_reply(reply, message)
         return query_reply
