@@ -204,46 +204,75 @@ class KnauerAS(ASEthernetDevice):
 
     def measure_tray_temperature(self):
         command_string = self._construct_communication_string(TrayTemperatureCommand, "GET_ACTUAL")
-        return int(self.autosampler_query(command_string))
+        return int(self._query(command_string))
 
-    def get_setpoint_tray_temperature(self):
-        command_string = self._construct_communication_string(TrayTemperatureCommand, "GET_PROGRAMMED")
-        return int(self.autosampler_query(command_string))
-
-    def set_tray_temperature(self, setpoint: int):
-        command_string = self._construct_communication_string(TrayTemperatureCommand, "SET", setpoint)
-        return self.autosampler_set(command_string)
-
+    def set_tray_temperature(self, setpoint: int = None):
+        return self._set_get_value(TrayTemperatureCommand, setpoint)
 
     def tubing_volume(self, volume: None or int = None):
-        TubingVolumeCommand
+        return self._set_get_value(TubingVolumeCommand, volume)
 
-    def tray_cooling(self, onoff: str):
-        command_string = self._construct_communication_string(TrayCoolingCommand, "SET", onoff)
-        return self.autosampler_set(command_string)
+    def set_tray_temperature_control(self, onoff: str = None):
+        return self._set_get_value(TrayCoolingCommand, onoff, TrayCoolingCommand.on_off)
 
+    def compressor(self, onoff: str = None):
+        return self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off)
+   
+    def headspace(self, onoff: str = None):
+        return self._set_get_value(HeadSpaceCommand, onoff, HeadSpaceCommand.on_off)
 
-    def syringe_volume(self):
-        SyringeVolumeCommand
-    def syringe_speed(self):
-        SyringeSpeedCommand
+    def syringe_volume(self, volume: None or int = None):
+        return self._set_get_value(SyringeVolumeCommand, volume)
+    
+    def loop_volume(self, volume: None or int = None):
+        return self._set_get_value(LoopVolumeCommand, volume)
+        
+    def flush_volume(self, volume: None or int = None):
+        return self._set_get_value(FlushVolumeCommand, volume)
+    
+    def injection_volume(self, volume: None or int = None):
+        return self._set_get_value(InjectionVolumeCommand, volume)
+        
+    def syringe_speed(self, speed: str = None):
+        """LOW, NORMAL, HIGH"""
+        return self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
 
-    def syringe_valve(self):
-        SwitchSyringeValveCommand
-    def injector_valve(self):
-        SwitchInjectorValveCommand
+    def change_position_syringe_valve(self, port):
+        command_string = self._construct_communication_string(SwitchSyringeValveCommand, "SET", port)
+        return self._set(command_string)
 
-    def compressor(self):
-        SwitchCompressorCommand
+    def read_position_syringe_valve(self):
+        command_string = self._construct_communication_string(SwitchSyringeValveCommand, "GET_ACTUAL")
+        raw_reply = self._query(command_string) - 1
+        return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
-    def aspirate(self):
-        AspirateCommand
+    def change_position_injector_valve(self, port):
+        command_string = self._construct_communication_string(SwitchInjectorValveCommand, "SET", port)
+        return self._set(command_string)
+
+    def read_position_injector_valve(self):
+        command_string = self._construct_communication_string(SwitchInjectorValveCommand, "GET_ACTUAL")
+        raw_reply = self._query(command_string)
+        return SwitchInjectorValveCommand.allowed_position(raw_reply).name
+
+    def aspirate(self, volume):
+        command_string = self._construct_communication_string(AspirateCommand, "SET", volume)
+        return self._set(command_string)
+
+    def dispense(self, volume):
+        command_string = self._construct_communication_string(DispenseCommand, "SET", volume)
+        return self._set(command_string)
+
+    def move_syringe(self, position):
+        command_string = self._construct_communication_string(MoveSyringeCommand, "SET", position)
+        return self._set(command_string)
 
     def get_status(self):
-        RequestStatusCommand
+        command_string = self._construct_communication_string(RequestStatusCommand, "GET_ACTUAL")
+        reply = str(self._query(command_string))
+        reply = (3-len(reply))*'0'+reply # zero pad from left to length == 3
+        return ASStatus(reply).name
 
-    def dispense(self):
-        DispenseCommand
 
     def fill_transport(self):
         FillTransportCommand
@@ -257,18 +286,10 @@ class KnauerAS(ASEthernetDevice):
         MoveTrayCommand
         NeedleHorizontalCommand
         MoveNeedleVerticalCommand
-    def loop_volume(self):
-        LoopVolumeCommand
-    def flush_volume(self):
-        FlushVolumeCommand
-    def headspace(self):
-        HeadSpaceCommand
+
     def initial_wash(self):
         InitialWashCommand
-    def injection_volume(self):
-        InjectionVolumeCommand
-    def move_syringe(self):
-        MoveSyringeCommand
+        
 
 if __name__ == "__main__":
     pass
