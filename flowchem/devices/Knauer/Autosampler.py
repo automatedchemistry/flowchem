@@ -73,7 +73,12 @@ class ASEthernetDevice:
                 while True:
                     chunk = s.recv(1024)
                     reply += chunk
-                    if chunk in CommunicationFlags.__dict__.values() or CommunicationFlags.MESSAGE_END.value in chunk:
+                    try:
+                        CommunicationFlags(chunk)
+                        break
+                    except ValueError:
+                        pass
+                    if CommunicationFlags.MESSAGE_END.value in chunk:
                         break
             return reply
         except socket.timeout:
