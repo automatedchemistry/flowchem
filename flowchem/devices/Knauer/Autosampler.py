@@ -138,25 +138,23 @@ class KnauerAS(ASEthernetDevice):
                                                            reply[
                                                            ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value], \
                                                            reply[ReplyStructure.ETX_START.value:]
-        if reply_start_char != ReplyStructure.MESSAGE_START | reply_end_char != ReplyStructure.MESSAGE_END:
+        if reply_start_char != ReplyStructure.MESSAGE_START.value or reply_end_char != ReplyStructure.MESSAGE_END.value:
             raise CommunicationError
 
 
         # basically, if the device gives an extended reply, length will be 14. This only matters for get commands
         if len(reply_stripped) == 14:
         # decompose further
-            as_id = reply_stripped[ReplyStructure.STX_END.value:ReplyStructure.ID_END.value]
-            as_ai = reply_stripped[ReplyStructure.ID_END.value:ReplyStructure.AI_END.value]
-            as_pfc = reply_stripped[ReplyStructure.AI_END.value:ReplyStructure.PFC_END.value]
-            as_val = reply_stripped[ReplyStructure.PFC_END.value:ReplyStructure.VALUE_END.value]
+            as_id = reply[ReplyStructure.STX_END.value:ReplyStructure.ID_END.value]
+            as_ai = reply[ReplyStructure.ID_END.value:ReplyStructure.AI_END.value]
+            as_pfc = reply[ReplyStructure.AI_END.value:ReplyStructure.PFC_END.value]
+            as_val = reply[ReplyStructure.PFC_END.value:ReplyStructure.VALUE_END.value]
             # check if reply from requested device
-            if as_id.decode() != self.autosampler_id:
+            if int(as_id.decode()) != self.autosampler_id:
                 raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is as_id")
-            if as_pfc.decode() != as_command[ReplyStructure.AI_END.value:ReplyStructure.PFC_END.value]:
-                raise ASError(f"Reply of AS is for another query. Query was {KnauerASCommands[as_command].name}, but reply is for {KnauerASCommands[as_pfc].name}")
             return as_val.decode().lstrip("0")
             # check the device ID against current device id, check that reply is on send request
-
+        # TODO check if reply is on query
         else:
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
