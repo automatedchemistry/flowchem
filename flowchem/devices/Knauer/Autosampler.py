@@ -73,7 +73,7 @@ class ASEthernetDevice:
                 while True:
                     chunk = s.recv(1024)
                     reply += chunk
-                    if chunk in NDA_knauer_AS.knauer_AS.CommunicationFlags.__dict__.values() or NDA_knauer_AS.knauer_AS.ReplyStructure.MESSAGE_END.value in chunk:
+                    if chunk in CommunicationFlags.__dict__.values() or CommunicationFlags.MESSAGE_END.value in chunk:
                         break
             return reply
         except socket.timeout:
@@ -86,7 +86,6 @@ class ASEthernetDevice:
 class KnauerAS(ASEthernetDevice):
     """
     Class to control Knauer or basically any Spark Holland AS.
-
     """
     AS_ID = 61
     def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
@@ -127,7 +126,6 @@ class KnauerAS(ASEthernetDevice):
         :return: reply: str
         """
         reply = self._send_and_receive(message)
-
         # this only checks that it was acknowledged
         self._parse_setting_reply(reply)
 
