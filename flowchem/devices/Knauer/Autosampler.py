@@ -160,7 +160,7 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"The reply is {reply} and does not fit the expected reply for value setting")
 
-    def _parse_query_reply(self, reply, as_command):
+    def _parse_query_reply(self, reply, as_command)->int:
         from NDA_knauer_AS.knauer_AS import ReplyStructure, KnauerASCommands
         reply_start_char, reply_stripped, reply_end_char = reply[:ReplyStructure.STX_END.value], \
                                                            reply[
