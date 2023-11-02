@@ -180,7 +180,11 @@ class KnauerAS(ASEthernetDevice):
             # check if reply from requested device
             if int(as_id.decode()) != self.autosampler_id:
                 raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is as_id")
-            return as_val.decode().lstrip("0")
+        # todo: this removes
+            if len(as_val.decode().lstrip("0")) > 0:
+                return int(as_val.decode().lstrip("0"))
+            else:
+                return int(as_val.decode()[-1:])
             # check the device ID against current device id, check that reply is on send request
         # TODO check if reply is on query
         else:
