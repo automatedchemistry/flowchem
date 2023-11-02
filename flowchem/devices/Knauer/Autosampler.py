@@ -8,7 +8,6 @@ Module for communication with Autosampler.
 
 import logging
 import socket
-import time
 
 import NDA_knauer_AS.knauer_AS
 from NDA_knauer_AS import *
@@ -94,6 +93,16 @@ class KnauerAS(ASEthernetDevice):
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
 
+    def _construct_communication_string(self, command: NDA_knauer_AS.knauer_AS.CommandStructure, *args, **kwargs):
+        # input can be strings, is translated to enum internally -> enum no need to expsoe
+        # if value cant be translated to enum, just through error with the available options
+        command_class = NDA_knauer_AS.knauer_AS.MoveTrayCommand()
+        #command_class = command()
+        command_class.query_actual()
+        command_class.query_programmed()
+        command_class.return_setting_string()
+        command_class.set_values(*args)
+
     def autosampler_set(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
@@ -158,10 +167,60 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
+    def tubing_volume(self, volume: None or int = None):
 
+        NDA_knauer_AS.knauer_AS.TubingVolumeCommand
+    def tray_temperature(self):
+        NDA_knauer_AS.knauer_AS.TrayTemperatureCommand
+    def tray_cooling(self):
+        NDA_knauer_AS.knauer_AS.TrayCoolingCommand
 
+    def syringe_volume(self):
+        NDA_knauer_AS.knauer_AS.SyringeVolumeCommand
+    def syringe_speed(self):
+        NDA_knauer_AS.knauer_AS.SyringeSpeedCommand
 
+    def syringe_valve(self):
+        NDA_knauer_AS.knauer_AS.SwitchSyringeValveCommand
+    def injector_valve(self):
+        NDA_knauer_AS.knauer_AS.SwitchInjectorValveCommand
 
+    def compressor(self):
+        NDA_knauer_AS.knauer_AS.SwitchCompressorCommand
+
+    def aspirate(self):
+        NDA_knauer_AS.knauer_AS.AspirateCommand
+
+    def get_status(self):
+        NDA_knauer_AS.knauer_AS.RequestStatusCommand
+
+    def dispense(self):
+        NDA_knauer_AS.knauer_AS.DispenseCommand
+
+    def fill_transport(self):
+        NDA_knauer_AS.knauer_AS.FillTransportCommand
+
+    def connect_to_sample(self):
+        NDA_knauer_AS.knauer_AS.MoveTrayCommand
+        NDA_knauer_AS.knauer_AS.NeedleHorizontalCommand
+        NDA_knauer_AS.knauer_AS.MoveNeedleVerticalCommand
+
+    def disconnect_sample(self):
+        NDA_knauer_AS.knauer_AS.MoveTrayCommand
+        NDA_knauer_AS.knauer_AS.NeedleHorizontalCommand
+        NDA_knauer_AS.knauer_AS.MoveNeedleVerticalCommand
+    def loop_volume(self):
+        NDA_knauer_AS.knauer_AS.LoopVolumeCommand
+    def flush_volume(self):
+        NDA_knauer_AS.knauer_AS.FlushVolumeCommand
+    def headspace(self):
+        NDA_knauer_AS.knauer_AS.HeadSpaceCommand
+    def initial_wash(self):
+        NDA_knauer_AS.knauer_AS.InitialWashCommand
+    def injection_volume(self):
+        NDA_knauer_AS.knauer_AS.InjectionVolumeCommand
+    def move_syringe(self):
+        NDA_knauer_AS.knauer_AS.MoveSyringeCommand
 
 if __name__ == "__main__":
     pass
