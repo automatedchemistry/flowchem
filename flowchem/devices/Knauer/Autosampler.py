@@ -176,51 +176,51 @@ class KnauerAS(ASEthernetDevice):
         NDA_knauer_AS.knauer_AS.TrayCoolingCommand
 
     def syringe_volume(self):
-        NDA_knauer_AS.knauer_AS.SyringeVolumeCommand
+        SyringeVolumeCommand
     def syringe_speed(self):
-        NDA_knauer_AS.knauer_AS.SyringeSpeedCommand
+        SyringeSpeedCommand
 
     def syringe_valve(self):
-        NDA_knauer_AS.knauer_AS.SwitchSyringeValveCommand
+        SwitchSyringeValveCommand
     def injector_valve(self):
-        NDA_knauer_AS.knauer_AS.SwitchInjectorValveCommand
+        SwitchInjectorValveCommand
 
     def compressor(self):
-        NDA_knauer_AS.knauer_AS.SwitchCompressorCommand
+        SwitchCompressorCommand
 
     def aspirate(self):
-        NDA_knauer_AS.knauer_AS.AspirateCommand
+        AspirateCommand
 
     def get_status(self):
-        NDA_knauer_AS.knauer_AS.RequestStatusCommand
+        RequestStatusCommand
 
     def dispense(self):
-        NDA_knauer_AS.knauer_AS.DispenseCommand
+        DispenseCommand
 
     def fill_transport(self):
-        NDA_knauer_AS.knauer_AS.FillTransportCommand
+        FillTransportCommand
 
     def connect_to_sample(self):
-        NDA_knauer_AS.knauer_AS.MoveTrayCommand
-        NDA_knauer_AS.knauer_AS.NeedleHorizontalCommand
-        NDA_knauer_AS.knauer_AS.MoveNeedleVerticalCommand
+        MoveTrayCommand
+        NeedleHorizontalCommand
+        MoveNeedleVerticalCommand
 
     def disconnect_sample(self):
-        NDA_knauer_AS.knauer_AS.MoveTrayCommand
-        NDA_knauer_AS.knauer_AS.NeedleHorizontalCommand
-        NDA_knauer_AS.knauer_AS.MoveNeedleVerticalCommand
+        MoveTrayCommand
+        NeedleHorizontalCommand
+        MoveNeedleVerticalCommand
     def loop_volume(self):
-        NDA_knauer_AS.knauer_AS.LoopVolumeCommand
+        LoopVolumeCommand
     def flush_volume(self):
-        NDA_knauer_AS.knauer_AS.FlushVolumeCommand
+        FlushVolumeCommand
     def headspace(self):
-        NDA_knauer_AS.knauer_AS.HeadSpaceCommand
+        HeadSpaceCommand
     def initial_wash(self):
-        NDA_knauer_AS.knauer_AS.InitialWashCommand
+        InitialWashCommand
     def injection_volume(self):
-        NDA_knauer_AS.knauer_AS.InjectionVolumeCommand
+        InjectionVolumeCommand
     def move_syringe(self):
-        NDA_knauer_AS.knauer_AS.MoveSyringeCommand
+        MoveSyringeCommand
 
 if __name__ == "__main__":
     pass
