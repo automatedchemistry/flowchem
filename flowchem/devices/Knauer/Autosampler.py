@@ -150,11 +150,11 @@ class KnauerAS(ASEthernetDevice):
         # reply needs to be binary string
         from NDA_knauer_AS.knauer_AS import CommunicationFlags
 
-        if reply == CommunicationFlags.ACKNOWLEDGE:
+        if reply == CommunicationFlags.ACKNOWLEDGE.value:
             return True
-        elif reply == CommunicationFlags.TRY_AGAIN:
+        elif reply == CommunicationFlags.TRY_AGAIN.value:
             raise ASBusyError
-        elif reply == CommunicationFlags.NOT_ACKNOWLEDGE:
+        elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:
             raise CommandOrValueError
         # this is only the case with replies on queries
         else:
