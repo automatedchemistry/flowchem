@@ -51,9 +51,9 @@ class ASEthernetDevice:
     TCP_PORT = 2101
     BUFFER_SIZE = 1024
 
-    def __init__(self, ip_address, buffersize=None, udp_port=None):
+    def __init__(self, ip_address, buffersize=None, tcp_port=None):
         self.ip_address = str(ip_address)
-        self.port = udp_port if udp_port else ASEthernetDevice.TCP_PORT
+        self.port = tcp_port if tcp_port else ASEthernetDevice.TCP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
 
         logging.basicConfig(
