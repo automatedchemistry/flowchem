@@ -8,13 +8,11 @@ Module for communication with Autosampler.
 
 import logging
 import socket
-
-import NDA_knauer_AS.knauer_AS
-from NDA_knauer_AS import *
+from enum import Enum, auto
 
 try:
     # noinspection PyUnresolvedReferences
-    from NDA_knauer_AS import *
+    from NDA_knauer_AS.knauer_AS import *
 
     HAS_AS_COMMANDS = True
 except ImportError:
