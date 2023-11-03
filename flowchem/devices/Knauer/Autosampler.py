@@ -149,7 +149,6 @@ class KnauerAS(ASEthernetDevice):
 
     def _parse_setting_reply(self, reply):
         # reply needs to be binary string
-        from NDA_knauer_AS.knauer_AS import CommunicationFlags
 
         if reply == CommunicationFlags.ACKNOWLEDGE.value:
             return True
@@ -162,7 +161,6 @@ class KnauerAS(ASEthernetDevice):
             raise ASError(f"The reply is {reply} and does not fit the expected reply for value setting")
 
     def _parse_query_reply(self, reply)->int:
-        from NDA_knauer_AS.knauer_AS import ReplyStructure, KnauerASCommands
         reply_start_char, reply_stripped, reply_end_char = reply[:ReplyStructure.STX_END.value], \
                                                            reply[
                                                            ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value], \
