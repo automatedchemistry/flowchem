@@ -9,6 +9,7 @@ Module for communication with Autosampler.
 import logging
 import socket
 from enum import Enum, auto
+from typing import Type
 
 try:
     # noinspection PyUnresolvedReferences
@@ -100,7 +101,7 @@ class KnauerAS(ASEthernetDevice):
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
 
-    def _construct_communication_string(self, command: CommandStructure, modus: str, *args: int or str, **kwargs: str)->str:
+    def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str, **kwargs: str)->str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
         # if value cant be translated to enum, just through error with the available options
         command_class = command()
@@ -160,7 +161,7 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"The reply is {reply} and does not fit the expected reply for value setting")
 
-    def _parse_query_reply(self, reply, as_command)->int:
+    def _parse_query_reply(self, reply)->int:
         from NDA_knauer_AS.knauer_AS import ReplyStructure, KnauerASCommands
         reply_start_char, reply_stripped, reply_end_char = reply[:ReplyStructure.STX_END.value], \
                                                            reply[
@@ -190,7 +191,7 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
-    def _set_get_value(self, command:CommandStructure, parameter:int or None=None, reply_mapping: None or Enum = None)->int:
+    def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None):
         if parameter:
             command_string = self._construct_communication_string(command, "SET", parameter)
             return self._set(command_string)
