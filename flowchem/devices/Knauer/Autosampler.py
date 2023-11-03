@@ -237,14 +237,16 @@ class KnauerAS(ASEthernetDevice):
         """LOW, NORMAL, HIGH"""
         return self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
 
-    def change_position_syringe_valve(self, port):
-        command_string = self._construct_communication_string(SwitchSyringeValveCommand, "SET", port)
-        return self._set(command_string)
-
-    def read_position_syringe_valve(self):
-        command_string = self._construct_communication_string(SwitchSyringeValveCommand, "GET_ACTUAL")
-        raw_reply = self._query(command_string) - 1
-        return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
+    #tested
+    def syringe_valve_position(self, port:str = None):
+        # TODO check if this mapping offset can be fixed elegantly
+        if port:
+            command_string = self._construct_communication_string(SwitchSyringeValveCommand, "SET", port)
+            return self._set(command_string)
+        else:
+            command_string = self._construct_communication_string(SwitchSyringeValveCommand, "GET_ACTUAL")
+            raw_reply = self._query(command_string) - 1
+            return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
     # tested
     def injector_valve_position(self, port:str = None):
