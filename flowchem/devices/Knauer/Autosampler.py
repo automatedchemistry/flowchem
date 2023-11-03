@@ -274,22 +274,34 @@ class KnauerAS(ASEthernetDevice):
         reply = (3-len(reply))*'0'+reply # zero pad from left to length == 3
         return ASStatus(reply).name
 
+    def fill_transport(self, repetitions:int):
+        command_string = self._construct_communication_string(FillTransportCommand, "SET", repetitions)
+        return self._set(command_string)
 
-    def fill_transport(self):
-        FillTransportCommand
+    def initial_wash(self, port_to_wash:str, on_off: str):
+        command_string = self._construct_communication_string(InitialWashCommand, "SET", port_to_wash, on_off)
+        return self._set(command_string)
+
+    def _move_tray(self, tray_type: str, sample_position: str or int):
+        command_string = self._construct_communication_string(MoveTrayCommand, "SET", tray_type, sample_position)
+        return self._set(command_string)
+
+    def _move_needle_horizontal(self, needle_position:str, plate: str = None, well: int = None):
+        command_string = self._construct_communication_string(NeedleHorizontalCommand, "SET", needle_position, plate, well)
+        return self._set(command_string)
+
+    def _move_needle_vertical(self, move_to):
+        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, "SET", move_to)
+        return self._set(command_string)
 
     def connect_to_sample(self):
-        MoveTrayCommand
-        NeedleHorizontalCommand
-        MoveNeedleVerticalCommand
+        raise NotImplementedError
+
 
     def disconnect_sample(self):
-        MoveTrayCommand
-        NeedleHorizontalCommand
-        MoveNeedleVerticalCommand
+        raise NotImplementedError
 
-    def initial_wash(self):
-        InitialWashCommand
+
         
 
 if __name__ == "__main__":
