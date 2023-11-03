@@ -144,7 +144,7 @@ class KnauerAS(ASEthernetDevice):
         """
         reply = self._send_and_receive(message)
 
-        query_reply = self._parse_query_reply(reply, message)
+        query_reply = self._parse_query_reply(reply)
         return query_reply
 
     def _parse_setting_reply(self, reply):
