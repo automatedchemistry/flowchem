@@ -227,10 +227,11 @@ class KnauerAS(ASEthernetDevice):
     
     def loop_volume(self, volume: None or int = None):
         return self._set_get_value(LoopVolumeCommand, volume)
-        
+    #tested, find out what this does/means
     def flush_volume(self, volume: None or int = None):
         return self._set_get_value(FlushVolumeCommand, volume)
-    
+    # tested, query works
+    # todo get setting to work
     def injection_volume(self, volume: None or int = None):
         return self._set_get_value(InjectionVolumeCommand, volume)
         
@@ -276,14 +277,18 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(FillTransportCommand, "SET", repetitions)
         return self._set(command_string)
 
+    #tested, if on is set it immeadiatly washed, if off is set it does nothing but refuses to wash sth else afterwards
     def initial_wash(self, port_to_wash:str, on_off: str):
         command_string = self._construct_communication_string(InitialWashCommand, "SET", port_to_wash, on_off)
         return self._set(command_string)
-
+    # move to row, singleplate not working (yet)
+    # leftplate/rightplate does not have a function, at least if it is the same plates
     def _move_tray(self, tray_type: str, sample_position: str or int):
         command_string = self._construct_communication_string(MoveTrayCommand, "SET", tray_type, sample_position)
         return self._set(command_string)
 
+# plate
+    # , no_plate is not working
     def _move_needle_horizontal(self, needle_position:str, plate: str = None, well: int = None):
         command_string = self._construct_communication_string(NeedleHorizontalCommand, "SET", needle_position, plate, well)
         return self._set(command_string)
