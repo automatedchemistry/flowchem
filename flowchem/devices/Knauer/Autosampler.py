@@ -216,8 +216,9 @@ class KnauerAS(ASEthernetDevice):
         return self._set_get_value(TrayCoolingCommand, onoff, TrayCoolingCommand.on_off)
 
     def compressor(self, onoff: str = None):
-        return self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off)
-   
+        return self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off, get_actual=True)
+
+    # does not do anything perceivable - hm
     def headspace(self, onoff: str = None):
         return self._set_get_value(HeadSpaceCommand, onoff, HeadSpaceCommand.on_off)
 
