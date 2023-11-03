@@ -189,12 +189,13 @@ class KnauerAS(ASEthernetDevice):
         else:
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
-    def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None):
+    def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None, get_actual = False):
+        """If get actuakl is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
         if parameter:
             command_string = self._construct_communication_string(command, "SET", parameter)
             return self._set(command_string)
         else:
-            command_string = self._construct_communication_string(command, "GET_PROGRAMMED")
+            command_string = self._construct_communication_string(command, "GET_PROGRAMMED" if not get_actual else "GET_ACTUAL")
             reply = self._query(command_string)
             if reply_mapping:
                 return reply_mapping(reply).name
