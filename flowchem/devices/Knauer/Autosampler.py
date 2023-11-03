@@ -246,15 +246,11 @@ class KnauerAS(ASEthernetDevice):
         raw_reply = self._query(command_string) - 1
         return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
-    def change_position_injector_valve(self, port):
-        command_string = self._construct_communication_string(SwitchInjectorValveCommand, "SET", port)
-        return self._set(command_string)
-
-    def read_position_injector_valve(self):
-        command_string = self._construct_communication_string(SwitchInjectorValveCommand, "GET_ACTUAL")
-        raw_reply = self._query(command_string)
-        return SwitchInjectorValveCommand.allowed_position(raw_reply).name
-
+    # tested
+    def injector_valve_position(self, port:str = None):
+        return self._set_get_value(SwitchInjectorValveCommand, port, SwitchInjectorValveCommand.allowed_position, get_actual=True)
+    #tested
+    # this is additive, it moves syr relatively
     def aspirate(self, volume):
         command_string = self._construct_communication_string(AspirateCommand, "SET", volume)
         return self._set(command_string)
