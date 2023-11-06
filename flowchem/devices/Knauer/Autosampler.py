@@ -10,6 +10,7 @@ import logging
 import socket
 from enum import Enum, auto
 from typing import Type
+from time import sleep
 
 try:
     # noinspection PyUnresolvedReferences
@@ -295,8 +296,14 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return self._set(command_string)
 
+    def wait_until_ready(self):
+        while True:
+            if self.get_status() == ASStatus.NOT_RUNNING.name:
+                break
+            # AS is rather fast so this sounds like a reasonable time
+            sleep(0.01)
+
     def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
-        # TODO wait until not busy anymore
         # TODO check why move tray needs parameter of side
         if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
             raise NotImplementedError
@@ -306,15 +313,20 @@ class KnauerAS(ASEthernetDevice):
         # now check if that works for selected tray:
         assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
         self._move_tray(side, row)
+        self.wait_until_ready()
         self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
+        self.wait_until_ready()
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+        self.wait_until_ready()
 
 # it would be reaonable to get all from needle to loop, with pearcing inert gas vial
     def disconnect_sample(self):
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        self.wait_until_ready()
         self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
+        self.wait_until_ready()
         self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
-
+        self.wait_until_ready()
 
         
 
