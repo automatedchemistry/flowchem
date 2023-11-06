@@ -23,6 +23,24 @@ except ImportError:
 # finding the AS is not trivial with autodiscover, it also only is one device
 
 
+# AS definitions
+class PlateTypes(Enum):
+    # pad with zeros
+    # always signifies start and end
+    SINGLE_TRAY_87 = [87]
+    TRAY_384_WELL = [16, 24]
+    TRAY_96_WELL = [8, 12]
+    TRAY_48_VIAL = [6, 8]
+    TRAY_12_VIAL = [3, 4]
+
+
+class SelectPlatePosition(Enum):
+    NO_PLATE = 0
+    LEFT_PLATE = 1
+    RIGHT_PLATE = 2
+    SINGLE_PLATE = 3
+
+
 class ASError(Exception):
     pass
 
@@ -297,8 +315,14 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(MoveNeedleVerticalCommand, "SET", move_to)
         return self._set(command_string)
 
-    def connect_to_sample(self):
-        raise NotImplementedError
+    def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
+        if PlateTypes(traytype) == PlateTypes.SINGLE_TRAY_87:
+            raise NotImplementedError
+        else:
+            # column is a letter, to convert to correct number use buildt-in, a gives 0 here
+            column_int = ord(column.upper())-65
+            print(f"Youve selected the column {column_int}, counting starts at 0, ")
+
 
 
     def disconnect_sample(self):
