@@ -316,6 +316,8 @@ class KnauerAS(ASEthernetDevice):
         return self._set(command_string)
 
     def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
+        # TODO wait until not busy anymore
+        # TODO check why move tray needs parameter of side
         if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
             raise NotImplementedError
         # column is a letter, to convert to correct number use buildt-in, a gives 0 here
@@ -323,7 +325,7 @@ class KnauerAS(ASEthernetDevice):
         print(f"You've selected the column {column_int}, counting starts at 1.")
         # now check if that works for selected tray:
         assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
-        self._move_tray(traytype, row)
+        self._move_tray(side, row)
         self._move_needle_horizontal("PLATE", plate=side, well=column_int)
         self._move_needle_vertical("DOWN")
 
