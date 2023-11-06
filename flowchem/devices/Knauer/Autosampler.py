@@ -296,6 +296,7 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return self._set(command_string)
 
+    # todo make this a decorator and just retry until acknowledge
     def wait_until_ready(self):
         while True:
             if self.get_status() == ASStatus.NOT_RUNNING.name:
@@ -319,7 +320,7 @@ class KnauerAS(ASEthernetDevice):
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
         self.wait_until_ready()
 
-# it would be reaonable to get all from needle to loop, with pearcing inert gas vial
+# it would be reaonable to get all from needle to loop, with piercing inert gas vial
     def disconnect_sample(self):
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         self.wait_until_ready()
@@ -328,7 +329,41 @@ class KnauerAS(ASEthernetDevice):
         self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
         self.wait_until_ready()
 
+    def pick_up_sample(self, volume_sample, volume_buffer=0, dead_volume_needle_valve=14):
+        if volume_buffer:
+            self.syringe_valve_position("wash")
+            self.wait_until_ready()
+            self.aspirate(volume_buffer)
+            self.wait_until_ready()
+        self.injector_valve_position("inject")
+        self.wait_until_ready()
+        self.syringe_valve_position("needle")
+        self.wait_until_ready()
+        self.aspirate(volume_sample+dead_volume_needle_valve)
+        self.wait_until_ready()
         
+
+    def wash_system(self):
+        #washing loop
+        for i in range(3):
+            self.syringe_valve_position("wash")
+            self.wait_until_ready()
+            self.aspirate(250)
+            self.wait_until_ready()
+            self.syringe_valve_position("needle")
+            self.wait_until_ready()
+            self.injector_valve_position("load")
+            self.wait_until_ready()
+            self.dispense(250)
+            self.wait_until_ready()
+
+    def dispense_sample(self, volume, dead_volume=50):
+        self.syringe_valve_position("needle")
+        self.wait_until_ready()
+        self.injector_valve_position("load")
+        self.wait_until_ready()
+        self.dispense(volume+dead_volume)
+        self.wait_until_ready()
 
 if __name__ == "__main__":
     pass
