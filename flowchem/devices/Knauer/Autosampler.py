@@ -316,17 +316,25 @@ class KnauerAS(ASEthernetDevice):
         return self._set(command_string)
 
     def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
-        if PlateTypes(traytype) == PlateTypes.SINGLE_TRAY_87:
+        if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
             raise NotImplementedError
-        else:
-            # column is a letter, to convert to correct number use buildt-in, a gives 0 here
-            column_int = ord(column.upper())-65
-            print(f"Youve selected the column {column_int}, counting starts at 0, ")
+        # column is a letter, to convert to correct number use buildt-in, a gives 0 here
+        column_int = ord(column.upper())-64
+        print(f"You've selected the column {column_int}, counting starts at 1.")
+        # now check if that works for selected tray:
+        assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
+        self._move_tray(traytype, row)
+        self._move_needle_horizontal("PLATE", plate=side, well=column_int)
+        self._move_needle_vertical("DOWN")
 
 
+# it would be reaonable to get all from needle to loop, with pearcing inert gas vial
+    #todo rewrite all to use enum access instead of hardcoded values
 
     def disconnect_sample(self):
-        raise NotImplementedError
+        self._move_needle_vertical("UP")
+        self._move_tray("No_plate", "HOME")
+        self._move_needle_horizontal("WASH")
 
 
         
