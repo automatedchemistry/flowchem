@@ -190,10 +190,10 @@ class KnauerAS(ASEthernetDevice):
     def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None, get_actual = False):
         """If get actuakl is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
         if parameter:
-            command_string = self._construct_communication_string(command, "SET", parameter)
+            command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
             return self._set(command_string)
         else:
-            command_string = self._construct_communication_string(command, "GET_PROGRAMMED" if not get_actual else "GET_ACTUAL")
+            command_string = self._construct_communication_string(command, CommandModus.GET_PROGRAMMED.name if not get_actual else CommandModus.GET_ACTUAL.name)
             reply = self._query(command_string)
             if reply_mapping:
                 return reply_mapping(reply).name
@@ -201,7 +201,7 @@ class KnauerAS(ASEthernetDevice):
                 return reply
 
     def measure_tray_temperature(self):
-        command_string = self._construct_communication_string(TrayTemperatureCommand, "GET_ACTUAL")
+        command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)
         return int(self._query(command_string))
 
     def set_tray_temperature(self, setpoint: int = None):
@@ -241,10 +241,10 @@ class KnauerAS(ASEthernetDevice):
     def syringe_valve_position(self, port:str = None):
         # TODO check if this mapping offset can be fixed elegantly
         if port:
-            command_string = self._construct_communication_string(SwitchSyringeValveCommand, "SET", port)
+            command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)
             return self._set(command_string)
         else:
-            command_string = self._construct_communication_string(SwitchSyringeValveCommand, "GET_ACTUAL")
+            command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)
             raw_reply = self._query(command_string) - 1
             return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
@@ -254,45 +254,45 @@ class KnauerAS(ASEthernetDevice):
     #tested
     # this is additive, it moves syr relatively
     def aspirate(self, volume):
-        command_string = self._construct_communication_string(AspirateCommand, "SET", volume)
+        command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
         return self._set(command_string)
 
     def dispense(self, volume):
-        command_string = self._construct_communication_string(DispenseCommand, "SET", volume)
+        command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
         return self._set(command_string)
 
     def move_syringe(self, position):
-        command_string = self._construct_communication_string(MoveSyringeCommand, "SET", position)
+        command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
         return self._set(command_string)
 
     def get_status(self):
-        command_string = self._construct_communication_string(RequestStatusCommand, "GET_ACTUAL")
+        command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
         reply = str(self._query(command_string))
         reply = (3-len(reply))*'0'+reply # zero pad from left to length == 3
         return ASStatus(reply).name
 
     def fill_transport(self, repetitions:int):
-        command_string = self._construct_communication_string(FillTransportCommand, "SET", repetitions)
+        command_string = self._construct_communication_string(FillTransportCommand, CommandModus.SET.name, repetitions)
         return self._set(command_string)
 
     #tested, if on is set it immeadiatly washed, if off is set it does nothing but refuses to wash sth else afterwards
     def initial_wash(self, port_to_wash:str, on_off: str):
-        command_string = self._construct_communication_string(InitialWashCommand, "SET", port_to_wash, on_off)
+        command_string = self._construct_communication_string(InitialWashCommand, CommandModus.SET.name, port_to_wash, on_off)
         return self._set(command_string)
     # move to row, singleplate not working (yet)
     # leftplate/rightplate does not have a function, at least if it is the same plates
     def _move_tray(self, tray_type: str, sample_position: str or int):
-        command_string = self._construct_communication_string(MoveTrayCommand, "SET", tray_type, sample_position)
+        command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
         return self._set(command_string)
 
 # plate
     # , no_plate is not working
     def _move_needle_horizontal(self, needle_position:str, plate: str = None, well: int = None):
-        command_string = self._construct_communication_string(NeedleHorizontalCommand, "SET", needle_position, plate, well)
+        command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
         return self._set(command_string)
 
-    def _move_needle_vertical(self, move_to):
-        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, "SET", move_to)
+    def _move_needle_vertical(self, move_to: str):
+        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return self._set(command_string)
 
     def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
@@ -306,17 +306,14 @@ class KnauerAS(ASEthernetDevice):
         # now check if that works for selected tray:
         assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
         self._move_tray(side, row)
-        self._move_needle_horizontal("PLATE", plate=side, well=column_int)
-        self._move_needle_vertical("DOWN")
-
+        self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
+        self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
 
 # it would be reaonable to get all from needle to loop, with pearcing inert gas vial
-    #todo rewrite all to use enum access instead of hardcoded values
-
     def disconnect_sample(self):
-        self._move_needle_vertical("UP")
-        self._move_tray("No_plate", "HOME")
-        self._move_needle_horizontal("WASH")
+        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
 
 
         
