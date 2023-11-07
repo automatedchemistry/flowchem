@@ -358,9 +358,9 @@ class KnauerAS(ASEthernetDevice):
         self.aspirate(volume_sample)
 
 
-    def wash_system(self, wash="needle"):
+    def wash_system(self, wash="needle", times:int=3):
         #washing loop, ejecting through needle!
-        for i in range(3):
+        for i in range(times):
             self.syringe_valve_position("wash")
             self.aspirate(250)
             self.syringe_valve_position("needle")
