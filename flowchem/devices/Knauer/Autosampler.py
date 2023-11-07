@@ -140,8 +140,7 @@ class KnauerAS(ASEthernetDevice):
                f"{ADDITIONAL_INFO}{communication_string}" \
                f"{CommunicationFlags.MESSAGE_END.value.decode()}"
 
-
-
+    @send_until_acknowledged
     def _set(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
@@ -153,6 +152,7 @@ class KnauerAS(ASEthernetDevice):
         # this only checks that it was acknowledged
         self._parse_setting_reply(reply)
 
+    @send_until_acknowledged
     def _query(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
@@ -322,6 +322,8 @@ class KnauerAS(ASEthernetDevice):
             # AS is rather fast so this sounds like a reasonable time
             sleep(0.01)
 
+
+
     def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
         # TODO check why move tray needs parameter of side
         if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
@@ -331,57 +333,40 @@ class KnauerAS(ASEthernetDevice):
         print(f"You've selected the column {column_int}, counting starts at 1.")
         # now check if that works for selected tray:
         assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
+
         self._move_tray(side, row)
-        self.wait_until_ready()
         self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
-        self.wait_until_ready()
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-        self.wait_until_ready()
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
     def disconnect_sample(self):
+
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        self.wait_until_ready()
         self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
-        self.wait_until_ready()
         self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
-        self.wait_until_ready()
 
     def pick_up_sample(self, volume_sample, volume_buffer=0):
         if volume_buffer:
             self.syringe_valve_position("wash")
-            self.wait_until_ready()
             self.aspirate(volume_buffer)
-            self.wait_until_ready()
         self.injector_valve_position("inject")
-        self.wait_until_ready()
         self.syringe_valve_position("needle")
-        self.wait_until_ready()
         self.aspirate(volume_sample)
-        self.wait_until_ready()
-        
+
 
     def wash_system(self):
         #washing loop
         for i in range(3):
             self.syringe_valve_position("wash")
-            self.wait_until_ready()
             self.aspirate(250)
-            self.wait_until_ready()
             self.syringe_valve_position("needle")
-            self.wait_until_ready()
             self.injector_valve_position("load")
-            self.wait_until_ready()
             self.dispense(250)
-            self.wait_until_ready()
 
     def dispense_sample(self, volume, dead_volume=50):
         self.syringe_valve_position("needle")
-        self.wait_until_ready()
         self.injector_valve_position("load")
-        self.wait_until_ready()
         self.dispense(volume+dead_volume)
-        self.wait_until_ready()
 
 if __name__ == "__main__":
     pass
