@@ -329,7 +329,7 @@ class KnauerAS(ASEthernetDevice):
         self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
         self.wait_until_ready()
 
-    def pick_up_sample(self, volume_sample, volume_buffer=0, dead_volume_needle_valve=14):
+    def pick_up_sample(self, volume_sample, volume_buffer=0):
         if volume_buffer:
             self.syringe_valve_position("wash")
             self.wait_until_ready()
@@ -339,7 +339,7 @@ class KnauerAS(ASEthernetDevice):
         self.wait_until_ready()
         self.syringe_valve_position("needle")
         self.wait_until_ready()
-        self.aspirate(volume_sample+dead_volume_needle_valve)
+        self.aspirate(volume_sample)
         self.wait_until_ready()
         
 
