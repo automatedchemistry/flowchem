@@ -11,6 +11,8 @@ import socket
 from enum import Enum, auto
 from typing import Type
 from time import sleep
+import functools
+
 
 try:
     # noinspection PyUnresolvedReferences
@@ -42,6 +44,21 @@ class ASBusyError(ASError):
     """AS is currently busy but will accept your command at another point of time"""
     pass
 
+# wrapper that executes for a maximum amount of time until positive reply received
+def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
+    @functools.wraps(func)
+    def wrapper(*args, max_reaction_time=max_reaction_time, time_between=time_between, **kwargs, ):
+        while True:
+            try:
+                return func(*args, **kwargs)
+                break
+            except ASBusyError:
+                # AS is rather fast so this sounds like a reasonable time
+                sleep(time_between)
+                max_reaction_time -= time_between
+                if max_reaction_time <= 0:
+                    raise ASError
+    return wrapper
 
 class CommandModus(Enum):
     SET = auto()
@@ -122,6 +139,7 @@ class KnauerAS(ASEthernetDevice):
         return f"{CommunicationFlags.MESSAGE_START.value.decode()}{self.autosampler_id}" \
                f"{ADDITIONAL_INFO}{communication_string}" \
                f"{CommunicationFlags.MESSAGE_END.value.decode()}"
+
 
 
     def _set(self, message: str or int):
