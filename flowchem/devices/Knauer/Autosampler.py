@@ -270,6 +270,10 @@ class KnauerAS(ASEthernetDevice):
     # tested
     def injector_valve_position(self, port:str = None):
         return self._set_get_value(SwitchInjectorValveCommand, port, SwitchInjectorValveCommand.allowed_position, get_actual=True)
+    
+    def needle_vertical_offset(self, offset: float = None):
+        return self._set_get_value(VerticalNeedleOffsetCommand, offset)
+
     #tested
     # this is additive, it moves syr relatively
     def aspirate(self, volume):
