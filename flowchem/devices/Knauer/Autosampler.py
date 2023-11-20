@@ -330,8 +330,12 @@ class KnauerAS(ASEthernetDevice):
 
     def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
         # TODO check why move tray needs parameter of side
-        if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
-            raise NotImplementedError
+        traytype = traytype.upper()
+        try:
+            if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
+                raise NotImplementedError
+        except KeyError as e:
+            raise Exception(f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
         # column is a letter, to convert to correct number use buildt-in, a gives 0 here
         column_int = ord(column.upper())-64
         print(f"You've selected the column {column_int}, counting starts at 1.")
