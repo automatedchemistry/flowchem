@@ -4,8 +4,7 @@ Module for communication with Autosampler.
 
 # For future: go through graph, acquire mac addresses, check which IPs these have and setup communication.
 # To initialise the appropriate device on the IP, use class name like on chemputer
-
-
+import inspect
 import logging
 import socket
 from enum import Enum, auto
@@ -353,31 +352,52 @@ class KnauerAS(ASEthernetDevice):
         self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
         self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
 
-    def pick_up_sample(self, volume_sample, volume_buffer=0):
+    def pick_up_sample(self, volume_sample, volume_buffer=0, syr_asp = None):
+
         if volume_buffer:
             self.syringe_valve_position("wash")
-            self.aspirate(volume_buffer)
+            if syr_asp == None:
+                self.aspirate(volume_buffer)
+            else:
+                syr_asp(volume_buffer/1000, 1)
         self.injector_valve_position("inject")
         self.syringe_valve_position("needle")
-        self.aspirate(volume_sample)
+        if syr_asp == None:
+            self.aspirate(volume_sample)
+        else:
+            syr_asp(volume_sample/1000, 0.1)
 
 
-    def wash_system(self, wash="needle", times:int=3):
+    def wash_system(self, wash="needle", times:int=3, syringe_asp = None, asp_value = 250, syringe_disp = None, disp_value = 250):
         #washing loop, ejecting through needle!
+        if syringe_disp == None:
+            syringe_disp = self.dispense
+        if syringe_asp == None:
+            syringe_asp = self.aspirate()
         for i in range(times):
             self.syringe_valve_position("wash")
-            self.aspirate(250)
+            if not syringe_asp:
+                self.aspirate(asp_value)
+            else:
+                syringe_asp(asp_value, 5)
             self.syringe_valve_position("needle")
             if wash == "needle":
                 self.injector_valve_position("inject")
             else:
                 self.injector_valve_position("load")
-            self.dispense(250)
+            if not syringe_disp:
+                self.dispense(disp_value)
+            else:
+                syringe_disp(disp_value, 5)
 
-    def dispense_sample(self, volume, dead_volume=50):
+    def dispense_sample(self, volume, dead_volume=50, syr_disp = None):
+
         self.syringe_valve_position("needle")
         self.injector_valve_position("load")
-        self.dispense(volume+dead_volume)
+        if syr_disp == None:
+            self.dispense(volume+dead_volume)
+        else:
+            syr_disp((volume+dead_volume)/1000, 0.1)
 
 if __name__ == "__main__":
     pass
