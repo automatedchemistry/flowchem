@@ -369,10 +369,6 @@ class KnauerAS(ASEthernetDevice):
 
     def wash_system(self, wash="needle", times:int=3, syringe_asp = None, asp_value = 250, syringe_disp = None, disp_value = 250):
         #washing loop, ejecting through needle!
-        if syringe_disp == None:
-            syringe_disp = self.dispense
-        if syringe_asp == None:
-            syringe_asp = self.aspirate()
         for i in range(times):
             self.syringe_valve_position("wash")
             if not syringe_asp:
