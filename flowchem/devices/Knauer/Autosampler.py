@@ -50,7 +50,6 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
         while True:
             try:
                 return func(*args, **kwargs)
-                break
             except ASBusyError:
                 # AS is rather fast so this sounds like a reasonable time
                 sleep(time_between)
