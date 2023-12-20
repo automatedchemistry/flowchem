@@ -376,7 +376,7 @@ class KnauerAS(ASEthernetDevice):
             if not syringe_asp:
                 self.aspirate(asp_value)
             else:
-                syringe_asp(asp_value, 5)
+                syringe_asp(asp_value, 1)  
             self.syringe_valve_position("needle")
             if wash == "needle":
                 self.injector_valve_position("inject")
@@ -385,7 +385,7 @@ class KnauerAS(ASEthernetDevice):
             if not syringe_disp:
                 self.dispense(disp_value)
             else:
-                syringe_disp(disp_value, 5)
+                syringe_disp(disp_value, 1)
 
     def dispense_sample(self, volume, dead_volume=0.050, syr_disp = None):
 
