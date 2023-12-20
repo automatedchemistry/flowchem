@@ -275,10 +275,12 @@ class KnauerAS(ASEthernetDevice):
     #tested
     # this is additive, it moves syr relatively
     def aspirate(self, volume):
+        volume = int(round(volume, 3) * 1000)
         command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
         return self._set(command_string)
 
     def dispense(self, volume):
+        volume = int(round(volume, 3) * 1000)
         command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
         return self._set(command_string)
 
@@ -358,16 +360,16 @@ class KnauerAS(ASEthernetDevice):
             if syr_asp == None:
                 self.aspirate(volume_buffer)
             else:
-                syr_asp(volume_buffer/1000, 1)
+                syr_asp(volume_buffer, 1)
         self.injector_valve_position("inject")
         self.syringe_valve_position("needle")
         if syr_asp == None:
             self.aspirate(volume_sample)
         else:
-            syr_asp(volume_sample/1000, 0.1)
+            syr_asp(volume_sample, 0.1)
 
 
-    def wash_system(self, wash="needle", times:int=3, syringe_asp = None, asp_value = 250, syringe_disp = None, disp_value = 250):
+    def wash_system(self, wash="needle", times:int=3, syringe_asp = None, asp_value = 0.250, syringe_disp = None, disp_value = 0.250):
         #washing loop, ejecting through needle!
         for i in range(times):
             self.syringe_valve_position("wash")
@@ -385,14 +387,14 @@ class KnauerAS(ASEthernetDevice):
             else:
                 syringe_disp(disp_value, 5)
 
-    def dispense_sample(self, volume, dead_volume=50, syr_disp = None):
+    def dispense_sample(self, volume, dead_volume=0.050, syr_disp = None):
 
         self.syringe_valve_position("needle")
         self.injector_valve_position("load")
         if syr_disp == None:
             self.dispense(volume+dead_volume)
         else:
-            syr_disp((volume+dead_volume)/1000, 0.1)
+            syr_disp(volume+dead_volume)
 
 if __name__ == "__main__":
     pass
