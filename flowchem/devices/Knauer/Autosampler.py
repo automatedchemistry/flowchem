@@ -534,6 +534,8 @@ class KnauerAS(ASEthernetDevice):
         """
         #washing loop, ejecting through needle!
         legal_arguments = ["needle", "outside", "waste"]
+        if dispense_to not in legal_arguments:
+            raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
         self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         for i in range(times):
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
@@ -546,8 +548,6 @@ class KnauerAS(ASEthernetDevice):
                 self.injector_valve_position(InjectorValvePositions.LOAD.name)
             elif dispense_to == legal_arguments[2]:
                 self.syringe_valve_position(SyringeValvePositions.WASTE.name)
-            else:
-                raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
             self.dispense(volume, flow_rate)
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
