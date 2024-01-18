@@ -217,6 +217,18 @@ class KnauerAS(ASEthernetDevice):
             else:
                 return reply
 
+    def initialize(self):
+        """
+        Sets initial positions of components to assure reproducible startup
+        Returns: None
+        """
+        # TODO home syringe, also external
+        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        self.syringe_valve_position(SyringeValvePositions.WASTE.name)
+        self.injector_valve_position(InjectorValvePositions.LOAD.name)
+
+
     def measure_tray_temperature(self):
         command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)
         return int(self._query(command_string))
