@@ -504,14 +504,20 @@ class KnauerAS(ASEthernetDevice):
             else:
                 syringe_disp(disp_value, 1)
 
-    def dispense_sample(self, volume, dead_volume=0.050, syr_disp = None):
-
-        self.syringe_valve_position("needle")
-        self.injector_valve_position("load")
-        if syr_disp == None:
-            self.dispense(volume+dead_volume)
-        else:
-            syr_disp(volume+dead_volume)
+    def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
+        """
+        Dispense Sample in buffer tube to device connected to AS
+        Args:
+            volume: Volume to dispense in mL
+            dead_volume: Dead volume to dispense additionally
+            flow_rate: Flowrate, only works w external syringe
+            
+        Returns: None
+        
+        """
+        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+        self.injector_valve_position(InjectorValvePositions.LOAD.name)
+        self.dispense(volume+dead_volume, flow_rate)
 
 if __name__ == "__main__":
     pass
