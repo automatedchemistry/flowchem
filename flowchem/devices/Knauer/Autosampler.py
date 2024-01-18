@@ -498,12 +498,16 @@ class KnauerAS(ASEthernetDevice):
             self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
             self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             self.dispense(volume, flow_rate)
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
             # dump this and additional volume to waste
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
             self.aspirate(volume, flow_rate)
             self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             self.dispense(volume, flow_rate)
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
 
     def pick_up_sample(self, volume_sample, volume_buffer=0, flow_rate=None):
@@ -537,6 +541,7 @@ class KnauerAS(ASEthernetDevice):
             self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
             if dispense_to == legal_arguments[0]:
                 self.injector_valve_position(InjectorValvePositions.INJECT.name)
+                self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             elif dispense_to == legal_arguments[1]:
                 self.injector_valve_position(InjectorValvePositions.LOAD.name)
             elif dispense_to == legal_arguments[2]:
@@ -544,6 +549,7 @@ class KnauerAS(ASEthernetDevice):
             else:
                 raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
             self.dispense(volume, flow_rate)
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
     def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
         """
