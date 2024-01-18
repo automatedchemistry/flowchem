@@ -271,7 +271,7 @@ class KnauerAS(ASEthernetDevice):
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
     def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None, get_actual = False):
-        """If get actuakl is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
+        """If get actual is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
         if parameter:
             command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
             return self._set(command_string)
@@ -470,7 +470,17 @@ class KnauerAS(ASEthernetDevice):
         self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
         self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         
-    def wash_needle(self, volume:float, times:int=3, flow_rate:float = None):
+    def wash_needle(self, volume:float=0.2, times:int=3, flow_rate:float = None):
+        """
+
+        Args:
+            volume: 0.2 mL is a reasonable value
+            times:
+            flow_rate:
+
+        Returns:
+
+        """
         for i in range(times):
             #washing loop, ejecting through needle!
             # first, push solvent to waste via needle
