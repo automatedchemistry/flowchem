@@ -363,6 +363,8 @@ class KnauerAS(ASEthernetDevice):
         return self._set(command_string)
 
     def move_syringe(self, position):
+        if self.external_syringe_aspirate or self.external_syringe_dispense:
+            raise NotImplementedError("Only works for buildt in syringe")
         command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
         return self._set(command_string)
 
@@ -373,11 +375,16 @@ class KnauerAS(ASEthernetDevice):
         return ASStatus(reply).name
 
     def fill_transport(self, repetitions:int):
+        # todo what does that do again? high level needle wash?
+        if self.external_syringe_aspirate or self.external_syringe_dispense:
+            raise NotImplementedError("Only works for buildt in syringe")
         command_string = self._construct_communication_string(FillTransportCommand, CommandModus.SET.name, repetitions)
         return self._set(command_string)
 
     #tested, if on is set it immeadiatly washed, if off is set it does nothing but refuses to wash sth else afterwards
     def initial_wash(self, port_to_wash:str, on_off: str):
+        if self.external_syringe_aspirate or self.external_syringe_dispense:
+            raise NotImplementedError("Only works for buildt in syringe")
         command_string = self._construct_communication_string(InitialWashCommand, CommandModus.SET.name, port_to_wash, on_off)
         return self._set(command_string)
     # move to row, singleplate not working (yet)
