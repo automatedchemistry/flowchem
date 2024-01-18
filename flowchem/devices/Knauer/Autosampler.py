@@ -485,24 +485,34 @@ class KnauerAS(ASEthernetDevice):
         else:
             syr_asp(volume_sample, 0.1)
 
+    def wash_system(self, times:int=3, flow_rate=None, volume = 0.250, dispense_to="needle"):
+        """
 
-    def wash_system(self, wash="needle", times:int=3, syringe_asp = None, asp_value = 0.250, syringe_disp = None, disp_value = 0.250):
+        Args:
+            times: How often to wash
+            flow_rate: Which flowrate to wash with. Only works with external syringe, otherwise use default value
+            volume: washing volume in mL
+            dispense_to: Where to dispense the washing fluid to - so which path to clean.
+
+        Returns: None
+
+        """
         #washing loop, ejecting through needle!
+        legal_arguments = ["needle", "outside", "waste"]
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         for i in range(times):
-            self.syringe_valve_position("wash")
-            if not syringe_asp:
-                self.aspirate(asp_value)
+            self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            self.aspirate(volume, flow_rate)
+            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+            if dispense_to == legal_arguments[0]:
+                self.injector_valve_position(InjectorValvePositions.INJECT.name)
+            elif dispense_to == legal_arguments[1]:
+                self.injector_valve_position(InjectorValvePositions.LOAD.name)
+            elif dispense_to == legal_arguments[2]:
+                self.syringe_valve_position(SyringeValvePositions.WASTE.name)
             else:
-                syringe_asp(asp_value, 1)  
-            self.syringe_valve_position("needle")
-            if wash == "needle":
-                self.injector_valve_position("inject")
-            else:
-                self.injector_valve_position("load")
-            if not syringe_disp:
-                self.dispense(disp_value)
-            else:
-                syringe_disp(disp_value, 1)
+                raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
+            self.dispense(volume, flow_rate)
 
     def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
         """
