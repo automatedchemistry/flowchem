@@ -115,6 +115,72 @@ class KnauerAS(ASEthernetDevice):
         # get statuses, that is basically syringe syize, volumes, platetype
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
+        self.initialize()
+        self._external_aspirate = None
+        self._external_dispense = None
+        self._external_syringe_ready = None
+
+    @property
+    def external_syringe_aspirate(self):
+        """
+        Access external syringe aspirate function object
+        Returns: external syringe aspirate function object
+
+        """
+        return self._external_aspirate
+
+    @external_syringe_aspirate.setter
+    def external_syringe_aspirate(self, aspirate):
+        """
+        Set the command for external syringe aspiration use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external syringe aspirate
+
+        Returns: None
+
+        """
+        self._external_aspirate = aspirate
+
+    @property
+    def external_syringe_ready(self):
+        """
+        Access external syringe wait_until_ready function object
+        Returns: external syringe wait_until_ready function object
+
+        """
+        return self._external_syringe_ready
+
+    @external_syringe_ready.setter
+    def external_syringe_ready(self, ready):
+        """
+        Set the command for external syringe wait_until_ready use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external wait_until_ready
+
+        Returns: None
+
+        """
+        self._external_syringe_ready = ready
+
+    @property
+    def external_syringe_dispense(self):
+        """
+        Access external syringe dispense function object
+        Returns: external dispense function object
+        """
+        return self._external_dispense
+
+    @external_syringe_dispense.setter
+    def external_syringe_dispense(self, dispense):
+        """
+        Set the command for external syringe dispense use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external syringe dispense
+
+        Returns: None
+
+        """
+        self._external_dispense = dispense
 
     def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str, **kwargs: str)->str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
