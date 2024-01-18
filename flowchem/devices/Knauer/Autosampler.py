@@ -520,7 +520,7 @@ class KnauerAS(ASEthernetDevice):
         # todo was 0.1
         self.aspirate(volume_sample, flow_rate)
 
-    def wash_system(self, times:int=3, flow_rate=None, volume = 0.250, dispense_to="needle"):
+    def wash_system(self, times:int=3, flow_rate=None, volume:float = 0.250, dispense_to:str="needle"):
         """
 
         Args:
