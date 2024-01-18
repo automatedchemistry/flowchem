@@ -475,7 +475,7 @@ class KnauerAS(ASEthernetDevice):
             #washing loop, ejecting through needle!
             # first, push solvent to waste via needle
             # fill
-            self.injector_valve_position(InjectorValvePositions.LOAD.name)
+            self.injector_valve_position(InjectorValvePositions.INJECT.name)
             self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
             self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
