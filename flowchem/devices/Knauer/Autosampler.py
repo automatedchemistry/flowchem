@@ -540,11 +540,12 @@ class KnauerAS(ASEthernetDevice):
         for i in range(times):
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
             self.aspirate(volume, flow_rate)
-            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
             if dispense_to == legal_arguments[0]:
+                self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
                 self.injector_valve_position(InjectorValvePositions.INJECT.name)
                 self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             elif dispense_to == legal_arguments[1]:
+                self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
                 self.injector_valve_position(InjectorValvePositions.LOAD.name)
             elif dispense_to == legal_arguments[2]:
                 self.syringe_valve_position(SyringeValvePositions.WASTE.name)
