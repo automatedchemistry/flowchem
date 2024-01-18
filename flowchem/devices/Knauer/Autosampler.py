@@ -464,11 +464,11 @@ class KnauerAS(ASEthernetDevice):
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
-    def disconnect_sample(self):
-
+    def disconnect_sample(self, move_plate = False):
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
-        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        if move_plate:
+            self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         
     def wash_needle(self, volume:float=0.2, times:int=3, flow_rate:float = None):
         """
