@@ -352,15 +352,47 @@ class KnauerAS(ASEthernetDevice):
 
     #tested
     # this is additive, it moves syr relatively
-    def aspirate(self, volume):
-        volume = int(round(volume, 3) * 1000)
-        command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
-        return self._set(command_string)
+    def aspirate(self, volume:float, flow_rate:float or int=None):
+        """
+        aspirate with buildt in syringe if no external syringe is set to autosampler.
+        Else use extrernal syringe
+        Args:
+            volume: volume to aspirate in mL
+            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
 
-    def dispense(self, volume):
-        volume = int(round(volume, 3) * 1000)
-        command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
-        return self._set(command_string)
+        Returns: None
+
+        """
+        if not self.external_syringe_aspirate:
+            if flow_rate is not None:
+                raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
+            volume = int(round(volume, 3) * 1000)
+            command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
+            return self._set(command_string)
+        else:
+            assert self.external_syringe_dispense is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
+            self.external_syringe_aspirate(volume, flow_rate)
+
+    def dispense(self, volume, flow_rate=None):
+        """
+        dispense with buildt in syringe if no external syringe is set to autosampler.
+        Else use extrernal syringe
+        Args:
+            volume: volume to dispense in mL
+            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
+
+        Returns: None
+
+        """
+        if not self.external_syringe_dispense:
+            if flow_rate is not None:
+                raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
+            volume = int(round(volume, 3) * 1000)
+            command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
+            return self._set(command_string)
+        else:
+            assert self.external_syringe_aspirate is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
+            self.external_syringe_dispense(volume, flow_rate)
 
     def move_syringe(self, position):
         if self.external_syringe_aspirate or self.external_syringe_dispense:
