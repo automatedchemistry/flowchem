@@ -468,22 +468,43 @@ class KnauerAS(ASEthernetDevice):
 
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
-        self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        
+    def wash_needle(self, volume:float, times:int=3, flow_rate:float = None):
+        for i in range(times):
+            #washing loop, ejecting through needle!
+            # first, push solvent to waste via needle
+            # fill
+            self.injector_valve_position(InjectorValvePositions.LOAD.name)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
+            self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+            self.aspirate(volume, flow_rate)
+            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+            self.dispense(volume, flow_rate)
 
-    def pick_up_sample(self, volume_sample, volume_buffer=0, syr_asp = None):
+            # empty
+            self.aspirate(volume, flow_rate)
+            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+            self.dispense(volume, flow_rate)
+            # dump this and additional volume to waste
+            self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            self.aspirate(volume, flow_rate)
+            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+            self.dispense(volume, flow_rate)
+
+
+    def pick_up_sample(self, volume_sample, volume_buffer=0, flow_rate=None):
 
         if volume_buffer:
-            self.syringe_valve_position("wash")
-            if syr_asp == None:
-                self.aspirate(volume_buffer)
-            else:
-                syr_asp(volume_buffer, 1)
-        self.injector_valve_position("inject")
-        self.syringe_valve_position("needle")
-        if syr_asp == None:
-            self.aspirate(volume_sample)
-        else:
-            syr_asp(volume_sample, 0.1)
+            self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            self.aspirate(volume_buffer, flow_rate)
+        self.injector_valve_position(InjectorValvePositions.INJECT.name)
+        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+        # todo was 0.1
+        self.aspirate(volume_sample, flow_rate)
 
     def wash_system(self, times:int=3, flow_rate=None, volume = 0.250, dispense_to="needle"):
         """
