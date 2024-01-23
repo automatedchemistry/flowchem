@@ -372,6 +372,7 @@ class KnauerAS(ASEthernetDevice):
         else:
             assert self.external_syringe_dispense is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
             self.external_syringe_aspirate(volume, flow_rate)
+            self.external_syringe_ready()
 
     def dispense(self, volume, flow_rate=None):
         """
@@ -393,6 +394,7 @@ class KnauerAS(ASEthernetDevice):
         else:
             assert self.external_syringe_aspirate is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
             self.external_syringe_dispense(volume, flow_rate)
+            self.external_syringe_ready()
 
     def move_syringe(self, position):
         if self.external_syringe_aspirate or self.external_syringe_dispense:
