@@ -497,18 +497,16 @@ class KnauerAS(ASEthernetDevice):
         self.connect_to_position("wash",None,None,None)
         while pump_thread.is_alive():
             sleep(0.1)
+        # this is just used to connect the syringe to sample
+        self.pick_up_sample(volume_sample=0,flow_rate=flow_rate)
         # empty syringe into reservoir
-        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        self.injector_valve_position(InjectorValvePositions.INJECT.name)
         self.dispense(volume, flow_rate * 10 if flow_rate else flow_rate)
         self.disconnect_sample()
         
     def empty_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
         # empty reservoir with syringe
-        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        self.injector_valve_position(InjectorValvePositions.INJECT.name)
         self.connect_to_position("wash",None,None,None)
-        self.aspirate(volume, flow_rate)
+        self.pick_up_sample(volume_sample=volume, flow_rate=flow_rate)
         # go up and move to waste
         self.disconnect_sample()
 
