@@ -507,7 +507,7 @@ class KnauerAS(ASEthernetDevice):
             sleep(0.1)
         # eject directly to waste
         self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        self.dispense(volume, flow_rate)
+        self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
         for i in range(times):
@@ -523,7 +523,7 @@ class KnauerAS(ASEthernetDevice):
                 sleep(0.1)
             # empty syringe into reservoir
             self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-            self.dispense(volume, flow_rate)
+            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
 
             # empty reservoir with syringe
             self.aspirate(volume,flow_rate)
@@ -532,7 +532,7 @@ class KnauerAS(ASEthernetDevice):
             self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
             self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             # dispense to waste and go up
-            self.dispense(volume, flow_rate)
+            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
 
@@ -575,7 +575,7 @@ class KnauerAS(ASEthernetDevice):
                 self.injector_valve_position(InjectorValvePositions.LOAD.name)
             elif dispense_to == legal_arguments[2]:
                 self.syringe_valve_position(SyringeValvePositions.WASTE.name)
-            self.dispense(volume, flow_rate)
+            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
     def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
