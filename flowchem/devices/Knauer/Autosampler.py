@@ -435,11 +435,23 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return self._set(command_string)
 
-    # todo make this a decorator and just retry until acknowledge
-    def wait_until_ready(self):
+    def wait_until_ready(self, wait_for_syringe = True):
+        """
+        Wait for AS to be done
+        Args:
+            wait_for_syringe: If True (default), also the external syringe will be waited for. 
+                            If False it can run in background 
+
+        Returns: None
+
+        """
+        # todo wait for external syringe ready as well
         while True:
             if self.get_status() == ASStatus.NOT_RUNNING.name:
                 break
+            # if theres external syringe, wait for it to get ready
+            if self._external_syringe_ready is not None and wait_for_syringe == True:
+                self._external_syringe_ready()
             # AS is rather fast so this sounds like a reasonable time
             sleep(0.01)
 
