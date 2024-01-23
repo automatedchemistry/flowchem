@@ -460,22 +460,27 @@ class KnauerAS(ASEthernetDevice):
 
 
 
-    def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
+    def connect_to_position(self, traytype: str, side: str or None, column:str or None, row: int or None):
         # TODO check why move tray needs parameter of side
         traytype = traytype.upper()
-        try:
-            if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
-                raise NotImplementedError
-        except KeyError as e:
-            raise Exception(f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
-        # column is a letter, to convert to correct number use buildt-in, a gives 0 here
-        column_int = ord(column.upper())-64
-        print(f"You've selected the column {column_int}, counting starts at 1.")
-        # now check if that works for selected tray:
-        assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
-
-        self._move_tray(side, row)
-        self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
+        if traytype in PlateTypes.__dict__.keys():
+            general_position=False
+            try:
+                if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
+                    raise NotImplementedError
+            except KeyError as e:
+                raise Exception(f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
+            # column is a letter, to convert to correct number use buildt-in, a gives 0 here
+            column_int = ord(column.upper()) - 64
+            print(f"You've selected the column {column_int}, counting starts at 1.")
+            # now check if that works for selected tray:
+            assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
+            self._move_tray(side, row)
+            self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
+        elif traytype in NeedleHorizontalPosition.__dict__.keys():
+            self._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
+        else:
+            raise NotImplementedError
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
