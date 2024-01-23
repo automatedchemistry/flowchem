@@ -87,7 +87,7 @@ class ASEthernetDevice:
                 s.send(message.encode())
                 reply = b""
                 while True:
-                    chunk = s.recv(1024)
+                    chunk = s.recv(ASEthernetDevice.BUFFER_SIZE)
                     reply += chunk
                     try:
                         CommunicationFlags(chunk)
