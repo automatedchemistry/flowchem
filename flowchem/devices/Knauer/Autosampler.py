@@ -11,6 +11,7 @@ from enum import Enum, auto
 from typing import Type
 from time import sleep
 import functools
+from threading import Thread
 
 
 try:
@@ -486,40 +487,51 @@ class KnauerAS(ASEthernetDevice):
         
     def wash_needle(self, volume:float=0.2, times:int=3, flow_rate:float = None):
         """
-
+        Fill neelde with solvent and then wash it.
         Args:
             volume: 0.2 mL is a reasonable value
             times:
             flow_rate:
 
-        Returns:
+        Returns: None
 
         """
+        # fill here, and eject, without needle wash!
+        self.syringe_valve_position(SyringeValvePositions.WASH.name)
+        pump_thread = Thread(target=self.aspirate, args=[volume, flow_rate])
+        pump_thread.start()
+        self.injector_valve_position(InjectorValvePositions.INJECT.name)
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+        while pump_thread.is_alive():
+            sleep(0.1)
+        # eject directly to waste
+        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+        self.dispense(volume, flow_rate)
+        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+
         for i in range(times):
-            #washing loop, ejecting through needle!
-            # first, push solvent to waste via needle
-            # fill
-            self.injector_valve_position(InjectorValvePositions.INJECT.name)
-            self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
+            # do wash reservoir fill
+            #   fill syringe here and go to right position
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            pump_thread=Thread(target=self.aspirate, args=[volume,flow_rate])
+            pump_thread.start()
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
             self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-            self.aspirate(volume, flow_rate)
+            while pump_thread.is_alive():
+                sleep(0.1)
+            # empty syringe into reservoir
             self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
             self.dispense(volume, flow_rate)
 
-            # empty
-            self.aspirate(volume, flow_rate)
-            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+            # empty reservoir with syringe
+            self.aspirate(volume,flow_rate)
+            # go up and move to waste
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
             self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
             self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-            self.dispense(volume, flow_rate)
-            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-            # dump this and additional volume to waste
-            self.syringe_valve_position(SyringeValvePositions.WASH.name)
-            self.aspirate(volume, flow_rate)
-            self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+            # dispense to waste and go up
             self.dispense(volume, flow_rate)
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
