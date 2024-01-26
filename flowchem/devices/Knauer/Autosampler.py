@@ -120,6 +120,7 @@ class KnauerAS(ASEthernetDevice):
         self._external_aspirate = None
         self._external_dispense = None
         self._external_syringe_ready = None
+        self._external_syringe_home = None
 
     @property
     def external_syringe_aspirate(self):
@@ -182,6 +183,26 @@ class KnauerAS(ASEthernetDevice):
 
         """
         self._external_dispense = dispense
+
+    @property
+    def external_syringe_home(self):
+        """
+        Access external syringe home function object
+        Returns: external home function object
+        """
+        return self._external_syringe_home
+
+    @external_syringe_home.setter
+    def external_syringe_home(self, home):
+        """
+        Set the command for external syringe home use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external syringe home
+
+        Returns: None
+
+        """
+        self._external_syringe_home = home
 
     def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str, **kwargs: str)->str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
@@ -330,7 +351,10 @@ class KnauerAS(ASEthernetDevice):
         return self._set_get_value(InjectionVolumeCommand, volume)
         
     def syringe_speed(self, speed: str = None):
-        """LOW, NORMAL, HIGH"""
+        """
+        LOW, NORMAL, HIGH
+        This does NOT work on all models
+        """
         return self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
 
     #tested
