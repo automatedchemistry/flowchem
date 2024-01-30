@@ -187,9 +187,9 @@ class Tray:
         entry=self.available_vials.loc[index]
         return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
 
-    def find_vial(self, contains)->int:
+    def find_vial(self, contains, min_volume: str="0 mL")->int:
         # todo check
-        lowest_vol = self.available_vials.loc[self.available_vials["Content"] == contains]["ContainedVolume"].idxmin()
+        lowest_vol = self.available_vials.loc[self.available_vials["Content"] == contains & (self.available_vials["ConntainedVolume"]-self.available_vials["RemainingVolume"])>flowchem_ureg(min_volume)]["ContainedVolume"].idxmin()
         return  lowest_vol
 
     # this is mostly for updating volume
