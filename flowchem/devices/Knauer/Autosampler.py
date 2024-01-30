@@ -5,6 +5,7 @@ Module for communication with Autosampler.
 # For future: go through graph, acquire mac addresses, check which IPs these have and setup communication.
 # To initialise the appropriate device on the IP, use class name like on chemputer
 import inspect
+import json
 import logging
 import socket
 from enum import Enum, auto
@@ -12,6 +13,9 @@ from typing import Type
 from time import sleep
 import functools
 from threading import Thread
+import pandas
+from flowchem.units import flowchem_ureg
+from rdkit.Chem import MolFromSmiles, MolToSmiles
 
 
 try:
@@ -103,6 +107,116 @@ class ASEthernetDevice:
             raise ConnectionError(
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
+
+
+class Vial:
+    class _SpecialVial(Enum):
+        CARRIER = "carrier"
+        INERT_GAS = "gas"
+        
+    # TODO get the rounding issue of ureg right
+    def __init__(self, substance, solvent:str or None, concentration: str, contained_volume:str, remaining_volume:str):
+        self._remaining_volume = flowchem_ureg(remaining_volume)
+        self._contained_volume = flowchem_ureg(contained_volume)
+        self.substance = self._set_vial_content(substance) # todo get this canonical
+        self.solvent = solvent
+        self.concentration = flowchem_ureg(concentration)
+
+    def extract_from_vial(self, volume:str):
+        self._contained_volume -= flowchem_ureg(volume)
+    
+    @property
+    def available_volume(self):
+        return self._contained_volume-self._remaining_volume
+        
+    def _set_vial_content(self, substance):
+        try:
+            return MolToSmiles(MolFromSmiles(substance))
+        except Exception as e:
+            if not str(e).startswith("Python argument types in"):
+                raise e
+            else:
+                pass
+            
+        try:
+            return self._SpecialVial(substance.lower()).name
+        except KeyError as e:
+            raise e
+
+class TrayPosition:
+    def __init__(self, side, row, column):
+        self.side = side
+        self.row = row
+        self.column = column
+
+    def valid_position(self):
+        assert self.side.upper() is "LEFT" or self.side.upper() is "RIGHT"
+        assert type(self.row) is int
+        assert type(column) is str and len(column) is 1
+
+
+    # basically, only acts a s container internally and to make substance access easy
+
+# TODO create a Tray class
+class Tray:
+    # needs to contain mapping of what is where
+    # needs to supply function of reading and writing how much is left where
+    def __init__(self, tray_type, persistant_storage:str):
+        #todo set a path for continuous storing of layout
+        self.tray_type = tray_type
+        self.persistant = persistant_storage
+        self.available_vials:DataFrame = self.load_submitted()
+        self._layout=["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume", "RemainingVolume"]
+
+    def load_submitted(self):
+        # create the layout in excel -> makes usage easy
+        try:
+            return pandas.read_excel(self.persistant)
+        except FileNotFoundErrore(f"Fill out excel file under {self.persistant}.") as e:
+            self.create_blank(self.persistant)
+            raise e
+
+    def check_validity(self):
+        # check if base objects are valid, eg valid position or valid smiles and also not yet occupied#
+        pass
+    # todo vial object and position should become a dataframe
+
+    def load_entry(self, index:int) -> [Vial, TrayPosition]:
+        # return vial for updating volume, return TrayPosiition to go there, via Tray update the json
+        # get position and substance from dataframe, do based on index
+        entry=self.available_vials.loc[index]
+        return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
+
+    def find_vial(self, contains)->int:
+        # todo check
+        lowest_vol = self.available_vials.loc[self.available_vials["Content"] == contains]["ContainedVolume"].idxmin()
+        return  lowest_vol
+
+    # this is mostly for updating volume
+    def modify_entry(self, index, column, new_value):
+        # modify entry, based on index
+        self.available_vials.at[index, column] = new_value
+
+    # constantly update the json file
+    def save_current(self):
+        self.create_output_path(file_ending="json")
+        # todo just overwrite? thats the current file
+        with open(write_to, "w") as f:
+            json.dump(self.available_vials,f)
+            
+    def save_output(self):
+        self.create_output_path(extended_file_name="_out")
+        self.available_vials.to_excel(write_to)
+        
+    def create_output_path(self, extended_file_name = None, file_ending = None):
+        output_name, output_ending = Path(self.persistant).name.split(".")
+        write_to = Path(self.persistant).parent / Path(f"{output_name}{extended_file_name if extended_file_name else ''}.{file_ending if file_ending else output_ending}")
+        return write_to
+
+    def create_blank(self, path):
+        if Path(path).exists():
+            raise FileExistsError
+        pandas.DataFrame(columns=self._layout).to_excel(path)
 
 
 class KnauerAS(ASEthernetDevice):
