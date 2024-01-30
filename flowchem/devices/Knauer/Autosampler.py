@@ -545,6 +545,18 @@ class KnauerAS(ASEthernetDevice):
         Returns: None
 
         """
+
+        for i in range(times):
+            # do wash reservoir fill
+            #   fill syringe here and go to right position
+            self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
+            self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+            # dispense to waste and go up
+            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        
         # fill here, and eject, without needle wash!
         self.syringe_valve_position(SyringeValvePositions.WASH.name)
         pump_thread = Thread(target=self.aspirate, args=[volume, flow_rate])
@@ -558,17 +570,6 @@ class KnauerAS(ASEthernetDevice):
         self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
         self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-
-        for i in range(times):
-            # do wash reservoir fill
-            #   fill syringe here and go to right position
-            self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
-            self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
-            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-            # dispense to waste and go up
-            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
-            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
 
     def pick_up_sample(self, volume_sample, volume_buffer=0, flow_rate=None):
