@@ -206,9 +206,10 @@ class Tray:
         
 
     # this is mostly for updating volume
-    def modify_entry(self, index, column, new_value):
+    def update_volume(self, index, vial:Vial):
         # modify entry, based on index
-        self.available_vials.at[index, column] = new_value
+        self.available_vials.at[index, "ContainedVolume"] = vial._contained_volume
+        self.save_current()
 
     # constantly update the json file
     def save_current(self):
