@@ -197,10 +197,13 @@ class Tray:
         entry=self.available_vials.loc[index]
         return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
 
-    def find_vial(self, contains, min_volume: str="0 mL")->int:
+    def find_vial(self, contains:str, min_volume: str="0 mL")->int:
         # todo check
-        lowest_vol = self.available_vials.loc[self.available_vials["Content"] == contains & (self.available_vials["ConntainedVolume"]-self.available_vials["RemainingVolume"])>flowchem_ureg(min_volume)]["ContainedVolume"].idxmin()
-        return  lowest_vol
+        right_substance = self.available_vials["Content"] == contains
+        lowest_vol = self.available_vials.where(right_substance)
+        lowest_vol["available"] = lowest_vol["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - lowest_vol["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
+        return lowest_vol[lowest_vol["available"] > flowchem_ureg(min_volume).m_as("mL")]["ContainedVolume"].idxmin()
+        
 
     # this is mostly for updating volume
     def modify_entry(self, index, column, new_value):
