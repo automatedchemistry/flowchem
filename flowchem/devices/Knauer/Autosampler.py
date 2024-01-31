@@ -63,6 +63,9 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
                     raise ASError
     return wrapper
 
+def canonize_smiles(smiles:str):
+    return MolToSmiles(MolFromSmiles(smiles))
+
 class CommandModus(Enum):
     SET = auto()
     GET_PROGRAMMED = auto()
@@ -131,7 +134,7 @@ class Vial:
         
     def _set_vial_content(self, substance):
         try:
-            return MolToSmiles(MolFromSmiles(substance))
+            return canonize_smiles(substance)
         except Exception as e:
             if not str(e).startswith("Python argument types in"):
                 raise e
