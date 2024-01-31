@@ -238,13 +238,14 @@ class KnauerAS(ASEthernetDevice):
     Class to control Knauer or basically any Spark Holland AS.
     """
     AS_ID = 61
-    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
+    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE, tray_mapping:Tray=None):
 
         super().__init__(ip_address, buffersize, port)
         # get statuses, that is basically syringe syize, volumes, platetype
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
         self.initialize()
+        self.tray_mapping:Tray = tray_mapping
         self._external_aspirate = None
         self._external_dispense = None
         self._external_syringe_ready = None
@@ -614,13 +615,22 @@ class KnauerAS(ASEthernetDevice):
             # AS is rather fast so this sounds like a reasonable time
             sleep(0.01)
 
-
-
+    def connect_chemical(self, chemical:str, volume_sample:str="0 mL", volume_buffer:str="0 mL", flow_rate=None):
+        # needs to take plate layout and basically the key, so smiles or special denomition
+        if not self.tray_mapping:
+            raise CommandOrValueError("You must provide a tray mapping to access substances by name")
+        else:
+            vial_index = self.tray_mapping.find_vial(chemical, min_volume=volume_sample)
+            vial, position = self.tray_mapping.load_entry(vial_index)
+            self.connect_to_position(self.tray_mapping.tray_type, position.side, position.column, position.row)
+            self.pick_up_sample(volume_sample, volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
+            vial.extract_from_vial(volume_sample)
+            self.tray_mapping.update_volume(vial_index, vial)
+            
     def connect_to_position(self, traytype: str, side: str or None, column:str or None, row: int or None):
         # TODO check why move tray needs parameter of side
         traytype = traytype.upper()
         if traytype in PlateTypes.__dict__.keys():
-            general_position=False
             try:
                 if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
                     raise NotImplementedError
