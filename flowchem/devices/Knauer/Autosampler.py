@@ -151,6 +151,7 @@ class TrayPosition:
         self.side = side
         self.row = row
         self.column = column
+        self.valid_position()
 
     def valid_position(self):
         assert self.side.upper() is "LEFT" or self.side.upper() is "RIGHT"
@@ -169,6 +170,7 @@ class Tray:
         self.tray_type = tray_type
         self.persistant = persistant_storage
         self.available_vials:DataFrame = self.load_submitted()
+        self.check_validity_and_normalise()
         self._layout=["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume", "RemainingVolume"]
 
     def load_submitted(self):
@@ -179,11 +181,16 @@ class Tray:
             self.create_blank(self.persistant)
             raise e
 
-    def check_validity(self):
-        # check if base objects are valid, eg valid position or valid smiles and also not yet occupied#
-        pass
-    # todo vial object and position should become a dataframe
-
+    def check_validity_and_normalise(self):
+        # normalize the dataframe
+        self.available_vials["Content"]=self.available_vials["Content"].apply(Vial._set_vial_content)
+        # make sure all unit ones are a unit
+        self.available_vials["Concentration", "ContainedVolume", "RemainingVolume"].apply(flowchem_ureg)
+        assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
+        assert self.available_vials["Side"].apply(lambda x: x.lower() in ["right", "left"]).all(), "Your sample side has wrong values"
+        assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
+        self.save_current()
+        
     def load_entry(self, index:int) -> [Vial, TrayPosition]:
         # return vial for updating volume, return TrayPosiition to go there, via Tray update the json
         # get position and substance from dataframe, do based on index
