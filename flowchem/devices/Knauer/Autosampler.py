@@ -181,7 +181,8 @@ class Tray:
         # create the layout in excel -> makes usage easy
         try:
             return pandas.read_excel(self.persistant)
-        except FileNotFoundErrore(f"Fill out excel file under {self.persistant}.") as e:
+        except FileNotFoundError as e:
+            e.args += (f"Fill out excel file under {self.persistant}.",)
             self.create_blank(self.persistant)
             raise e
 
