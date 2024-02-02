@@ -219,13 +219,13 @@ class Tray:
 
     # constantly update the json file
     def save_current(self):
-        self.create_output_path(file_ending="json")
+        write_to=self.create_output_path(file_ending="json")
         # todo just overwrite? thats the current file
         with open(write_to, "w") as f:
-            json.dump(self.available_vials,f)
+            self.available_vials.to_json(f)
             
     def save_output(self):
-        self.create_output_path(extended_file_name="_out")
+        write_to=self.create_output_path(extended_file_name="_out")
         self.available_vials.to_excel(write_to)
         
     def create_output_path(self, extended_file_name = None, file_ending = None):
