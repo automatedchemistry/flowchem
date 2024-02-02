@@ -66,6 +66,21 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
 def canonize_smiles(smiles:str):
     return MolToSmiles(MolFromSmiles(smiles))
 
+    # make static
+def set_vial_content(substance):
+    try:
+        return canonize_smiles(substance)
+    except Exception as e:
+        if not str(e).startswith("Python argument types in"):
+            raise e
+        else:
+            pass
+    try:
+        return Vial._SpecialVial(substance.lower()).name
+    except ValueError as e:
+        e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
+        raise e
+
 class CommandModus(Enum):
     SET = auto()
     GET_PROGRAMMED = auto()
@@ -121,7 +136,7 @@ class Vial:
     def __init__(self, substance, solvent:str or None, concentration: str, contained_volume:str, remaining_volume:str):
         self._remaining_volume = flowchem_ureg(remaining_volume)
         self._contained_volume = flowchem_ureg(contained_volume)
-        self.substance = self._set_vial_content(substance) # todo get this canonical
+        self.substance = set_vial_content(substance) # todo get this canonical
         self.solvent = solvent
         self.concentration = flowchem_ureg(concentration)
 
@@ -131,20 +146,7 @@ class Vial:
     @property
     def available_volume(self):
         return self._contained_volume-self._remaining_volume
-        
-    def _set_vial_content(self, substance):
-        try:
-            return canonize_smiles(substance)
-        except Exception as e:
-            if not str(e).startswith("Python argument types in"):
-                raise e
-            else:
-                pass
-            
-        try:
-            return self._SpecialVial(substance.lower()).name
-        except KeyError as e:
-            raise e
+
 
 class TrayPosition:
     def __init__(self, side, row, column):
@@ -183,7 +185,7 @@ class Tray:
 
     def check_validity_and_normalise(self):
         # normalize the dataframe
-        self.available_vials["Content"]=self.available_vials["Content"].apply(Vial._set_vial_content)
+        self.available_vials["Content"]=self.available_vials["Content"].apply(set_vial_content)
         # make sure all unit ones are a unit
         self.available_vials["Concentration", "ContainedVolume", "RemainingVolume"].apply(flowchem_ureg)
         assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
