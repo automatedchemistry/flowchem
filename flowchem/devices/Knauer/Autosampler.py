@@ -14,8 +14,9 @@ from time import sleep
 import functools
 from threading import Thread
 import pandas
-from flowchem.units import flowchem_ureg
+from flowchem.constants import flowchem_ureg
 from rdkit.Chem import MolFromSmiles, MolToSmiles
+from pathlib import Path
 
 
 try:
