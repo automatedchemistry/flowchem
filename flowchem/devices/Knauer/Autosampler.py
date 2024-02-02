@@ -737,7 +737,7 @@ class KnauerAS(ASEthernetDevice):
             times: How often to wash
             flow_rate: Which flowrate to wash with. Only works with external syringe, otherwise use default value
             volume: washing volume in mL
-            dispense_to: Where to dispense the washing fluid to - so which path to clean.
+            dispense_to: Where to dispense the washing fluid to - so which path to clean. Options are needle, outside, waste
 
         Returns: None
 
