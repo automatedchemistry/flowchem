@@ -157,9 +157,10 @@ class TrayPosition:
         self.valid_position()
 
     def valid_position(self):
-        assert self.side.upper() is "LEFT" or self.side.upper() is "RIGHT"
-        assert type(self.row) is int
-        assert type(column) is str and len(column) is 1
+        from numpy import int64
+        assert self.side.upper() == "LEFT" or self.side.upper() == "RIGHT"
+        assert type(self.row) is int64
+        assert type(self.column) == str and len(self.column) == 1
 
 
     # basically, only acts a s container internally and to make substance access easy
