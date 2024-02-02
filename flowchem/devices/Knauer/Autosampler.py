@@ -205,9 +205,10 @@ class Tray:
     def find_vial(self, contains:str, min_volume: str="0 mL")->int:
         # todo check
         right_substance = self.available_vials["Content"] == contains
-        lowest_vol = self.available_vials.where(right_substance)
-        lowest_vol["available"] = lowest_vol["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - lowest_vol["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
-        return lowest_vol[lowest_vol["available"] > flowchem_ureg(min_volume).m_as("mL")]["ContainedVolume"].idxmin()
+        lowest_vol = self.available_vials.loc[right_substance]
+        # TODO check if everything is in mL
+        new = lowest_vol["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - lowest_vol["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - (flowchem_ureg(min_volume).m_as("mL"))
+        return new.idxmin()
         
 
     # this is mostly for updating volume
