@@ -18,7 +18,7 @@ from flowchem.constants import flowchem_ureg
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 from pathlib import Path
 
-
+# TODO assert that writing to and reloading works reliably - so use old mapping if it exists, here ro from platform code
 try:
     # noinspection PyUnresolvedReferences
     from NDA_knauer_AS.knauer_AS import *
@@ -77,7 +77,7 @@ def set_vial_content(substance):
         else:
             pass
     try:
-        return Vial._SpecialVial(substance.lower()).name
+        return _SpecialVial(substance.lower()).name
     except ValueError as e:
         e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
         raise e
@@ -127,11 +127,12 @@ class ASEthernetDevice:
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
 
+class _SpecialVial(Enum):
+    CARRIER = "carrier"
+    INERT_GAS = "gas"
+
 
 class Vial:
-    class _SpecialVial(Enum):
-        CARRIER = "carrier"
-        INERT_GAS = "gas"
         
     # TODO get the rounding issue of ureg right
     def __init__(self, substance, solvent:str or None, concentration: str, contained_volume:str, remaining_volume:str):
