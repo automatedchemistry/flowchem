@@ -64,10 +64,11 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
                     raise ASError
     return wrapper
 
+
 def canonize_smiles(smiles:str):
     return MolToSmiles(MolFromSmiles(smiles))
 
-    # make static
+
 def set_vial_content(substance):
     try:
         return canonize_smiles(substance)
@@ -181,11 +182,38 @@ class Tray:
     def load_submitted(self):
         # create the layout in excel -> makes usage easy
         try:
-            return pandas.read_excel(self.persistant)
+            path = self._old_loading()
+            return pandas.read_excel(path) if not "json" in path.name else pandas.read_json(path)
         except FileNotFoundError as e:
             e.args += (f"Fill out excel file under {self.persistant}.",)
             self.create_blank(self.persistant)
             raise e
+
+# todo if loading submitted, check if a out file exitsts with same name. if not, check if a json checkoint file exists.
+    #  if so, load thejson file and create the out file. Now, ask the user which should be used. if the out file is loaded, delete the old out file, directly write the json file (before deleting)
+    # with that procedure, it should always be the updatedfile used
+
+    def _old_loading(self)->Path:
+        output = self.create_output_path(extended_file_name="_out")
+        checkpoint = self.create_output_path(file_ending="json")
+
+        if Path(output).exists():
+            # if an output excel was written load that
+            to_load = output
+            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"previously properly finished experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+        elif Path(checkpoint).exists():
+            to_load = checkpoint
+            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"previously intermittantly closed experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+        else:
+            to_load = Path(self.persistant)
+            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"absolutely fresh layout. Type 'YES' and hit enter to proceed, anything else will quit")
+        if user == "YES":
+            return to_load
+        else:
+            raise CommandOrValueError
 
     def check_validity_and_normalise(self):
         # normalize the dataframe
