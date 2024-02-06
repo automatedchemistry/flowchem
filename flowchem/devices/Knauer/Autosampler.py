@@ -225,6 +225,25 @@ class Tray:
         assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
         self.save_current()
         
+    def get_unique_chemicals(self) -> list:
+        """
+        Get the unique SMILES strings from the available samples
+        Returns:
+            list:   List of unique SMILES strings
+        """
+        # drop duplicates
+        single_values=self.available["Content"].drop_duplicates()
+        # remove the ones that are in _SpecialVial
+        def special_vial(x):
+            try:
+                _SpecialVial[x]
+                return True
+            except KeyError:
+                return False
+
+        return [x for x in single_values if not special_vial(x)]
+
+        
     def load_entry(self, index:int) -> [Vial, TrayPosition]:
         # return vial for updating volume, return TrayPosiition to go there, via Tray update the json
         # get position and substance from dataframe, do based on index
