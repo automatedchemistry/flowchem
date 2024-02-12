@@ -140,11 +140,6 @@ class ASEthernetDevice:
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
 
-class _SpecialVial(Enum):
-    CARRIER = "carrier"
-    INERT_GAS = "gas"
-
-
 class Vial:
         
     # TODO get the rounding issue of ureg right
