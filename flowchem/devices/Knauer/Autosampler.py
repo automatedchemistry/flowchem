@@ -69,7 +69,7 @@ def canonize_smiles(smiles:str):
     return MolToSmiles(MolFromSmiles(smiles))
 
 
-def set_vial_content(substance):
+def set_vial_content(substance, return_special_vial=False):
     try:
         return canonize_smiles(substance)
     except Exception as e:
@@ -82,6 +82,18 @@ def set_vial_content(substance):
     except ValueError as e:
         e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
         raise e
+    
+def check_special_vial(substance)-> bool:
+    try:
+        _SpecialVial(substance)
+        return True
+    except ValueError as e:
+        return False
+
+class _SpecialVial(Enum):
+    CARRIER = "carrier"
+    INERT_GAS = "gas"
+
 
 class CommandModus(Enum):
     SET = auto()
