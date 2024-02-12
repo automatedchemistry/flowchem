@@ -78,7 +78,7 @@ def set_vial_content(substance, return_special_vial=False):
         else:
             pass
     try:
-        return _SpecialVial(substance.lower()).name
+        return _SpecialVial(substance.lower()).value
     except ValueError as e:
         e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
         raise e
