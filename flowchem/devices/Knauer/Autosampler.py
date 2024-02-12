@@ -147,8 +147,12 @@ class Vial:
         self._remaining_volume = flowchem_ureg(remaining_volume)
         self._contained_volume = flowchem_ureg(contained_volume)
         self.substance = set_vial_content(substance) # todo get this canonical
-        self.solvent = solvent
-        self.concentration = flowchem_ureg(concentration)
+        if not check_special_vial(substance):
+            self.solvent = solvent
+            self.concentration = flowchem_ureg(concentration)
+        else:
+            self.solvent = None
+            self.concentration = None
 
     def extract_from_vial(self, volume:str):
         self._contained_volume -= flowchem_ureg(volume)
