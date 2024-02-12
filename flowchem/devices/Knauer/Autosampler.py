@@ -186,6 +186,7 @@ class Tray:
         #todo set a path for continuous storing of layout
         self.tray_type = tray_type
         self.persistant = persistant_storage
+        self._loaded_fresh:bool = None
         self.available_vials:DataFrame = self.load_submitted()
         self.check_validity_and_normalise()
         self._layout=["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume", "RemainingVolume"]
@@ -213,14 +214,18 @@ class Tray:
             to_load = output
             user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
                        f"previously properly finished experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            self._loaded_fresh = False
+
         elif Path(checkpoint).exists():
             to_load = checkpoint
             user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
                        f"previously intermittantly closed experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            self._loaded_fresh = False
         else:
             to_load = Path(self.persistant)
             user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
                        f"absolutely fresh layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            self._loaded_fresh = True
         if user == "YES":
             return to_load
         else:
