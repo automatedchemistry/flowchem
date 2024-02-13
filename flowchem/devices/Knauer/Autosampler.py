@@ -172,7 +172,7 @@ class TrayPosition:
     def valid_position(self):
         from numpy import int64
         assert self.side.upper() == SelectPlatePosition.LEFT_PLATE.name or self.side.upper() == SelectPlatePosition.RIGHT_PLATE.name
-        assert type(self.row) is int64
+        assert type(self.row) in [int64, int]
         assert type(self.column) == str and len(self.column) == 1
 
 
