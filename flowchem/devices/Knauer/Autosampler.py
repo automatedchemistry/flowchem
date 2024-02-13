@@ -633,7 +633,7 @@ class KnauerAS(ASEthernetDevice):
         if self.external_syringe_aspirate or self.external_syringe_dispense:
             # todo
             if position.upper() == "HOME":
-                self.external_syringe_home()
+                self.external_syringe_home(10)
             else:
                 raise NotImplementedError("Only works for buildt in syringe")
         command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
