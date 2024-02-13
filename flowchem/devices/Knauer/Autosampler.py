@@ -155,7 +155,9 @@ class Vial:
             self.concentration = None
 
     def extract_from_vial(self, volume:str):
-        self._contained_volume -= flowchem_ureg(volume)
+        if type(volume) is str:
+            volume = flowchem_ureg(volume)
+        self._contained_volume -= volume
     
     @property
     def available_volume(self):
@@ -267,11 +269,11 @@ class Tray:
         return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
 
     def find_vial(self, contains:str, min_volume: str="0 mL")->int:
-        # todo check
+        min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
         right_substance = self.available_vials["Content"] == contains
         lowest_vol = self.available_vials.loc[right_substance]
         # TODO check if everything is in mL
-        new = lowest_vol["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - lowest_vol["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - (flowchem_ureg(min_volume).m_as("mL"))
+        new = lowest_vol["ContainedVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - (min_volume.m_as("mL"))
         return new.idxmin()
     
     def find_lowest_volume_vial(self, identifier: List[str]) -> int:
@@ -708,8 +710,10 @@ class KnauerAS(ASEthernetDevice):
         else:
             vial_index = self.tray_mapping.find_vial(chemical, min_volume=volume_sample)
             vial, position = self.tray_mapping.load_entry(vial_index)
-            self.connect_to_position(self.tray_mapping.tray_type, position.side, position.column, position.row)
-            self.pick_up_sample(volume_sample, volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
+            self.connect_to_position(self.tray_mapping.tray_type, position.side, position.column, int(position.row))
+            # this waits for syringe to be ready as well per default
+            self.wait_until_ready(wait_for_syringe=True)
+            self.pick_up_sample(flowchem_ureg(volume_sample).m_as("mL"), volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
             vial.extract_from_vial(volume_sample)
             self.tray_mapping.update_volume(vial_index, vial)
             
