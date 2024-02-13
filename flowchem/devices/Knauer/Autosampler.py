@@ -275,7 +275,7 @@ class Tray:
             identifier: list of smiles to check for
 
         Returns:
-            index of the vial with the lowest volume
+            index of the vial with the lowest volume. If all are the same, it simply returns some
         """
         # todo check
         # find the lowest volume over a list of substances
@@ -729,6 +729,7 @@ class KnauerAS(ASEthernetDevice):
             self._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
         else:
             raise NotImplementedError
+        # per default, also awaits external syringe
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
@@ -796,7 +797,7 @@ class KnauerAS(ASEthernetDevice):
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
 
-    def pick_up_sample(self, volume_sample, volume_buffer=0, flow_rate=None):
+    def pick_up_sample(self, volume_sample:float or int, volume_buffer=0, flow_rate=None):
 
         if volume_buffer:
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
