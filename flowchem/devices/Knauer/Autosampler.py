@@ -9,7 +9,7 @@ import json
 import logging
 import socket
 from enum import Enum, auto
-from typing import Type
+from typing import Type, List
 from time import sleep
 import functools
 from threading import Thread
@@ -243,7 +243,7 @@ class Tray:
         assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
         self.save_current()
         
-    def get_unique_chemicals(self) -> list:
+    def get_unique_chemicals(self) -> List[str]:
         """
         Get the unique SMILES strings from the available samples
         Returns:
