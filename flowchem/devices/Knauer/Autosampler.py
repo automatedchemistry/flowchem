@@ -250,16 +250,8 @@ class Tray:
             list:   List of unique SMILES strings
         """
         # drop duplicates
-        single_values=self.available["Content"].drop_duplicates()
-        # remove the ones that are in _SpecialVial
-        def special_vial(x):
-            try:
-                _SpecialVial[x]
-                return True
-            except KeyError:
-                return False
-
-        return [x for x in single_values if not special_vial(x)]
+        single_values=self.available_vials["Content"].drop_duplicates()
+        return [x for x in single_values if not check_special_vial(x)]
 
         
     def load_entry(self, index:int) -> [Vial, TrayPosition]:
