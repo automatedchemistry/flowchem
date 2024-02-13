@@ -606,12 +606,12 @@ class KnauerAS(ASEthernetDevice):
         else:
             assert self.external_syringe_dispense is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
             self.external_syringe_aspirate(volume, flow_rate)
-            self.external_syringe_ready()
+            
 
     def dispense(self, volume, flow_rate=None):
         """
         dispense with buildt in syringe if no external syringe is set to autosampler.
-        Else use extrernal syringe
+        Else use external syringe
         Args:
             volume: volume to dispense in mL
             flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
@@ -628,7 +628,6 @@ class KnauerAS(ASEthernetDevice):
         else:
             assert self.external_syringe_aspirate is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
             self.external_syringe_dispense(volume, flow_rate)
-            self.external_syringe_ready()
 
     def move_syringe(self, position):
         if self.external_syringe_aspirate or self.external_syringe_dispense:
@@ -688,10 +687,11 @@ class KnauerAS(ASEthernetDevice):
         # todo wait for external syringe ready as well
         while True:
             if self.get_status() == ASStatus.NOT_RUNNING.name:
-                break
             # if theres external syringe, wait for it to get ready
-            if self._external_syringe_ready is not None and wait_for_syringe == True:
-                self._external_syringe_ready()
+                if self.external_syringe_ready is not None and wait_for_syringe == True:
+                    self.external_syringe_ready()
+                else:
+                    break
             # AS is rather fast so this sounds like a reasonable time
             sleep(0.01)
 
@@ -740,15 +740,15 @@ class KnauerAS(ASEthernetDevice):
             
     def fill_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
         self.syringe_valve_position(SyringeValvePositions.WASH.name)
-        pump_thread = Thread(target=self.aspirate, args=[volume, flow_rate])
-        pump_thread.start()
+        self.aspirate(volume, flow_rate)
         self.connect_to_position("wash",None,None,None)
-        while pump_thread.is_alive():
-            sleep(0.1)
+        # aspirate does not await syringe execution, therefor explicit await is necessary
+        self.wait_until_ready()
         # this is just used to connect the syringe to sample
         self.pick_up_sample(volume_sample=0,flow_rate=flow_rate)
         # empty syringe into reservoir
         self.dispense(volume, flow_rate * 10 if flow_rate else flow_rate)
+        self.wait_until_ready()
         self.disconnect_sample()
         
     def empty_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
@@ -779,20 +779,20 @@ class KnauerAS(ASEthernetDevice):
             self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             # dispense to waste and go up
             self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+            self.wait_until_ready()
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         
         # fill here, and eject, without needle wash!
         self.syringe_valve_position(SyringeValvePositions.WASH.name)
-        pump_thread = Thread(target=self.aspirate, args=[volume, flow_rate])
-        pump_thread.start()
+        self.aspirate(volume, flow_rate)
         self.injector_valve_position(InjectorValvePositions.INJECT.name)
         self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-        while pump_thread.is_alive():
-            sleep(0.1)
+        self.wait_until_ready()
         # eject directly to waste
         self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
         self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+        self.wait_until_ready()
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
 
@@ -802,9 +802,12 @@ class KnauerAS(ASEthernetDevice):
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
             self.aspirate(volume_buffer, flow_rate)
         self.injector_valve_position(InjectorValvePositions.INJECT.name)
+        # wait until buffer taken
+        self.wait_until_ready()
         self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        # todo was 0.1
         self.aspirate(volume_sample, flow_rate)
+        # while picking up sample, there is no logical AS based background activity, so wait until ready
+        self.wait_until_ready()
 
     def wash_system(self, times:int=3, flow_rate=None, volume:float = 0.250, dispense_to:str="needle"):
         """
@@ -826,6 +829,7 @@ class KnauerAS(ASEthernetDevice):
         for i in range(times):
             self.syringe_valve_position(SyringeValvePositions.WASH.name)
             self.aspirate(volume, flow_rate)
+            self.wait_until_ready()
             if dispense_to == legal_arguments[0]:
                 self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
                 self.injector_valve_position(InjectorValvePositions.INJECT.name)
@@ -836,11 +840,13 @@ class KnauerAS(ASEthernetDevice):
             elif dispense_to == legal_arguments[2]:
                 self.syringe_valve_position(SyringeValvePositions.WASTE.name)
             self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+            self.wait_until_ready()
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
     def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
         """
-        Dispense Sample in buffer tube to device connected to AS
+        Dispense Sample in buffer tube to device connected to AS. This does not await end of dispensal.
+         You have to do that explicitly
         Args:
             volume: Volume to dispense in mL
             dead_volume: Dead volume to dispense additionally
