@@ -239,7 +239,7 @@ class Tray:
         # make sure all unit ones are a unit
         self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(flowchem_ureg)
         assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
-        assert self.available_vials["Side"].apply(lambda x: x.lower() in ["right", "left"]).all(), "Your sample side has wrong values"
+        assert self.available_vials["Side"].apply(lambda x: x.upper() in [SelectPlatePosition.RIGHT_PLATE.name, SelectPlatePosition.LEFT_PLATE.name]).all(), "Your sample side has wrong values"
         assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
         self.save_current()
         
