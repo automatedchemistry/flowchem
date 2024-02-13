@@ -237,7 +237,7 @@ class Tray:
         # normalize the dataframe
         self.available_vials["Content"]=self.available_vials["Content"].apply(set_vial_content)
         # make sure all unit ones are a unit
-        self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(flowchem_ureg)
+        self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(flowchem_ureg, na_action="ignore") #
         assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
         assert self.available_vials["Side"].apply(lambda x: x.upper() in [SelectPlatePosition.RIGHT_PLATE.name, SelectPlatePosition.LEFT_PLATE.name]).all(), "Your sample side has wrong values"
         assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
