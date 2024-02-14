@@ -636,8 +636,9 @@ class KnauerAS(ASEthernetDevice):
                 self.external_syringe_home(10)
             else:
                 raise NotImplementedError("Only works for buildt in syringe")
-        command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
-        return self._set(command_string)
+        else:
+            command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
+            return self._set(command_string)
 
     def get_status(self):
         command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
