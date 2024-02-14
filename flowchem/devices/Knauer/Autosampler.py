@@ -355,7 +355,7 @@ class KnauerAS(ASEthernetDevice):
     @property
     def external_syringe_ready(self):
         """
-        Access external syringe wait_until_ready function object
+        Access external syringe wait_until_ready function object. Needs to block until ready
         Returns: external syringe wait_until_ready function object
 
         """
