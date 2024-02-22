@@ -266,7 +266,13 @@ class Tray:
         lowest_vol = self.available_vials.loc[right_substance]
         # TODO check if everything is in mL
         new = lowest_vol["ContainedVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - (min_volume.m_as("mL"))
-        return new.idxmin()
+        new = new[new>=0]
+        # TODO raise Error if no vial is contains enough
+        try:
+            return new.idxmin()
+        except ValueError:
+            return None
+            
     
     def find_lowest_volume_vial(self, identifier: List[str]) -> int:
         """
