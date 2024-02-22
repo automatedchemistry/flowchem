@@ -709,6 +709,8 @@ class KnauerAS(ASEthernetDevice):
             raise CommandOrValueError("You must provide a tray mapping to access substances by name")
         else:
             vial_index = self.tray_mapping.find_vial(chemical, min_volume=volume_sample)
+            if not vial_index:
+                raise ValueError(f"No vial contains enough sample for the desired volume")
             vial, position = self.tray_mapping.load_entry(vial_index)
             self.connect_to_position(self.tray_mapping.tray_type, position.side, position.column, int(position.row))
             # this waits for syringe to be ready as well per default
