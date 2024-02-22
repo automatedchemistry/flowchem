@@ -160,7 +160,7 @@ class Vial:
         self._contained_volume -= volume
     
     @property
-    def available_volume(self):
+    def available_volume(self)-> flowchem_ureg.Quantity:
         return self._contained_volume-self._remaining_volume
 
 
@@ -260,7 +260,7 @@ class Tray:
         entry=self.available_vials.loc[index]
         return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
 
-    def find_vial(self, contains:str, min_volume: str="0 mL")->int:
+    def find_vial(self, contains:str, min_volume: str="0 mL")-> int | None:
         min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
         right_substance = self.available_vials["Content"] == contains
         lowest_vol = self.available_vials.loc[right_substance]
