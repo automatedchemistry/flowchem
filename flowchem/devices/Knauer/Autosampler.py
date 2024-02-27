@@ -716,7 +716,8 @@ class KnauerAS(ASEthernetDevice):
             # this waits for syringe to be ready as well per default
             self.wait_until_ready(wait_for_syringe=True)
             self.pick_up_sample(flowchem_ureg(volume_sample).m_as("mL"), volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
-            vial.extract_from_vial(volume_sample)
+            if vial.substance != _SpecialVial.INERT_GAS.value:
+                vial.extract_from_vial(volume_sample)
             self.tray_mapping.update_volume(vial_index, vial)
             
     def connect_to_position(self, traytype: str, side: str or None, column:str or None, row: int or None):
