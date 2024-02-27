@@ -274,11 +274,12 @@ class Tray:
             return None
             
     
-    def find_lowest_volume_vial(self, identifier: List[str]) -> int:
+    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int | None:
         """
         Find the vial with the lowest volume of a list of substances
         Args:
             identifier: list of smiles to check for
+            min_volume: minimum volume to be considered in mL
 
         Returns:
             index of the vial with the lowest volume. If all are the same, it simply returns some
@@ -288,7 +289,12 @@ class Tray:
         right_substances = self.available_vials.loc[self.available_vials["Content"].isin(identifier)]
         # TODO check if everything is in mL
         new = right_substances["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
-        return new.idxmin()
+        # todo vial does not contain enough?
+        new=new.where(lambda x: x >= min_volume)
+        if len(new) == 0:
+            return None
+        else:
+            return new.idxmin()
         
 
     # this is mostly for updating volume
