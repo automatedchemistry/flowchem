@@ -291,10 +291,10 @@ class Tray:
         new = right_substances["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
         # todo vial does not contain enough?
         new=new.where(lambda x: x >= min_volume)
-        if len(new) == 0:
+        if new.isnull().all():
             return None
         else:
-            return new.idxmin()
+            return new.idxmin(skipna=True)
         
 
     # this is mostly for updating volume
