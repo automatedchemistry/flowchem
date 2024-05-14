@@ -747,6 +747,7 @@ class KnauerAS(ASEthernetDevice):
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
     def disconnect_sample(self, move_plate = False):
+        self.injector_valve_position(InjectorValvePositions.LOAD.name)
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         if move_plate:
             self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
