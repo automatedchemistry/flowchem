@@ -264,10 +264,8 @@ class Tray:
         min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
         right_substance = self.available_vials["Content"] == contains
         lowest_vol = self.available_vials.loc[right_substance]
-        # TODO check if everything is in mL
         new = lowest_vol["ContainedVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - (min_volume.m_as("mL"))
         new = new[new>=0]
-        # TODO raise Error if no vial is contains enough
         try:
             return new.idxmin()
         except ValueError:
@@ -284,12 +282,9 @@ class Tray:
         Returns:
             index of the vial with the lowest volume. If all are the same, it simply returns some
         """
-        # todo check
         # find the lowest volume over a list of substances
         right_substances = self.available_vials.loc[self.available_vials["Content"].isin(identifier)]
-        # TODO check if everything is in mL
         new = right_substances["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
-        # todo vial does not contain enough?
         new=new.where(lambda x: x >= min_volume)
         if new.isnull().all():
             return None
