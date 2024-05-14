@@ -646,7 +646,7 @@ class KnauerAS(ASEthernetDevice):
         if self.external_syringe_aspirate or self.external_syringe_dispense:
             # todo
             if position.upper() == "HOME":
-                self.external_syringe_home(10)
+                self.external_syringe_home(2)
             else:
                 raise NotImplementedError("Only works for buildt in syringe")
         else:
@@ -766,7 +766,7 @@ class KnauerAS(ASEthernetDevice):
         # this is just used to connect the syringe to sample
         self.pick_up_sample(volume_sample=0,flow_rate=flow_rate)
         # empty syringe into reservoir
-        self.dispense(volume, flow_rate * 10 if flow_rate else flow_rate)
+        self.dispense(volume, flow_rate)
         self.wait_until_ready()
         self.disconnect_sample()
         
@@ -797,7 +797,7 @@ class KnauerAS(ASEthernetDevice):
             self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
             self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
             # dispense to waste and go up
-            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+            self.dispense(volume, flow_rate)
             self.wait_until_ready()
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         
@@ -858,7 +858,7 @@ class KnauerAS(ASEthernetDevice):
                 self.injector_valve_position(InjectorValvePositions.LOAD.name)
             elif dispense_to == legal_arguments[2]:
                 self.syringe_valve_position(SyringeValvePositions.WASTE.name)
-            self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+            self.dispense(volume, flow_rate)
             self.wait_until_ready()
             self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
