@@ -18,11 +18,12 @@ from pathlib import Path
 
 class ClarityInterface:
     def __init__(self, remote: bool = False, host: str = None, port: int = None, path_to_executable: str = None,
-                 instrument_number: int = 1):
+                 instrument_number: int = 1, execute: bool = True):
         # just determine path to executable, and open socket if for remote usage
         self.remote = remote
         self.instrument = instrument_number
         self.path_to_executable = path_to_executable
+        self._execute = execute
         if self.remote:
             self.interface = MessageSender(host, port)
             self.command_executor = self.interface.open_socket_and_send
@@ -32,11 +33,14 @@ class ClarityInterface:
     # if remote execute everything on other PC, else on this
     # Todo doesn't make sense here, done other way
     def execute_command(self, command_string):
-        if self.remote:
-            self.command_executor(command_string)
+        if self._execute:
+            if self.remote:
+                self.command_executor(command_string)
+            else:
+                self.command_executor(command_string, self.path_to_executable)
         else:
-            self.command_executor(command_string, self.path_to_executable)
-
+            print(f"Command {command_string} would have been executed")
+        
     #bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
     # TODO remove if published
     def switch_lamp_on(self, address='192.168.10.111', port=10001):
