@@ -93,7 +93,6 @@ class ClarityInterface:
     def set_sample_name(self, sample_name):
         """Sets the sample name for the next single run"""
         self.execute_command(f"i={self.instrument} set_sample_name={sample_name}")
-        sleep(1)
 
     def run(self):
         """Runs the instrument. Care should be taken to activate automatic data export on HPLC. (can be done via command,
