@@ -30,6 +30,37 @@ except ImportError:
 # from pint import UnitRegistry
 # finding the AS is not trivial with autodiscover, it also only is one device
 
+class ErrorCodes(Enum):
+    ERROR_294 = "Home sensor not reached."
+    ERROR_295 = "Deviation of more than +/- 2 mm towards home."
+    ERROR_296 = "Home sensor not de-activated."
+    ERROR_297 = "Home sensor activated when not expected."
+    ERROR_298 = "Tray position is unknown."
+    ERROR_303 = "Horizontal: needle position is unknown."
+    ERROR_304 = "Horizontal: home sensor not reached."
+    ERROR_306 = "Horizontal: home sensor not de-activated."
+    ERROR_307 = "Horizontal: home sensor activated when not expected."
+    ERROR_312 = "Vertical: needle position is unknown."
+    ERROR_313 = "Vertical: home sensor not reached."
+    ERROR_315 = "Vertical: home sensor not de-activated."
+    ERROR_317 = "Vertical: stripper did not detect plate (or wash/waste)."
+    ERROR_318 = "Vertical: stripper stuck."
+    ERROR_319 = "Vertical: The sample needle arm is at an invalid position."
+    ERROR_324 = "Syringe valve did not find destination position."
+    ERROR_330 = "Syringe home sensor not reached."
+    ERROR_331 = "Syringe home sensor not de-activated."
+    ERROR_334 = "Syringe position is unknown."
+    ERROR_335 = "Syringe rotation error."
+    ERROR_340 = "Destination position not reached." #i
+    ERROR_341 = "Wear-out limit reached."
+    ERROR_342 = "Illegal sensor readout."
+    ERROR_347 = "Temperature above 48°C at cooling ON."
+    ERROR_280 = "EEPROM write error."
+    ERROR_282 = "EEPROM error in settings."
+    ERROR_283 = "EEPROM error in adjustments."
+    ERROR_284 = "EEPROM error in log counter."
+    ERROR_290 = "Error occurred during initialization, the Alias cannot start."
+
 
 class ASError(Exception):
     pass
