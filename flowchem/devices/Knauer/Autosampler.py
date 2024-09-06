@@ -31,6 +31,7 @@ except ImportError:
 # finding the AS is not trivial with autodiscover, it also only is one device
 
 class ErrorCodes(Enum):
+    ERROR_0 = "No Error."
     ERROR_294 = "Home sensor not reached."
     ERROR_295 = "Deviation of more than +/- 2 mm towards home."
     ERROR_296 = "Home sensor not de-activated."
