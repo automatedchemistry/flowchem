@@ -560,6 +560,9 @@ class KnauerAS(ASEthernetDevice):
         Returns: None
         """
         # TODO home syringe, also external
+        self.get_errors()
+        # todo reset errors parsing not working fix
+        self.reset_errors()
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         self.syringe_valve_position(SyringeValvePositions.WASTE.name)
