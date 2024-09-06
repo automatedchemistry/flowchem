@@ -76,6 +76,10 @@ class CommandOrValueError(ASError):
     """Command is unknown, value is unknown or out of range, transmission failed"""
     pass
 
+class ASFailureError(ASError):
+    """AS failed to execute command"""
+    pass
+
 
 class ASBusyError(ASError):
     """AS is currently busy but will accept your command at another point of time"""
@@ -696,6 +700,12 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
         reply = str(self._query(command_string))
         reply = (3-len(reply))*'0'+reply # zero pad from left to length == 3
+        if len(reply) == 4:
+            if reply[0] == '1':
+                # this means there is an Error
+                error_code = self.get_errors()
+                self.reset_errors()
+                raise ASFailureError(f"Error code {error_code} occured when checking for status")
         return ASStatus(reply).name
 
     def fill_transport(self, repetitions:int):
