@@ -292,7 +292,7 @@ class Tray:
         entry=self.available_vials.loc[index]
         return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
 
-    def find_vial(self, contains:str, min_volume: str="0 mL")-> int | None:
+    def find_vial(self, contains:str, min_volume: str="0 mL")-> int or None:
         min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
         right_substance = self.available_vials["Content"] == contains
         lowest_vol = self.available_vials.loc[right_substance]
@@ -304,7 +304,7 @@ class Tray:
             return None
             
     
-    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int | None:
+    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int or None:
         """
         Find the vial with the lowest volume of a list of substances
         Args:
