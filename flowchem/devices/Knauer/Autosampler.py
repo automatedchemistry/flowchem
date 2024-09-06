@@ -728,8 +728,9 @@ class KnauerAS(ASEthernetDevice):
         while True:
             if self.get_status() == ASStatus.NOT_RUNNING.name:
             # if theres external syringe, wait for it to get ready
-                if self.external_syringe_ready is not None and wait_for_syringe == True:
-                    self.external_syringe_ready()
+                if wait_for_syringe == True:
+                    if self.external_syringe_ready is not None:
+                        self.external_syringe_ready()
                     break
                 else:
                     break
