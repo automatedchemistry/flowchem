@@ -511,6 +511,12 @@ class KnauerAS(ASEthernetDevice):
             return True
         elif reply == CommunicationFlags.TRY_AGAIN.value:
             raise ASBusyError
+        elif len(reply) == 4 and int(reply[0]) == 1:
+            # this means the AS has error I think
+            error = self.get_errors()
+            # TODO access enum
+            self.reset_errors()
+            raise ASFailureError("Error in setting: ", error)
         elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:
             raise CommandOrValueError
         # this is only the case with replies on queries
