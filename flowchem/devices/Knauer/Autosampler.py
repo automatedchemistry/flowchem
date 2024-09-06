@@ -680,6 +680,15 @@ class KnauerAS(ASEthernetDevice):
             command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
             return self._set(command_string)
 
+    def get_errors(self):
+        command_string = self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
+        reply = str(self._query(command_string))
+        return ErrorCodes[f"ERROR_{reply}"].value
+
+    def reset_errors(self):
+        command_string = self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
+        self._set(command_string)
+
     def get_status(self):
         command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
         reply = str(self._query(command_string))
