@@ -112,10 +112,10 @@ class HuberChiller(FlowchemDevice):
         pb_command = PBCommand(command.upper())
         await self._serial.write_async(pb_command.to_chiller())
         logger.debug(f"Command {command[0:8]} sent!")
-
+        await asyncio.sleep(2)
         # Receive reply and return it after decoding
         try:
-            reply = await asyncio.wait_for(self._serial.readline_async(), 3)
+            reply = await asyncio.wait_for(self._serial.readline_async(), 1)
         except asyncio.TimeoutError:
             logger.error("No reply received! Unsupported command?")
             return ""
@@ -125,8 +125,8 @@ class HuberChiller(FlowchemDevice):
 
     async def get_temperature(self) -> float:
         """Get temperature. Process preferred, otherwise internal."""
-        if process_t := await self.process_temperature():
-            return process_t
+        # if process_t := await self.process_temperature():
+        #     return process_t
         return await self.internal_temperature()  # type: ignore
 
     async def get_temperature_setpoint(self) -> float | None:
@@ -348,10 +348,13 @@ class HuberChiller(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    device = HuberChiller(aioserial.AioSerial(port="COM8"))
+    device = HuberChiller(aioserial.AioSerial(port="COM13"))
 
     async def main(chiller):
         await chiller.initialize()
         print(f"S/N is {await chiller.serial_number()}")
 
     asyncio.run(main(device))
+
+
+    import flowchem
