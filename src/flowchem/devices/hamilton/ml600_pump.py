@@ -8,7 +8,6 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.pumps.syringe_pump import SyringePump
-from flowchem.utils.exceptions import DeviceError
 
 if TYPE_CHECKING:
     from .ml600 import ML600
@@ -32,7 +31,7 @@ class ML600Pump(SyringePump):
         """ML600 can withdraw."""
         return True
 
-    async def is_pumping(self) -> bool:
+    async def is_pumping(self) -> bool | dict[str, bool]:
         """Check if pump is moving.
         false means pump is not moving and buffer is empty. """
         # true might mean pump is moving, buffer still contain command or both
@@ -46,7 +45,7 @@ class ML600Pump(SyringePump):
         if not await self.hw_device.get_pump_status(self.pump_code):
             return True
         else:
-            logger.warning("the first check show false. try again.")
+            logger.warning(f"the first check show false. try again.")
             await asyncio.sleep(1)
             return not await self.hw_device.get_pump_status(self.pump_code)
 
@@ -63,7 +62,7 @@ class ML600Pump(SyringePump):
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
         if not volume:
             target_vol = ureg.Quantity("0 ml")
-            logger.warning("the volume to infuse is not provided. set to 0 ml")
+            logger.warning(f"the volume to infuse is not provided. set to 0 ml")
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
             target_vol = current_volume - ureg.Quantity(volume)
@@ -72,9 +71,7 @@ class ML600Pump(SyringePump):
                     f"Cannot infuse target volume {volume}! "
                     f"Only {current_volume} in the syringe!",
                 )
-                raise DeviceError(f"Cannot infuse target volume {volume}! "
-                                  f"Only {current_volume} in the syringe!")
-                # return False
+                return False
 
         await self.hw_device.set_to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
         logger.info(f"infusing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
@@ -103,9 +100,7 @@ class ML600Pump(SyringePump):
                     f"Cannot withdraw target volume {volume}! "
                     f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
                 )
-                raise DeviceError(f"Cannot withdraw target volume {volume}! "
-                                  f"Max volume left is {self.hw_device.syringe_volume - current_volume}!")
-                # return False
+                return False
 
         await self.hw_device.set_to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
         logger.info(f"withdrawing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")

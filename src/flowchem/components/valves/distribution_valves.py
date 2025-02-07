@@ -63,6 +63,7 @@ class ThreePortFourPositionValve(Valve):
             rotor_ports=[(4, 4, 5, 5), (4,)],
         )
 
+
 # tot this shopuld be 4 port
 class ThreePortTwoPositionValve(Valve):
     """
@@ -76,6 +77,7 @@ class ThreePortTwoPositionValve(Valve):
             stator_ports=[(None, 1, 2, 3,), (0,)],
             rotor_ports=[(4, 4, None, None), (None,)],
         )
+
 
 class FourPortFivePositionValve(Valve):
     """
