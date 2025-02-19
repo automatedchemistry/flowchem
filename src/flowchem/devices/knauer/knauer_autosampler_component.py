@@ -40,6 +40,7 @@ class AutosamplerGantry3D(gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
+        self.add_api_route("/move_tray", self.move_tray, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
         self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
@@ -71,10 +72,19 @@ class AutosamplerGantry3D(gantry3D):
         column: ["a", "b", "c", "d", "e", "f"].
         row: [1, 2, 3, 4, 5, 6, 7, 8]
         """
-        await self.set_z_position("UP")
-        await self.set_xy_position(tray=tray,row=row,column=column)
+        tray = tray.upper()
+        if tray in SelectPlatePosition.__dict__.keys():
+            await self.set_z_position("UP")
+            await self.set_xy_position(tray=tray,row=row,column=column)
+            await self.set_z_position("DOWN")
+            logger.debug(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
+            return True
+        elif tray in NeedleHorizontalPosition.__dict__.keys():
+            self.set_needle_position(position="tray")
+        else:
+            raise NotImplementedError
         await self.set_z_position("DOWN")
-        logger.info(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
+        logger.debug(f"Needle connected successfully to position: {tray}")
         return True
 
     async def set_xy_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
@@ -101,8 +111,11 @@ class AutosamplerGantry3D(gantry3D):
         await self.hw_device._move_tray(tray, row)
         success = await self.hw_device._move_needle_horizontal("PLATE", plate=tray, well=column_num)
         if success:
-            logger.info(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
+            logger.debug(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
             return True
+
+    async def move_tray(self,  tray: str = "", row: int = None):
+        await self.hw_device._movetray(tray=tray,row=row)
 
     async def set_z_position(self, position: str = "") -> bool:
         """
