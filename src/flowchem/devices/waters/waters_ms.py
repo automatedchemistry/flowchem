@@ -29,8 +29,8 @@ class WatersMS(FlowchemDevice):
     def __init__(self,
                  name: str = "Waters_MS",
                  path_to_AutoLynxQ: str = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
-                 ms_exp_file: str = "15min_scan.exp",
-                 tune_file: str = "SampleTuneAndDev_ManOBz_MeOH_after_geom.ipr",
+                 ms_exp_file: str = "",
+                 tune_file: str = "",
                  inlet_method: str = "inlet_method",
                  ) -> None:
         super().__init__(name=name)
