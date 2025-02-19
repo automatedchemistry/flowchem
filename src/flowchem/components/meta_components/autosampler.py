@@ -17,7 +17,7 @@ from time import sleep
 import functools
 from threading import Thread
 import pandas
-from flowchem.constants import flowchem_ureg
+from flowchem import ureg
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 from pathlib import Path
 
@@ -167,7 +167,7 @@ class Tray:
         if user == "YES":
             return to_load
         else:
-            raise CommandOrValueError
+            raise ValueError
 
     def check_validity_and_normalise(self):
         # normalize the dataframe
@@ -261,12 +261,12 @@ class Autosampler():
     """
     def __init__(self, name: str, gantry3D=None, pump=None, syringe_valve=None, injection_valve=None, tray_mapping:Tray=None):
 
-        super().__init__(ip_address, buffersize, port)
+        super().__init__()
         # get statuses, that is basically syringe syize, volumes, platetype
-        self.gantry3D:AutosamplerGantry3D = gantry3D
-        self.pump:AutosamplerPump = pump
-        self.syringe_valve:AutosamplerSyringeValve = syringe_valve
-        self.injection_valve:AutosamplerInjectionValve = injection_valve
+        self.gantry3D:FlowchemComponent = gantry3D
+        self.pump:FlowchemComponent = pump
+        self.syringe_valve:FlowchemComponent = syringe_valve
+        self.injection_valve:FlowchemComponent = injection_valve
 
         self.initialize()
         self.tray_mapping:Tray = tray_mapping
@@ -367,7 +367,7 @@ class Autosampler():
         self.gantry3D.put("set_z_position",{"position": "UP"})
 
 
-    def pick_up_sample(self, volume_sample:float or int, volume_buffer=0, flow_rate=None):
+    def pick_up_sample(self, volume:float or int, volume_buffer=0, flow_rate=None):
 
         if volume_buffer:
             self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
