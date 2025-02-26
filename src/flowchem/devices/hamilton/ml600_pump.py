@@ -23,6 +23,7 @@ class ML600Pump(SyringePump):
         "" for single syringe pump. B or C  for dual syringe pump.
         """
         super().__init__(name, hw_device)
+        self.add_api_route("/set_to_volume", self.set_to_volume, methods=["PUT"])
         self.pump_code = pump_code
         # self.add_api_route("/pump", self.get_monitor_position, methods=["GET"])
 
@@ -104,4 +105,10 @@ class ML600Pump(SyringePump):
 
         await self.hw_device.set_to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
         logger.info(f"withdrawing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
+        return await self.hw_device.get_pump_status(self.pump_code)
+
+    async def set_to_volume(self, target_volume: str, rate: str) -> bool:
+        target_volume = ureg.Quantity(target_volume)
+        rate = ureg.Quantity(rate)
+        await self.hw_device.set_to_volume(target_volume, rate, self.pump_code)
         return await self.hw_device.get_pump_status(self.pump_code)
