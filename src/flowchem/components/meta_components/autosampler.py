@@ -1,21 +1,14 @@
 """
 Module for communication with Autosampler.
 """
-
 # For future: go through graph, acquire mac addresses, check which IPs these have and setup communication.
 # To initialise the appropriate device on the IP, use class name like on chemputer
 from loguru import logger
-from time import sleep
-import json
-import inspect
-import json
-import logging
-import socket
+
 from enum import Enum, auto
 from typing import Type, List
 from time import sleep
-import functools
-from threading import Thread
+
 import pandas as pd
 from pandas import DataFrame
 from flowchem import ureg
@@ -23,25 +16,7 @@ from rdkit.Chem import MolFromSmiles, MolToSmiles
 from pathlib import Path
 
 from flowchem.client.component_client import FlowchemComponentClient
-# from flowchem.components.flowchem_component import FlowchemComponent
-# from flowchem.components.meta_components.gantry3D import gantry3D
-# from flowchem.components.pumps.syringe_pump import SyringePump
-# from flowchem.components.valves.valve import ValveInfo, return_tuple_from_input
-# from flowchem.components.valves.distribution_valves import (
-#     TwoPortDistributionValve,
-#     FourPortDistributionValve,
-#     SixPortDistributionValve,
-#     TwelvePortDistributionValve,
-#     SixteenPortDistributionValve,
-#     )
-from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
-from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.knauer.knauer_autosampler_component import (
-    AutosamplerGantry3D,
-    AutosamplerPump,
-    AutosamplerSyringeValve,
-    AutosamplerInjectionValve
-)
+
 
 # TODO assert that writing to and reloading works reliably - so use old mapping if it exists, here ro from platform code
 try:
@@ -267,9 +242,7 @@ class Autosampler:
     """
     Autosampler meta components.
     """
-    def __init__(self, name: str, gantry3d=None, pump=None, syringe_valve=None, injection_valve=None, tray_mapping: Tray=None):
-
-        super().__init__()
+    def __init__(self, gantry3d=None, pump=None, syringe_valve=None, injection_valve=None, tray_mapping: Tray=None):
         # get statuses, that is basically syringe syize, volumes, plate type
         self.gantry3D: FlowchemComponentClient = gantry3d
         self.pump: FlowchemComponentClient = pump
