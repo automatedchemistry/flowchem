@@ -80,7 +80,7 @@ class AutosamplerGantry3D(gantry3D):
             logger.debug(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
             return True
         elif tray in NeedleHorizontalPosition.__dict__.keys():
-            self.set_needle_position(position="tray")
+            await self.set_needle_position(position="tray")
         else:
             raise NotImplementedError
         await self.set_z_position("DOWN")
@@ -108,14 +108,14 @@ class AutosamplerGantry3D(gantry3D):
 
         #traytype = self.hw_device.tray_type.upper()
         await self.hw_device._move_needle_vertical("UP")
-        await self.hw_device._move_tray(tray, row)
+        await self.hw_device._move_tray(tray_type=tray,sample_position=row)
         success = await self.hw_device._move_needle_horizontal("PLATE", plate=tray, well=column_num)
         if success:
             logger.debug(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
             return True
 
     async def move_tray(self,  tray: str = "", row: int = None):
-        await self.hw_device._movetray(tray=tray,row=row)
+        await self.hw_device._move_tray(tray_type=tray, sample_position=row)
 
     async def set_z_position(self, position: str = "") -> bool:
         """
