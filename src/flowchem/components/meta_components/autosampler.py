@@ -270,11 +270,11 @@ class Autosampler:
     def __init__(self, name: str, gantry3d=None, pump=None, syringe_valve=None, injection_valve=None, tray_mapping: Tray=None):
 
         super().__init__()
-        # get statuses, that is basically syringe syize, volumes, platetype
-        self.gantry3D:FlowchemComponent = gantry3D
-        self.pump:FlowchemComponent = pump
-        self.syringe_valve:FlowchemComponent = syringe_valve
-        self.injection_valve:FlowchemComponent = injection_valve
+        # get statuses, that is basically syringe syize, volumes, plate type
+        self.gantry3D: FlowchemComponentClient = gantry3d
+        self.pump: FlowchemComponentClient = pump
+        self.syringe_valve: FlowchemComponentClient = syringe_valve
+        self.injection_valve: FlowchemComponentClient = injection_valve
 
         self.initialize()
         self.tray_mapping: Tray = tray_mapping
