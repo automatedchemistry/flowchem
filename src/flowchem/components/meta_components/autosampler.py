@@ -16,22 +16,24 @@ from typing import Type, List
 from time import sleep
 import functools
 from threading import Thread
-import pandas
+import pandas as pd
+from pandas import DataFrame
 from flowchem import ureg
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 from pathlib import Path
 
-from flowchem.components.flowchem_component import FlowchemComponent
-from flowchem.components.meta_components.gantry3D import gantry3D
-from flowchem.components.pumps.syringe_pump import SyringePump
-from flowchem.components.valves.valve import ValveInfo, return_tuple_from_input
-from flowchem.components.valves.distribution_valves import (
-    TwoPortDistributionValve,
-    FourPortDistributionValve,
-    SixPortDistributionValve,
-    TwelvePortDistributionValve,
-    SixteenPortDistributionValve,
-    )
+from flowchem.client.component_client import FlowchemComponentClient
+# from flowchem.components.flowchem_component import FlowchemComponent
+# from flowchem.components.meta_components.gantry3D import gantry3D
+# from flowchem.components.pumps.syringe_pump import SyringePump
+# from flowchem.components.valves.valve import ValveInfo, return_tuple_from_input
+# from flowchem.components.valves.distribution_valves import (
+#     TwoPortDistributionValve,
+#     FourPortDistributionValve,
+#     SixPortDistributionValve,
+#     TwelvePortDistributionValve,
+#     SixteenPortDistributionValve,
+#     )
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer.knauer_autosampler_component import (
@@ -50,6 +52,7 @@ try:
 except ImportError:
     HAS_AS_COMMANDS = False
 
+
 def canonize_smiles(smiles:str):
     return MolToSmiles(MolFromSmiles(smiles))
 
@@ -67,13 +70,15 @@ def set_vial_content(substance, return_special_vial=False):
     except ValueError as e:
         e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
         raise e
-    
-def check_special_vial(substance)-> bool:
+
+
+def check_special_vial(substance) -> bool:
     try:
         _SpecialVial(substance)
         return True
     except ValueError as e:
         return False
+
 
 class _SpecialVial(Enum):
     CARRIER = "carrier"
@@ -82,25 +87,25 @@ class _SpecialVial(Enum):
 
 class Vial:
         
-    # TODO get the rounding issue of ureg right
-    def __init__(self, substance, solvent:str or None, concentration: str, contained_volume:str, remaining_volume:str):
-        self._remaining_volume = flowchem_ureg(remaining_volume)
-        self._contained_volume = flowchem_ureg(contained_volume)
-        self.substance = set_vial_content(substance) # todo get this canonical
+    def __init__(self, substance, solvent: str or None, concentration: str, contained_volume: str, remaining_volume: str):
+
+        self._remaining_volume = ureg.Quantity(remaining_volume)
+        self._contained_volume = ureg.Quantity(contained_volume)
+        self.substance = set_vial_content(substance)  # todo get this canonical
         if not check_special_vial(substance):
             self.solvent = solvent
-            self.concentration = flowchem_ureg(concentration)
+            self.concentration = ureg.Quantity(concentration)
         else:
             self.solvent = None
             self.concentration = None
 
-    def extract_from_vial(self, volume:str):
+    def extract_from_vial(self, volume: str):
         if type(volume) is str:
-            volume = flowchem_ureg(volume)
+            volume = ureg.Quantity(volume)
         self._contained_volume -= volume
     
     @property
-    def available_volume(self)-> flowchem_ureg.Quantity:
+    def available_volume(self) -> ureg.Quantity.Quantity:
         return self._contained_volume-self._remaining_volume
 
 
@@ -114,54 +119,58 @@ class TrayPosition:
 
     def valid_position(self):
         from numpy import int64
-        assert self.side.upper() == SelectPlatePosition.LEFT_PLATE.name or self.side.upper() == SelectPlatePosition.RIGHT_PLATE.name
+        assert (self.side.upper() == SelectPlatePosition.LEFT_PLATE.name or self.side.upper() ==
+                SelectPlatePosition.RIGHT_PLATE.name)
         assert type(self.row) in [int64, int]
-        assert type(self.column) == str and len(self.column) == 1
+        assert self.column is str and len(self.column) == 1
 
 
 class Tray:
-    def __init__(self, tray_type, persistant_storage:str):
-        #todo set a path for continuous storing of layout
+    def __init__(self, tray_type, persistant_storage: str):
+        # todo set a path for continuous storing of layout
         self.tray_type = tray_type
         self.persistant = persistant_storage
-        self._loaded_fresh:bool = None
-        self.available_vials:DataFrame = self.load_submitted()
+        self._loaded_fresh: bool | None = None
+        self.available_vials: DataFrame = self.load_submitted()
         self.check_validity_and_normalise()
-        self._layout=["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume", "RemainingVolume"]
+        self._layout = ["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume",
+                        "RemainingVolume"]
 
     def load_submitted(self):
-        # create the layout in excel -> makes usage easy
+        # create the layout in Excel -> makes usage easy
         try:
             path = self._old_loading()
-            return pandas.read_excel(path) if not "json" in path.name else pandas.read_json(path)
+            return pd.read_excel(path) if not "json" in path.name else pd.read_json(path)
         except FileNotFoundError as e:
             e.args += (f"Fill out excel file under {self.persistant}.",)
             self.create_blank(self.persistant)
             raise e
 
-# todo if loading submitted, check if a out file exitsts with same name. if not, check if a json checkoint file exists.
-    #  if so, load thejson file and create the out file. Now, ask the user which should be used. if the out file is loaded, delete the old out file, directly write the json file (before deleting)
-    # with that procedure, it should always be the updatedfile used
+# todo if loading submitted, check if a out file exists with same name. if not, check if a json checkpoint file exists.
+    # if so, load thejson file and create the out file. Now, ask the user which should be used. if the out file is
+    # loaded, delete the old out file, directly write the json file (before deleting)
+    # with that procedure, it should always be the updated file used
 
-    def _old_loading(self)->Path:
+    def _old_loading(self) -> Path:
         output = self.create_output_path(extended_file_name="_out")
         checkpoint = self.create_output_path(file_ending="json")
 
         if Path(output).exists():
             # if an output excel was written load that
             to_load = output
-            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
-                       f"previously properly finished experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            user = input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"previously properly finished experiments layout. Type 'YES' and hit enter to proceed,"
+                       f" anything else will quit")
             self._loaded_fresh = False
 
         elif Path(checkpoint).exists():
             to_load = checkpoint
-            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+            user = input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
                        f"previously intermittantly closed experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
             self._loaded_fresh = False
         else:
             to_load = Path(self.persistant)
-            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+            user = input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
                        f"absolutely fresh layout. Type 'YES' and hit enter to proceed, anything else will quit")
             self._loaded_fresh = True
         if user == "YES":
@@ -171,12 +180,12 @@ class Tray:
 
     def check_validity_and_normalise(self):
         # normalize the dataframe
-        self.available_vials["Content"]=self.available_vials["Content"].apply(set_vial_content)
+        self.available_vials["Content"] = self.available_vials["Content"].apply(set_vial_content)
         # make sure all unit ones are a unit
-        self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(flowchem_ureg, na_action="ignore") #
+        self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(ureg, na_action="ignore")
         assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
         assert self.available_vials["Side"].apply(lambda x: x.upper() in [SelectPlatePosition.RIGHT_PLATE.name, SelectPlatePosition.LEFT_PLATE.name]).all(), "Your sample side has wrong values"
-        assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
+        assert self.available_vials["Row"].apply(lambda x: x <= 8).all(), "Your row has wrong values"
         self.save_current()
         
     def get_unique_chemicals(self) -> List[str]:
@@ -186,28 +195,27 @@ class Tray:
             list:   List of unique SMILES strings
         """
         # drop duplicates
-        single_values=self.available_vials["Content"].drop_duplicates()
+        single_values = self.available_vials["Content"].drop_duplicates()
         return [x for x in single_values if not check_special_vial(x)]
 
-        
     def load_entry(self, index:int) -> [Vial, TrayPosition]:
         # return vial for updating volume, return TrayPosiition to go there, via Tray update the json
         # get position and substance from dataframe, do based on index
         entry=self.available_vials.loc[index]
-        return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
+        return Vial(entry["Content"], entry["Solvent"], entry["Concentration"], entry["ContainedVolume"], entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
 
     def find_vial(self, contains:str, min_volume: str="0 mL")-> int or None:
-        min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
+        min_volume = ureg.Quantity(min_volume) if type(min_volume) is str else min_volume
         right_substance = self.available_vials["Content"] == contains
         lowest_vol = self.available_vials.loc[right_substance]
-        new = lowest_vol["ContainedVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - (min_volume.m_as("mL"))
-        new = new[new>=0]
+        new = lowest_vol["ContainedVolume"].map(lambda x: ureg.Quantity(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: ureg.Quantity(x).m_as("mL")) - (min_volume.m_as("mL"))
+        new = new[new >= 0]
         try:
             return new.idxmin()
         except ValueError:
             return None
 
-    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int or None:
+    def find_lowest_volume_vial(self, identifier: List[str], min_volume=0.07) -> int or None:
         """
         Find the vial with the lowest volume of a list of substances
         Args:
@@ -219,32 +227,32 @@ class Tray:
         """
         # find the lowest volume over a list of substances
         right_substances = self.available_vials.loc[self.available_vials["Content"].isin(identifier)]
-        new = right_substances["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
-        new=new.where(lambda x: x >= min_volume)
+        new = right_substances["ContainedVolume"].map(ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(ureg).map(lambda x: x.m_as("mL"))
+        new = new.where(lambda x: x >= min_volume)
         if new.isnull().all():
             return None
         else:
             return new.idxmin(skipna=True)
 
     # this is mostly for updating volume
-    def update_volume(self, index, vial:Vial, save=True):
+    def update_volume(self, index, vial: Vial, save=True):
         # modify entry, based on index
-        self.available_vials.at[index, "ContainedVolume"] = f"{round(vial._contained_volume.m_as('mL'),3)} mL"
+        self.available_vials.at[index, "ContainedVolume"] = f"{round(vial._contained_volume.m_as('mL'), 3)} mL"
         if save:
             self.save_current()
 
     # constantly update the json file
     def save_current(self):
-        write_to=self.create_output_path(file_ending="json")
-        # todo just overwrite? thats the current file
+        write_to = self.create_output_path(file_ending="json")
+        # todo just overwrite? that's the current file
         with open(write_to, "w") as f:
             self.available_vials.to_json(f)
             
     def save_output(self):
-        write_to=self.create_output_path(extended_file_name="_out")
+        write_to = self.create_output_path(extended_file_name="_out")
         self.available_vials.to_excel(write_to)
         
-    def create_output_path(self, extended_file_name = None, file_ending = None):
+    def create_output_path(self, extended_file_name=None, file_ending=None):
         output_name, output_ending = Path(self.persistant).name.split(".")
         write_to = Path(self.persistant).parent / Path(f"{output_name}{extended_file_name if extended_file_name else ''}.{file_ending if file_ending else output_ending}")
         return write_to
@@ -252,14 +260,14 @@ class Tray:
     def create_blank(self, path):
         if Path(path).exists():
             raise FileExistsError
-        pandas.DataFrame(columns=self._layout).to_excel(path)
+        pd.DataFrame(columns=self._layout).to_excel(path)
 
 
-class Autosampler():
+class Autosampler:
     """
     Autosampler meta components.
     """
-    def __init__(self, name: str, gantry3D=None, pump=None, syringe_valve=None, injection_valve=None, tray_mapping:Tray=None):
+    def __init__(self, name: str, gantry3d=None, pump=None, syringe_valve=None, injection_valve=None, tray_mapping: Tray=None):
 
         super().__init__()
         # get statuses, that is basically syringe syize, volumes, platetype
@@ -269,7 +277,7 @@ class Autosampler():
         self.injection_valve:FlowchemComponent = injection_valve
 
         self.initialize()
-        self.tray_mapping:Tray = tray_mapping
+        self.tray_mapping: Tray = tray_mapping
 
     def initialize(self):
         """
@@ -277,16 +285,16 @@ class Autosampler():
         Returns: None
         """
         self.gantry3D.put("reset_errors")
-        self.gantry3D.put("set_z_position",{"position": "UP"})
-        self.gantry3D.put("set_needle_position",{"position": "WASTE"})
-        self.syringe_valve.put("set_monitor_position",{"position": "WASTE"})
-        self.injector_valve.put("set_monitor_position",{"position": "LOAD"})
+        self.gantry3D.put("set_z_position", {"position": "UP"})
+        self.gantry3D.put("set_needle_position", {"position": "WASTE"})
+        self.syringe_valve.put("set_monitor_position", {"position": "WASTE"})
+        self.injection_valve.put("set_monitor_position", {"position": "LOAD"})
 
-    def connect_chemical(self, chemical:str, volume_sample:str="0 mL", volume_buffer:str="0 mL", flow_rate=None):
-        # needs to take plate layout and basically the key, so smiles or special denomition
+    def connect_chemical(self, chemical: str, volume_sample: str = "0 mL", volume_buffer: str = "0 mL", flow_rate=None):
+        # needs to take plate layout and basically the key, so smiles or special denomination
         if not self.tray_mapping:
             logger.error("You must provide a tray mapping to access substances by name")
-            raise CommandOrValueError("You must provide a tray mapping to access substances by name")
+            raise ValueError("You must provide a tray mapping to access substances by name")
         else:
             vial_index = self.tray_mapping.find_vial(chemical, min_volume=volume_sample)
             if vial_index is None:
@@ -296,14 +304,14 @@ class Autosampler():
             self.gantry3D.put("connect_to_position", {"tray":  position.side, "row": position.row, "column": position.column})
             # this waits for syringe to be ready as well per default
             self.wait_until_ready(wait_for_syringe=True)
-            self.pick_up_sample(flowchem_ureg(volume_sample).m_as("mL"), volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
+            self.pick_up_sample(ureg.Quantity(volume_sample).m_as("mL"), volume_buffer=ureg.Quantity(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
             if vial.substance != _SpecialVial.INERT_GAS.value:
                 vial.extract_from_vial(volume_sample)
             self.tray_mapping.update_volume(vial_index, vial)
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
     def disconnect_sample(self, move_plate = False):
-        self.injector_valve.put("set_monitor_position",{"position": "LOAD"})
+        self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
         self.gantry3D.put("set_z_position",{"position": "UP"})
         if move_plate:
             self.gantry3D.put("move_tray", {"tray": "NO_PLATE", "row": "HOME"})
@@ -356,7 +364,7 @@ class Autosampler():
         # fill here, and eject, without needle wash!
         self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
         self.pump.put("withdraw",{"rate": flow_rate, "volume": volume})
-        self.injector_valve.put("set_monitor_position",{"position": "INJECT"})
+        self.injection_valve.put("set_monitor_position",{"position": "INJECT"})
         self.gantry3D.put("set_needle_position",{"position": "WASTE"})
         self.gantry3D.put("set_z_position",{"position": "DOWN"})
         self.wait_until_ready()
@@ -372,7 +380,7 @@ class Autosampler():
         if volume_buffer:
             self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
             self.pump.put("withdraw",{"rate": flow_rate, "volume": volume})
-        self.injector_valve.put("set_monitor_position",{"position": "INJECT"})
+        self.injection_valve.put("set_monitor_position",{"position": "INJECT"})
         # wait until buffer taken
         self.wait_until_ready()
         self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
@@ -403,11 +411,11 @@ class Autosampler():
             self.wait_until_ready()
             if dispense_to == legal_arguments[0]:
                 self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-                self.injector_valve.put("set_monitor_position",{"position": "INJECT"})
+                self.injection_valve.put("set_monitor_position",{"position": "INJECT"})
                 self.gantry3D.put("set_z_position",{"position": "DOWN"})
             elif dispense_to == legal_arguments[1]:
                 self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-                self.injector_valve.put("set_monitor_position",{"position": "LOAD"})
+                self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
             elif dispense_to == legal_arguments[2]:
                 self.syringe_valve.put("set_monitor_position",{"position": "WASTE"})
             self.pump.put("infuse",{"rate": flow_rate, "volume": volume})
@@ -427,7 +435,7 @@ class Autosampler():
         
         """
         self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-        self.injector_valve.put("set_monitor_position",{"position": "LOAD"})
+        self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
         self.pump.put("infuse", {"rate": flow_rate, "volume": volume+dead_volume})
 
 if __name__ == "__main__":
