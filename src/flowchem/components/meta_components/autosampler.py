@@ -301,15 +301,39 @@ class Autosampler:
                 logger.error(f"No vial contains enough sample for the desired volume")
                 raise ValueError(f"No vial contains enough sample for the desired volume")
             vial, position = self.tray_mapping.load_entry(vial_index)
-            self.gantry3D.put("connect_to_position", {"tray":  position.side, "row": position.row, "column": position.column})
+            self.gantry3D.put("connect_to_position", {"tray":  position.side, "row": position.row,
+                                                      "column": position.column})
             # this waits for syringe to be ready as well per default
             self.wait_until_ready(wait_for_syringe=True)
-            self.pick_up_sample(ureg.Quantity(volume_sample).m_as("mL"), volume_buffer=ureg.Quantity(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
+            self.pick_up_sample(volume=ureg.Quantity(volume_sample).m_as("mL"), volume_buffer=ureg.Quantity(volume_buffer).m_as("ml"),
+                                flow_rate=flow_rate if not flow_rate else ureg.Quantity(flow_rate).m_as("mL/min"))
             if vial.substance != _SpecialVial.INERT_GAS.value:
                 vial.extract_from_vial(volume_sample)
             self.tray_mapping.update_volume(vial_index, vial)
 
-# it would be reaonable to get all from needle to loop, with piercing inert gas vial
+    def wait_until_ready(self, wait_for_syringe: bool = True):
+        """
+        Wait for AS to be done
+        Args:
+            wait_for_syringe: If True (default), also the  syringe will be waited for.
+                            If False it can run in background
+
+        Returns: None
+
+        """
+        # todo wait for external syringe ready as well
+        while True:
+            if not self.gantry3D.get("is_needle_running"):  # Needle is not running
+                if not self.pump.get("is_pumping"):  # Syringe is also not pumping
+                    break
+                elif not wait_for_syringe:  # If wait_for_syringe is False, break even if syringe is pumping
+                    break
+                else:
+                    sleep(0.01)
+            else:  # Needle is running
+                sleep(0.01)
+
+# it would be reasonable to get all from needle to loop, with piercing inert gas vial
     def disconnect_sample(self, move_plate = False):
         self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
         self.gantry3D.put("set_z_position",{"position": "UP"})
@@ -320,26 +344,26 @@ class Autosampler:
     def fill_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
         self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
         self.pump.put("withdraw",{"rate": flow_rate, "volume": volume})
-        self.connect_to_position("WASH",None,None,None)
+        self.gantry3D.put("connect_to_position", {"tray": "WASH"})
         # aspirate does not await syringe execution, therefor explicit await is necessary
         self.wait_until_ready()
         # this is just used to connect the syringe to sample
-        self.pick_up_sample(volume_sample=0,flow_rate=flow_rate)
+        self.pick_up_sample(volume=0,flow_rate=flow_rate)
         # empty syringe into reservoir
         self.pump.put("infuse",{"rate": flow_rate, "volume": volume})
         self.wait_until_ready()
         self.disconnect_sample()
         
-    def empty_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
+    def empty_wash_reservoir(self, volume: float = 0.2, flow_rate: float = None):
         # empty reservoir with syringe
-        self.connect_to_position("WASH",None,None,None)
-        self.pick_up_sample(volume_sample=volume, flow_rate=flow_rate)
+        self.gantry3D.put("connect_to_position", {"tray": "WASH"})
+        self.pick_up_sample(volume=volume, flow_rate=flow_rate)
         # go up and move to waste
         self.disconnect_sample()
 
-    def wash_needle(self, volume:float=0.2, times:int=3, flow_rate:float = None):
+    def wash_needle(self, volume: float = 0.2, times: int = 3, flow_rate: float = None):
         """
-        Fill neelde with solvent and then wash it.
+        Fill needle with solvent and then wash it.
         Args:
             volume: 0.2 mL is a reasonable value
             times:
@@ -351,7 +375,7 @@ class Autosampler:
 
         for i in range(times):
             # do wash reservoir fill
-            #   fill syringe here and go to right position
+            # fill syringe here and go to right position
             self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
             self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
             self.gantry3D.put("set_needle_position",{"position": "WASTE"})
@@ -374,9 +398,7 @@ class Autosampler:
         self.wait_until_ready()
         self.gantry3D.put("set_z_position",{"position": "UP"})
 
-
-    def pick_up_sample(self, volume:float or int, volume_buffer=0, flow_rate=None):
-
+    def pick_up_sample(self, volume: float or int, volume_buffer=0, flow_rate=None):
         if volume_buffer:
             self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
             self.pump.put("withdraw",{"rate": flow_rate, "volume": volume})
@@ -388,7 +410,7 @@ class Autosampler:
         # while picking up sample, there is no logical AS based background activity, so wait until ready
         self.wait_until_ready()
 
-    def wash_system(self, times:int=3, flow_rate=None, volume:float = 0.250, dispense_to:str="needle"):
+    def wash_system(self, times: int = 3, flow_rate=None, volume: float = 0.250, dispense_to: str = "needle"):
         """
 
         Args:
@@ -400,7 +422,7 @@ class Autosampler:
         Returns: None
 
         """
-        #washing loop, ejecting through needle!
+        # washing loop, ejecting through needle!
         legal_arguments = ["needle", "outside", "waste"]
         if dispense_to not in legal_arguments:
             raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
@@ -422,14 +444,14 @@ class Autosampler:
             self.wait_until_ready()
             self.gantry3D.put("set_z_position",{"position": "UP"})
 
-    def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
+    def dispense_sample(self, volume: float, dead_volume=0.050, flow_rate=None):
         """
         Dispense Sample in buffer tube to device connected to AS. This does not await end of dispensal.
          You have to do that explicitly
         Args:
             volume: Volume to dispense in mL
             dead_volume: Dead volume to dispense additionally
-            flow_rate: Flowrate, only works w external syringe
+            flow_rate: Flow rate, only works w external syringe
             
         Returns: None
         
