@@ -40,6 +40,7 @@ class AutosamplerGantry3D(gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
+        self.add_api_route("/compressor", self.compressor, methods=["PUT"])
         self.add_api_route("/move_tray", self.move_tray, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
@@ -148,6 +149,9 @@ class AutosamplerGantry3D(gantry3D):
             return True
         else:
             return False
+
+    async def compressor(self, onoff: str = None):
+        return await self.hw_device.compressor(onoff)
 
 
 class AutosamplerPump(SyringePump):
