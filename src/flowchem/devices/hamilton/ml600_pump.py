@@ -24,6 +24,9 @@ class ML600Pump(SyringePump):
         """
         super().__init__(name, hw_device)
         self.add_api_route("/set_to_volume", self.set_to_volume, methods=["PUT"])
+        self.add_api_route("/get_current_volume", self.get_current_volume, methods=["GET"])
+        self.add_api_route("/initialize_syringe", self.initialize_syringe, methods=["PUT"])
+
         self.pump_code = pump_code
         # self.add_api_route("/pump", self.get_monitor_position, methods=["GET"])
 
@@ -50,7 +53,7 @@ class ML600Pump(SyringePump):
             await asyncio.sleep(1)
             return not await self.hw_device.get_pump_status(self.pump_code)
 
-    async def infuse(self, rate: str = "", volume: str = "") -> bool:
+    async def infuse(self, rate: str = "1 ml/min", volume: str = "") -> bool:
         """Start infusion with given rate and volume (both optional).
 
         If no rate is specified, the default (1 ml/min) is used, can be set on per-pump basis via `default_infuse_rate`
@@ -107,8 +110,16 @@ class ML600Pump(SyringePump):
         logger.info(f"withdrawing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
         return await self.hw_device.get_pump_status(self.pump_code)
 
-    async def set_to_volume(self, target_volume: str, rate: str) -> bool:
-        target_volume = ureg.Quantity(target_volume)
+    async def set_to_volume(self, volume: str, rate: str) -> bool:
+        volume = ureg.Quantity(volume)
         rate = ureg.Quantity(rate)
-        await self.hw_device.set_to_volume(target_volume, rate, self.pump_code)
+        await self.hw_device.set_to_volume(volume, rate, self.pump_code)
         return await self.hw_device.get_pump_status(self.pump_code)
+
+    async def get_current_volume(self):
+        """Return current syringe position in ml."""
+        return await self.hw_device.get_current_volume(self.pump_code)
+
+    async def initialize_syringe(self, speed: str):
+        """Return current syringe position in ml."""
+        return await self.hw_device.initialize_syringe(speed=ureg.Quantity(speed), pump=self.pump_code)
