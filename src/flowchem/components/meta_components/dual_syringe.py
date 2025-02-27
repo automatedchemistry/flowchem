@@ -57,15 +57,98 @@ class DualSyringe:
         assert self.syringe_volumes["left"] == self.syringe_volumes[
             "right"], "Syringes are not the same size, this can create unexpected behaviour"
         # switch valves
-        while True:
-            if not self.left_pump.get("is_pumping") and not self.right_pump.get("is_pumping"):
-                self.left_valve.put("set_position", {"connect": "[[null,null],[2,0]]"})
-                self.right_valve.put("set_position", {"connect": "[[null,null],[2,0]]"})
-                # self.wait_until_idle(syringe=None)
-                # ToDo Check if it's necessary to get valve's status (is_idle)
-                # actuate syringes
-                self.left_pump.put("set_to_volume", {"target_volume": to_volume_left, "rate": speed_left})
-                self.right_pump.put("set_to_volume", {"target_volume": to_volume_right, "rate": speed_right})
-                break
-            else:
-                sleep(0.01)
+        self.wait_until_idle()
+        self.left_valve.put("set_position", {"connect": "[[null,null],[2,0]]"})
+        self.right_valve.put("set_position", {"connect": "[[null,null],[2,0]]"})
+        # self.wait_until_idle(syringe=None)
+        # ToDo Check if it's necessary to get valve's status (is_idle)
+        # actuate syringes
+        self.left_pump.put("set_to_volume", {"target_volume": str(to_volume_left), "rate": str(speed_left)})
+        self.right_pump.put("set_to_volume", {"target_volume": str(to_volume_right), "rate": str(speed_right)})
+
+    def fill_single_syringe(self, volume: ureg.Quantity, speed: ureg.Quantity, valve_angle: str ="[[null,1],[null,0]]", syringe="left"):
+        """
+        Fill a single syringe. This should also work on dual syringe, but only for the left one.
+        Assumes Input and output on the right so the valve is not used here
+
+
+        Args:
+            volume:
+            speed:
+
+        Returns:
+
+        """
+        # switch valves
+        assert syringe in ["left", "right"], "Either select left or right syringe"
+        self.wait_until_idle(syringe=syringe)
+        # easy to get working on right one: just make default variable for right or left
+        match syringe:
+            case "left":
+                self.left_valve.put("set_position", {"connect": valve_angle})
+                self.wait_until_idle(syringe=syringe)
+                curr_vol = self.left_pump.get("get_current_volume")
+                to_vol = curr_vol + volume
+                to_vol = round(to_vol.m_as("ml"),3)
+                self.left_pump.put("set_to_volume", {"target_volume": f"{to_vol} ml", "rate": str(speed)})
+            case "right":
+                self.right_valve.put("set_position", {"connect": valve_angle})
+                self.wait_until_idle(syringe=syringe)
+                curr_vol = self.right_pump.get("get_current_volume")
+                to_vol = curr_vol + volume
+                to_vol = round(to_vol.m_as("ml"), 3)
+                self.right_pump.put("set_to_volume", {"target_volume": f"{to_vol} ml", "rate": str(speed)})
+            case _:
+                logger.error(f"Invalid syringe value: {syringe}. Expected 'left', 'right', or None.")
+
+    def deliver_from_single_syringe(self, volume_to_deliver: ureg.Quantity, speed: ureg.Quantity , valve_angle: str ="[[null,1],[null,0]]", syringe="left"):
+        """
+        Assumes Input and output on the right so the valve is not used here
+
+        Args:
+            volume_to_deliver:
+            speed:
+            syringe:
+
+        Returns:
+
+        """
+        self.wait_until_idle(syringe=syringe)
+        match syringe:
+            case "left":
+                self.left_valve.put("set_position", {"connect": valve_angle})
+                self.wait_until_idle(syringe=syringe)
+                curr_vol = self.left_pump.get("get_current_volume")
+                to_vol = curr_vol + volume_to_deliver
+                to_vol = round(to_vol.m_as("ml"), 3)
+                self.left_pump.put("set_to_volume", {"target_volume": f"{to_vol} ml", "rate": str(speed)})
+            case "right":
+                self.right_valve.put("set_position", {"connect": valve_angle})
+                self.wait_until_idle(syringe=syringe)
+                curr_vol = self.right_pump.get("get_current_volume")
+                to_vol = curr_vol + volume_to_deliver
+                to_vol = round(to_vol.m_as("ml"), 3)
+                self.right_pump.put("set_to_volume", {"target_volume": f"{to_vol} ml", "rate": str(speed)})
+            case _:
+                logger.error(f"Invalid syringe value: {syringe}. Expected 'left', 'right', or None.")
+
+    def wait_until_idle(self, syringe=None):
+        """ Waits for both pumps to be idle. """
+        match syringe:
+            case None:
+                logger.debug(f"wait until both pumps idle")
+                while self.left_pump.get("is_pumping") or self.right_pump.get("is_pumping"):
+                    sleep(0.001)
+            case "left":
+                logger.debug(f"wait until left pump idle")
+                while self.left_pump.get("is_pumping"):
+                    sleep(0.001)
+            case "right":
+                logger.debug(f"wait until right pump idle")
+                while self.right_pump.get("is_pumping"):
+                    sleep(0.001)
+            case _:
+                logger.error(f"Invalid syringe value: {syringe}. Expected 'left', 'right', or None.")
+
+
+
