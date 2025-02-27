@@ -452,12 +452,14 @@ class ML600(FlowchemDevice):
         """Initialize valve only."""
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.INIT_VALVE_ONLY))
 
-    async def initialize_syringe(self, speed: ureg.Quantity | None = None):
+    async def initialize_syringe(self, speed: ureg.Quantity | None = None, pump: str = ""):
         """Initialize syringe only. speed: 2-3692 in seconds/stroke"""
+
         init_syringe = Protocol1Command(
             command=ML600Commands.INIT_SYRINGE_ONLY,
             optional_parameter="S",
             parameter_value=self._validate_speed(speed),
+            target_component=pump
         )
         return await self.send_command_and_read_reply(init_syringe)
 
