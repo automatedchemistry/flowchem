@@ -251,6 +251,11 @@ class Autosampler:
 
         self.initialize()
         self.tray_mapping: Tray = tray_mapping
+        self.extra_components: dict[str, FlowchemComponentClient] = {}
+
+    def add_component(self, name: str, component: FlowchemComponentClient):
+        """Add a FlowchemComponentClient instance with a custom name."""
+        self.extra_components[name] = component
 
     def initialize(self):
         """
