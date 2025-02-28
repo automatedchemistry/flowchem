@@ -120,6 +120,10 @@ class ML600Pump(SyringePump):
         """Return current syringe position in ml."""
         return await self.hw_device.get_current_volume(self.pump_code)
 
-    async def initialize_syringe(self, speed: str):
-        """Return current syringe position in ml."""
+    async def initialize_syringe(self, flow_rate: str):
+        """
+        Initialize syringe on specified side only
+        flowrate: ml/min
+        """
+        speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(flow_rate))
         return await self.hw_device.initialize_syringe(speed=ureg.Quantity(speed), pump=self.pump_code)
