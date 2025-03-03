@@ -43,8 +43,14 @@ class AutosamplerGantry3D(gantry3D):
         self.add_api_route("/compressor", self.compressor, methods=["PUT"])
         self.add_api_route("/move_tray", self.move_tray, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
+        self.add_api_route("/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
         self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
+
+    async def needle_vertical_offset(self, offset: str = "") -> bool:   #todo: mm?
+        """Needle offset in mm"""
+        offset = ureg.Quantity(offset)
+        return self.hw_device.needle_vertical_offset(offset.m_as("mm"))
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
