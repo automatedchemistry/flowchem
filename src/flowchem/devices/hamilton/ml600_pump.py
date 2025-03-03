@@ -1,6 +1,6 @@
 """ML600 component relative to pumping."""
 from __future__ import annotations
-
+import time
 import asyncio
 from typing import TYPE_CHECKING
 
@@ -26,6 +26,7 @@ class ML600Pump(SyringePump):
         self.add_api_route("/set_to_volume", self.set_to_volume, methods=["PUT"])
         self.add_api_route("/get_current_volume", self.get_current_volume, methods=["GET"])
         self.add_api_route("/initialize_syringe", self.initialize_syringe, methods=["PUT"])
+        self.add_api_route("/wait_until_idle", self.wait_until_idle, methods=["GET"])
 
         self.pump_code = pump_code
         # self.add_api_route("/pump", self.get_monitor_position, methods=["GET"])
@@ -127,3 +128,10 @@ class ML600Pump(SyringePump):
         """
         speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(flow_rate))
         return await self.hw_device.initialize_syringe(speed=ureg.Quantity(speed), pump=self.pump_code)
+
+    def wait_until_idle(self) -> bool:
+        """ Waits for both pumps to be idle. """
+        logger.debug(f"wait until pump idle")
+        while self.hw_device.wait_until_idle(pump=self.pump_code):
+            time.sleep(0.001)
+        return True
