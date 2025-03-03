@@ -16,7 +16,7 @@ class DualSyringe:
         self.left_valve: FlowchemComponentClient = left_valve
         self.right_valve: FlowchemComponentClient = right_valve
         if type(syringe_volume) is ureg.Quantity:
-            self.syringe_volumes = {"left": syringe_volume, "right": syringe_volume}
+            self.syringe_volume = {"left": syringe_volume, "right": syringe_volume}
         elif isinstance(syringe_volume, dict) and all(isinstance(key, ureg.Quantity) for key in syringe_volume.keys()):
             self.syringe_volume = {"left": syringe_volume["left"], "right": syringe_volume["right"]}
         else:
