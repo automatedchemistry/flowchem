@@ -591,18 +591,18 @@ class ML600(FlowchemDevice):
                 ))
         return status
 
-    async def wait_until_system_idle(self):
+    async def wait_until_idle(self, pump: str | None = None):
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 {self.name} wait until idle...")
-        while not await self.is_system_idle():
+        while not await self.is_idle(pump=pump):
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 {self.name} idle now!")
 
-    async def is_system_idle(self) -> bool:
+    async def is_idle(self, pump: str | None = None) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
             await self.send_command_and_read_reply(
-                Protocol1Command(command=ML600Commands.REQUEST_DONE, execution_command="")) == "Y"
+                Protocol1Command(command=ML600Commands.REQUEST_DONE, execution_command="", target_component=pump)) == "Y"
         )
 
     async def is_single_syringe(self) -> bool:
