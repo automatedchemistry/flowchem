@@ -129,7 +129,7 @@ class ML600Pump(SyringePump):
         speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(flow_rate))
         return await self.hw_device.initialize_syringe(speed=ureg.Quantity(speed), pump=self.pump_code)
 
-    def wait_until_idle(self) -> bool:
+    async def wait_until_idle(self) -> bool:
         """ Waits for both pumps to be idle. """
         logger.debug(f"wait until pump idle")
         while self.hw_device.wait_until_idle(pump=self.pump_code):
