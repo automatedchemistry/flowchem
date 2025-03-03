@@ -398,6 +398,9 @@ class KnauerAutosampler(FlowchemDevice):
     async def set_tray_temperature(self, setpoint: int = None):
         return await self._set_get_value(TrayTemperatureCommand, setpoint)
 
+    def needle_vertical_offset(self, offset: float = None):
+        return self._set_get_value(VerticalNeedleOffsetCommand, offset)
+
     async def tubing_volume(self, volume: None or int = None):
         return await self._set_get_value(TubingVolumeCommand, volume)
 
