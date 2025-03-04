@@ -263,10 +263,10 @@ class Autosampler:
         Returns: None
         """
         self.gantry3D.put("reset_errors")
-        self.gantry3D.put("set_z_position", {"position": "UP"})
-        self.gantry3D.put("set_needle_position", {"position": "WASTE"})
-        self.syringe_valve.put("set_monitor_position", {"position": "WASTE"})
-        self.injection_valve.put("set_monitor_position", {"position": "LOAD"})
+        self.gantry3D.put("set_z_position",  params={"position": "UP"})
+        self.gantry3D.put("set_needle_position",  params={"position": "WASTE"})
+        self.syringe_valve.put("set_monitor_position",  params={"position": "WASTE"})
+        self.injection_valve.put("set_monitor_position",  params={"position": "LOAD"})
 
     def connect_chemical(self, chemical: str, volume_sample: ureg.Quantity = ureg.Quantity("0 mL"), volume_buffer: ureg.Quantity = ureg.Quantity("0 mL"), flow_rate: ureg.Quantity=None):
         # needs to take plate layout and basically the key, so smiles or special denomination
@@ -279,7 +279,7 @@ class Autosampler:
                 logger.error(f"No vial contains enough sample for the desired volume")
                 raise ValueError(f"No vial contains enough sample for the desired volume")
             vial, position = self.tray_mapping.load_entry(vial_index)
-            self.gantry3D.put("connect_to_position", {"tray":  position.side, "row": position.row,
+            self.gantry3D.put("connect_to_position",  params={"tray":  position.side, "row": position.row,
                                                       "column": position.column})
             # this waits for syringe to be ready as well per default
             self.wait_until_ready(wait_for_syringe=True)
@@ -313,28 +313,28 @@ class Autosampler:
 
 # it would be reasonable to get all from needle to loop, with piercing inert gas vial
     def disconnect_sample(self, move_plate=False):
-        self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
-        self.gantry3D.put("set_z_position",{"position": "UP"})
+        self.injection_valve.put("set_monitor_position", params={"position": "LOAD"})
+        self.gantry3D.put("set_z_position", params={"position": "UP"})
         if move_plate:
-            self.gantry3D.put("move_tray", {"tray": "NO_PLATE", "row": "HOME"})
-            self.gantry3D.put("set_needle_position",{"position": "WASTE"})
+            self.gantry3D.put("move_tray",  params={"tray": "NO_PLATE", "row": "HOME"})
+            self.gantry3D.put("set_needle_position", params={"position": "WASTE"})
             
     def fill_wash_reservoir(self, volume: ureg.Quantity = ureg.Quantity("0.2 ml"), flow_rate: ureg.Quantity = None):
-        self.syringe_valve.put("set_monitor_position", {"position": "WASH"})
-        self.pump.put("withdraw",{"rate": str(flow_rate), "volume": str(volume)})
-        self.gantry3D.put("connect_to_position", {"tray": "WASH"})
+        self.syringe_valve.put("set_monitor_position",  params={"position": "WASH"})
+        self.pump.put("withdraw", params={"rate": str(flow_rate), "volume": str(volume)})
+        self.gantry3D.put("connect_to_position",  params={"tray": "WASH"})
         # aspirate does not await syringe execution, therefor explicit await is necessary
         self.wait_until_ready()
         # this is just used to connect the syringe to sample
         self.pick_up_sample(volume=ureg.Quantity("0 ml"),flow_rate=flow_rate)
         # empty syringe into reservoir
-        self.pump.put("infuse",{"rate": str(flow_rate), "volume": str(volume)})
+        self.pump.put("infuse", params={"rate": str(flow_rate), "volume": str(volume)})
         self.wait_until_ready()
         self.disconnect_sample()
         
     def empty_wash_reservoir(self, volume:  ureg.Quantity = ureg.Quantity("0.2 ml"), flow_rate:  ureg.Quantity = None):
         # empty reservoir with syringe
-        self.gantry3D.put("connect_to_position", {"tray": "WASH"})
+        self.gantry3D.put("connect_to_position",  params={"tray": "WASH"})
         self.pick_up_sample(volume=volume, flow_rate=flow_rate)
         # go up and move to waste
         self.disconnect_sample()
@@ -354,35 +354,35 @@ class Autosampler:
             # fill syringe here and go to right position
             self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
             self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
-            self.gantry3D.put("set_needle_position",{"position": "WASTE"})
-            self.gantry3D.put("set_z_position", {"position": "DOWN"})
+            self.gantry3D.put("set_needle_position", params={"position": "WASTE"})
+            self.gantry3D.put("set_z_position",  params={"position": "DOWN"})
             # dispense to waste and go up
-            self.pump.put("infuse",{"rate": str(flow_rate), "volume": str(volume)})
+            self.pump.put("infuse", params={"rate": str(flow_rate), "volume": str(volume)})
             self.wait_until_ready()
-            self.gantry3D.put("set_z_position", {"position": "UP"})
+            self.gantry3D.put("set_z_position",  params={"position": "UP"})
         
         # fill here, and eject, without needle wash!
-        self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
-        self.pump.put("withdraw",{"rate": str(flow_rate), "volume": str(volume)})
-        self.injection_valve.put("set_monitor_position",{"position": "INJECT"})
-        self.gantry3D.put("set_needle_position",{"position": "WASTE"})
-        self.gantry3D.put("set_z_position",{"position": "DOWN"})
+        self.syringe_valve.put("set_monitor_position", params={"position": "WASH"})
+        self.pump.put("withdraw", params={"rate": str(flow_rate), "volume": str(volume)})
+        self.injection_valve.put("set_monitor_position", params={"position": "INJECT"})
+        self.gantry3D.put("set_needle_position", params={"position": "WASTE"})
+        self.gantry3D.put("set_z_position", params={"position": "DOWN"})
         self.wait_until_ready()
         # eject directly to waste
-        self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-        self.pump.put("infuse", {"rate": str(flow_rate*10) if flow_rate else flow_rate, "volume": str(volume)})
+        self.syringe_valve.put("set_monitor_position", params={"position": "NEEDLE"})
+        self.pump.put("infuse",  params={"rate": str(flow_rate*10) if flow_rate else flow_rate, "volume": str(volume)})
         self.wait_until_ready()
-        self.gantry3D.put("set_z_position",{"position": "UP"})
+        self.gantry3D.put("set_z_position", params={"position": "UP"})
 
     def pick_up_sample(self, volume: ureg.Quantity, volume_buffer: ureg.Quantity = ureg.Quantity("0 ml"), flow_rate: ureg.Quantity=None):
         if volume_buffer:
-            self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
-            self.pump.put("withdraw",{"rate": str(flow_rate), "volume": str(volume_buffer)})
-        self.injection_valve.put("set_monitor_position",{"position": "INJECT"})
+            self.syringe_valve.put("set_monitor_position", params={"position": "WASH"})
+            self.pump.put("withdraw", params={"rate": str(flow_rate), "volume": str(volume_buffer)})
+        self.injection_valve.put("set_monitor_position", params={"position": "INJECT"})
         # wait until buffer taken
         self.wait_until_ready()
-        self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-        self.pump.put("withdraw",{"rate": str(flow_rate), "volume": str(volume)})
+        self.syringe_valve.put("set_monitor_position", params={"position": "NEEDLE"})
+        self.pump.put("withdraw", params={"rate": str(flow_rate), "volume": str(volume)})
         # while picking up sample, there is no logical AS based background activity, so wait until ready
         self.wait_until_ready()
 
@@ -402,23 +402,23 @@ class Autosampler:
         legal_arguments = ["needle", "outside", "waste"]
         if dispense_to not in legal_arguments:
             raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
-        self.gantry3D.put("set_needle_position",{"position": "WASTE"})
+        self.gantry3D.put("set_needle_position", params={"position": "WASTE"})
         for i in range(times):
-            self.syringe_valve.put("set_monitor_position",{"position": "WASH"})
-            self.pump.put("withdraw",{"rate": str(flow_rate), "volume": str(volume)})
+            self.syringe_valve.put("set_monitor_position", params={"position": "WASH"})
+            self.pump.put("withdraw", params={"rate": str(flow_rate), "volume": str(volume)})
             self.wait_until_ready()
             if dispense_to == legal_arguments[0]:
-                self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-                self.injection_valve.put("set_monitor_position",{"position": "INJECT"})
-                self.gantry3D.put("set_z_position",{"position": "DOWN"})
+                self.syringe_valve.put("set_monitor_position", params={"position": "NEEDLE"})
+                self.injection_valve.put("set_monitor_position", params={"position": "INJECT"})
+                self.gantry3D.put("set_z_position", params={"position": "DOWN"})
             elif dispense_to == legal_arguments[1]:
-                self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-                self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
+                self.syringe_valve.put("set_monitor_position", params={"position": "NEEDLE"})
+                self.injection_valve.put("set_monitor_position", params={"position": "LOAD"})
             elif dispense_to == legal_arguments[2]:
-                self.syringe_valve.put("set_monitor_position",{"position": "WASTE"})
-            self.pump.put("infuse",{"rate": str(flow_rate), "volume": str(volume)})
+                self.syringe_valve.put("set_monitor_position", params={"position": "WASTE"})
+            self.pump.put("infuse", params={"rate": str(flow_rate), "volume": str(volume)})
             self.wait_until_ready()
-            self.gantry3D.put("set_z_position",{"position": "UP"})
+            self.gantry3D.put("set_z_position", params={"position": "UP"})
 
     def dispense_sample(self, volume: ureg.Quantity, dead_volume: ureg.Quantity = ureg.Quantity("0.050 ml"), flow_rate: ureg.Quantity = None):
         """
@@ -433,9 +433,9 @@ class Autosampler:
         
         """
         sum_volume = volume + dead_volume
-        self.syringe_valve.put("set_monitor_position",{"position": "NEEDLE"})
-        self.injection_valve.put("set_monitor_position",{"position": "LOAD"})
-        self.pump.put("infuse", {"rate": str(flow_rate), "volume": str(sum_volume)})
+        self.syringe_valve.put("set_monitor_position", params={"position": "NEEDLE"})
+        self.injection_valve.put("set_monitor_position", params={"position": "LOAD"})
+        self.pump.put("infuse",  params={"rate": str(flow_rate), "volume": str(sum_volume)})
 
 if __name__ == "__main__":
     pass
