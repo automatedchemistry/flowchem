@@ -4,6 +4,26 @@ from flowchem import ureg
 from flowchem.client.component_client import FlowchemComponentClient
 
 
+def create_syringe_pump(flowchem_devices, config, volume="1 ml"):
+    """
+    Creates a SyringePumpValve instance based on the given configuration.
+
+    Args:
+        flowchem_devices (dict): The dictionary containing all device components.
+        config (str): The dot-separated string for pump and valve identification.
+        volume (str): The syringe volume (default is "1 ml").
+
+    Returns:
+        SyringePumpValve: A configured SyringePumpValve instance.
+    """
+    pump_key, pump_part = config.split(".")
+    valve_key, valve_part = config.split(".")
+    return SyringePumpValve(
+        pump=flowchem_devices[pump_key][pump_part],
+        valve=flowchem_devices[valve_key][valve_part],
+        syringe_volume=ureg.Quantity(volume),
+    )
+
 class SyringePumpValve:
     """
     Syringe pump + valve meta component.
