@@ -111,27 +111,26 @@ class ML600Pump(SyringePump):
         logger.info(f"withdrawing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
         return await self.hw_device.get_pump_status(self.pump_code)
 
-    async def set_to_volume(self, volume: str, rate: str) -> bool:
+    async def set_to_volume(self, volume: str, rate: str = "1 ml/min") -> bool:
         volume = ureg.Quantity(volume)
         rate = ureg.Quantity(rate)
         await self.hw_device.set_to_volume(volume, rate, self.pump_code)
         return await self.hw_device.get_pump_status(self.pump_code)
 
-    async def get_current_volume(self):
-        """Return current syringe position in ml."""
-        return await self.hw_device.get_current_volume(self.pump_code)
+    async def get_current_volume(self) -> float:
+        """Return current syringe volume in ml."""
+        vol = await self.hw_device.get_current_volume(self.pump_code)
+        return vol.m_as("ml")
 
-    async def initialize_syringe(self, flow_rate: str):
+    async def initialize_syringe(self, rate: str):
         """
         Initialize syringe on specified side only
         flowrate: ml/min
         """
-        speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(flow_rate))
+        speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(rate))
         return await self.hw_device.initialize_syringe(speed=ureg.Quantity(speed), pump=self.pump_code)
 
     async def wait_until_idle(self) -> bool:
-        """ Waits for both pumps to be idle. """
+        """ Waits pump to be idle. """
         logger.debug(f"wait until pump idle")
-        while self.hw_device.wait_until_idle(pump=self.pump_code):
-            time.sleep(0.001)
-        return True
+        return await self.hw_device.wait_until_idle(pump=self.pump_code)
