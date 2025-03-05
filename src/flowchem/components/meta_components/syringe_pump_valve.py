@@ -23,15 +23,15 @@ class SyringePumpValve:
         if not syringe_volume.check("[volume]"):
             raise ValueError("syringe_volume must be a quantity with units of volume (e.g., 'ml').")
 
-    def initialize_syringe(self, flowrate: ureg.Quantity, connect: str ="[[null,1],[null,0]]", syringe="left"):
+    def initialize_syringe(self, flowrate: ureg.Quantity | None = None):
         """
 
         """
+        if not flowrate:
+            flowrate = ureg.Quantity(f"{self.syringe_volume["left"].m_as("ml") * 2} ml/min")
         # Check if desired units
         if not flowrate.check("[volume] / [time]"):
             raise ValueError("Flowrate must be a quantity with units of volume per time (e.g., 'ml/min').")
-        self.wait_until_idle()
-        self.valve.put("position", params={"connect": connect})
         self.wait_until_idle()
         self.pump.put("initialize_syringe", params={"rate": str(flowrate)})
 
