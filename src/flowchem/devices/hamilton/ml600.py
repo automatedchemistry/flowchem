@@ -321,7 +321,7 @@ class ML600(FlowchemDevice):
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
         try:
             # todo: set syringe_volume to a dict/str??
-            self.syringe_volume = ureg.Quantity(syringe_volume)
+            self.syringe_volume = ureg(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfigurationError(
@@ -335,7 +335,7 @@ class ML600(FlowchemDevice):
                 f"The volume (in ml) has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
 
-        self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step")
+        self._steps_per_ml = ureg(f"{48000 / self.syringe_volume} step")
         # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
         # logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
@@ -416,7 +416,7 @@ class ML600(FlowchemDevice):
         command.target_pump_num = self.address
         return await self.pump_io.write_and_read_reply_async(command)
 
-    def _validate_speed(self, speed: ureg.Quantity | None) -> str:
+    def _validate_speed(self, speed: ureg | None) -> str:
         """Validate the speed.
 
         Given a speed (seconds/stroke) returns a valid value for it, and a warning if out of bounds.
@@ -427,8 +427,8 @@ class ML600(FlowchemDevice):
 
         # Alert if out of bounds but don't raise exceptions, according to general philosophy.
         # Target flow rate too high
-        if speed < ureg.Quantity("2 sec/stroke"):
-            speed = ureg.Quantity("2 sec/stroke")
+        if speed < ureg("2 sec/stroke"):
+            speed = ureg("2 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -437,8 +437,8 @@ class ML600(FlowchemDevice):
             )
 
         # Target flow rate too low
-        if speed > ureg.Quantity("3692 sec/stroke"):
-            speed = ureg.Quantity("3692 sec/stroke")
+        if speed > ureg("3692 sec/stroke"):
+            speed = ureg("3692 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -452,7 +452,7 @@ class ML600(FlowchemDevice):
         """Initialize valve only."""
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.INIT_VALVE_ONLY))
 
-    async def initialize_syringe(self, speed: ureg.Quantity | None = None, pump: str = ""):
+    async def initialize_syringe(self, speed: ureg, pump: str = ""):
         """Initialize syringe only. speed: 2-3692 in seconds/stroke"""
 
         init_syringe = Protocol1Command(
@@ -463,7 +463,7 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(init_syringe)
 
-    def _flowrate_to_seconds_per_stroke(self, flowrate: ureg.Quantity):
+    def _flowrate_to_seconds_per_stroke(self, flowrate: ureg):
         """Convert flow rates to steps per seconds.
 
         To determine the volume dispensed per step the total syringe volume is divided by
@@ -480,14 +480,14 @@ class ML600(FlowchemDevice):
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
-    def _volume_to_step_position(self, volume: ureg.Quantity) -> int:
+    def _volume_to_step_position(self, volume: ureg) -> int:
         """Convert a volume to a step position."""
         # todo: different syringes
         # noinspection PyArgumentEqualDefault
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps"))
 
-    async def get_current_volume(self, pump: str = "") -> ureg.Quantity:
+    async def get_current_volume(self, pump: str = "") -> ureg:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION,target_component=pump),)
@@ -495,7 +495,7 @@ class ML600(FlowchemDevice):
         current_steps = int(syringe_pos) * ureg.step
         return current_steps / self._steps_per_ml
 
-    async def set_to_volume(self, target_volume: ureg.Quantity, rate: ureg.Quantity, pump: str = ""):
+    async def set_to_volume(self, target_volume: ureg, rate: ureg, pump: str = ""):
         """Absolute move to target volume provided by set step position and speed."""
         # in pump component, it already checked the desired volume setting is possible to execute or not
         speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
