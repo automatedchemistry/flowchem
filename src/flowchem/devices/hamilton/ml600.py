@@ -406,10 +406,10 @@ class ML600(FlowchemDevice):
         # Add device components
         if self.dual_syringe:
             self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
-                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
+                                    ML600LeftValve("left_valve", self), ML600LeftValve("right_valve", self)])   #Changed the components for platform configuration (All duals have left valeves and all individuals have right valve)
 
         else:
-            self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
+            self.components.extend([ML600Pump("pump", self), ML600RightValve("valve", self)])
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
