@@ -11,8 +11,11 @@ if TYPE_CHECKING:
 
 class ML600LeftValve(FourPortFivePositionValve):
     hw_device: ML600  # for typing's sake
-    identifier = "B"
+    identifier: str
 
+    def __init__(self, name: str, hw_device: ML600, identifier: str = "") -> None:
+        super().__init__(name, hw_device)
+        self.identifier = identifier
     # 0 degree syr-left,
     # 45 right-front
     # 90 nothing
@@ -32,7 +35,11 @@ class ML600LeftValve(FourPortFivePositionValve):
 
 class ML600RightValve(ThreePortFourPositionValve):
     hw_device: ML600  # for typing's sake
-    identifier = "C"
+    identifier: str
+
+    def __init__(self, name: str, hw_device: ML600, identifier: str = "") -> None:
+        super().__init__(name, hw_device)
+        self.identifier = identifier
 
     def _change_connections(self, raw_position: str, reverse: bool = False) -> str:
         if not reverse:
