@@ -25,7 +25,12 @@ class ML600Pump(SyringePump):
         """
         super().__init__(name, hw_device)
         self.pump_code = pump_code
-        # self.add_api_route("/pump", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/get_position", self.get_position, methods=["GET"])
+
+    async def get_position(self) -> str:
+        """Get the current position of the pump."""
+        current_volume = await self.hw_device.get_current_volume(self.pump_code)
+        return str(current_volume)
 
     @staticmethod
     def is_withdrawing_capable() -> bool:

@@ -621,8 +621,10 @@ if __name__ == "__main__":
         "name": "test1",
         "syringe_volume": "5 mL",
     }
-    pump1 = ML600.from_config(**conf)
-    # asyncio.run(pump1.initialize())
-    print(asyncio.run(pump1.get_valve_status()))
-    print(asyncio.run(pump1.get_valve_angle("B")))
-    asyncio.run(pump1.set_valve_angle(270, "B"))
+    ml600_devices = ML600.from_config(**conf)
+    asyncio.run(ml600_devices.initialize())
+    print(asyncio.run(ml600_devices.get_valve_status()))
+    print(asyncio.run(ml600_devices.get_valve_angle("B")))
+    asyncio.run(ml600_devices.set_valve_angle(270, "B"))
+    pump, valve = ml600_devices.components
+    print(asyncio.run(valve.get_position()))
