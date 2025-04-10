@@ -131,8 +131,8 @@ class Protocol1Command:
         if not command_string:
             command_string = self._multiple_compile()
 
-        command_string = f"{PUMP_ADDRESS[self.target_pump_num]}" \
-                         f"{command_string}"
+        command_string = (f"{PUMP_ADDRESS[self.target_pump_num]}"
+                         f"{command_string}")
 
         if self.execution_command is not None:
             command_string += "R"
@@ -147,7 +147,7 @@ class Protocol1Command:
             self.command_value = ""
 
         compiled_command = (
-            f"{self.command}{self.command_value}"
+            f"{self.target_component}"f"{self.command.value}{self.command_value}"
         )
         if self.parameter_value:
             compiled_command += f"{self.optional_parameter}{self.parameter_value}"
@@ -292,7 +292,8 @@ class HamiltonPumpIO:
         for com in command:
             command_compiled += com._multiple_compile()
         com_comp = com.multiple_compile(command_compiled)
-        await self._write_async(com_comp)
+        logger.info(f"COMMAND: {com_comp}")
+        await self._write_async(com_comp.encode("ascii"))
         response = await self._read_reply_async()
 
         # Parse reply
@@ -830,14 +831,17 @@ class ML600(FlowchemDevice):
 
 if __name__ == "__main__":
     # asyncio.run(main())
+    from flowchem import ureg
 
     conf = {
-        "port": "COM9",
-        "address": 1,
-        "name": "test1",
-        "syringe_volume": "5 mL",
+    "port": "COM21",
+    "address": 1,
+    "name": "test1",
+    "syringe_volume": "0.1 mL",
     }
     pump1 = ML600.from_config(**conf)
-    asyncio.run(pump1.set_raw_position("180"))
+    asyncio.run(pump1.initialize())
+    #asyncio.run(pump1.set_to_volume(target_volume= ureg("0 ml"), rate= ureg("0.5 ml/min"), pump="C"))
+    asyncio.run(pump1.set_to_volume_dual_syringes(target_volume= ureg("0.1 ml"), rate= ureg("2 ml/min"), valve_angles={"left": "[[null,0],[2,3]]", "right": "[[null,0],[2,3]]"}))
     #print(asyncio.run(pump1.get_valve_status("C")))
 

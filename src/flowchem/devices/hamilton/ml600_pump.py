@@ -136,7 +136,7 @@ class ML600Pump(SyringePump):
         logger.debug(f"wait until pump idle")
         return await self.hw_device.wait_until_idle(pump=self.pump_code)
 
-    async def set_to_volume_dual_syringes(self, target_volume: ureg, rate: ureg, valve_angles: dict[str, str | int]):
+    async def set_to_volume_dual_syringes(self, target_volume: str, rate: str, connection: str = ""):
         """
         Executes a synchronized filling of both syringes.
 
@@ -148,7 +148,9 @@ class ML600Pump(SyringePump):
         rate (ureg.Quantity): Filling rate.
         valve_angles (dict): Dictionary with 'left' and 'right' keys specifying valve angle positions.
         """
-        if valve_angles is None:
-            valve_angles = {"left": "[[null,0],[2,3]]", "right": "[[null,0],[2,3]]"}
-        logger.debug(f"Setting volume of both syringes to {target_volume.m_as("ml")} ml")
-        return await self.hw_device.set_to_volume_dual_syringes(target_volume=target_volume,rate=rate,valve_angles=valve_angles)
+
+        if connection == "":
+            connection = "[[null,0],[2,3]]"
+        valve_angles = {"left": connection, "right": connection}
+        logger.debug(f"Setting volume of both syringes to {target_volume} ml")
+        return await self.hw_device.set_to_volume_dual_syringes(target_volume=ureg(target_volume),rate=ureg(rate),valve_angles=valve_angles)
