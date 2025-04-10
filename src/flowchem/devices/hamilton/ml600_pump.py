@@ -24,6 +24,7 @@ class ML600Pump(SyringePump):
         """
         super().__init__(name, hw_device)
         self.add_api_route("/set_to_volume", self.set_to_volume, methods=["PUT"])
+        self.add_api_route("/set_to_volume_dual_syringes", self.set_to_volume_dual_syringes, methods=["PUT"])
         self.add_api_route("/get_current_volume", self.get_current_volume, methods=["GET"])
         self.add_api_route("/initialize_syringe", self.initialize_syringe, methods=["PUT"])
         self.add_api_route("/wait_until_idle", self.wait_until_idle, methods=["GET"])
@@ -134,3 +135,20 @@ class ML600Pump(SyringePump):
         """ Waits pump to be idle. """
         logger.debug(f"wait until pump idle")
         return await self.hw_device.wait_until_idle(pump=self.pump_code)
+
+    async def set_to_volume_dual_syringes(self, target_volume: ureg, rate: ureg, valve_angles: dict[str, str | int]):
+        """
+        Executes a synchronized filling of both syringes.
+
+        This function was created specifically for the platform,
+        ensuring both syringes operate in perfect synchrony. Valve angles must
+        be explicitly set to control flow direction on each side.
+        Parameters:
+        target_volume (ureg.Quantity): Volume to fill.
+        rate (ureg.Quantity): Filling rate.
+        valve_angles (dict): Dictionary with 'left' and 'right' keys specifying valve angle positions.
+        """
+        if valve_angles is None:
+            valve_angles = {"left": "[[null,0],[2,3]]", "right": "[[null,0],[2,3]]"}
+        logger.debug(f"Setting volume of both syringes to {target_volume.m_as("ml")} ml")
+        return await self.hw_device.set_to_volume_dual_syringes(target_volume=target_volume,rate=rate,valve_angles=valve_angles)

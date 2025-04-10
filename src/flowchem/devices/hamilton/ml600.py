@@ -123,6 +123,38 @@ class Protocol1Command:
 
         return compiled_command + self.execution_command
 
+    def multiple_compile(self, command_string: str | None) -> str:
+        """
+        Create actual command byte by prepending pump address to command and appending executing command.
+        """
+        assert self.target_pump_num in range(1, 17)
+        if not command_string:
+            command_string = self._multiple_compile()
+
+        command_string = f"{PUMP_ADDRESS[self.target_pump_num]}" \
+                         f"{command_string}"
+
+        if self.execution_command is not None:
+            command_string += "R"
+
+        return command_string + "\r"
+
+    def _multiple_compile(self) -> str:
+        """
+        Create command string for individual pump. from that, up to two commands can be compiled, by appending pump address and adding run value
+        """
+        if not self.command_value:
+            self.command_value = ""
+
+        compiled_command = (
+            f"{self.command}{self.command_value}"
+        )
+        if self.parameter_value:
+            compiled_command += f"{self.optional_parameter}{self.parameter_value}"
+        # Add execution flag at the end
+
+        return compiled_command
+
 
 class HamiltonPumpIO:
     """Setup with serial parameters, low level IO."""
@@ -248,6 +280,25 @@ class HamiltonPumpIO:
             )
 
         return self._parse_response(response)
+
+    async def multiple_write_and_read_reply_async(self, command: list[Protocol1Command] | Protocol1Command) -> str:
+
+        """ Main HamiltonPumpIO method.
+        Sends a command to the pump, read the replies and returns it, optionally parsed """
+        command_compiled = ""
+        self._serial.reset_input_buffer()
+        if type(command) != list:
+            command = [command]
+        for com in command:
+            command_compiled += com._multiple_compile()
+        com_comp = com.multiple_compile(command_compiled)
+        await self._write_async(com_comp)
+        response = await self._read_reply_async()
+
+        # Parse reply
+        parsed_response = self._parse_response(response)
+
+        return parsed_response
 
 
 class ML600(FlowchemDevice):
@@ -710,6 +761,71 @@ class ML600(FlowchemDevice):
                 await asyncio.sleep(0.1)
         return True
         # todo: it's will be good check only pump but not whole system
+
+    async def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
+        return await self.pump_io.multiple_write_and_read_reply_async(list_of_commands)
+
+    async def set_to_volume_dual_syringes(self, target_volume: ureg, rate: ureg, valve_angles: dict[str, str | int]):
+        """
+        Executes a synchronized filling of both syringes.
+
+        This function was created specifically for the platform,
+        ensuring both syringes operate in perfect synchrony. Valve angles must
+        be explicitly set to control flow direction on each side.
+        Parameters:
+        target_volume (ureg.Quantity): Volume to fill.
+        rate (ureg.Quantity): Filling rate.
+        valve_angles (dict): Dictionary with 'left' and 'right' keys specifying valve angle positions.
+        """
+        ML600LeftValvePositionMapping = {
+            0: {"angle": 0, "position": "[[null,0],[2,3]]"},
+            1: {"angle": 45, "position": "[[1,0],[null,null]]"},
+            2: {"angle": 90, "position": "[[null,3],[null,0]]"},
+            3: {"angle": 135, "position": "[[null,null],[2,0]]"},
+            4: {"angle": 180, "position": "[[null,1],[null,0]]"},
+            5: {"angle": 225, "position": "[[null,null],[3,0]]"},
+            6: {"angle": 270, "position": "[[1,2],[null,0]]"},
+            7: {"angle": 315, "position": "[[null,0],[null,null]]"}
+        }
+        def get_angle_from_position(position_value: str) -> str | None:
+            for key, data in ML600LeftValvePositionMapping.items():
+                if data["position"] == position_value:
+                    return str(data["angle"])
+            return None
+        assert self.dual_syringe is True, "Must be dual syringe to use this method."
+        speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
+        set_speed = self._validate_speed(speed)  # check desired speed is possible to execute
+        position = self._volume_to_step_position(target_volume)
+        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {set_speed}")
+        # switch valves
+        assert self.syringe_volume["left"] == self.syringe_volume["right"], "Syringes are not the same size, this can create unexpected behaviour"
+        await self.wait_until_idle(pump="")
+        await self.send_multiple_commands([
+            Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, target_component="B",
+                             command_value=get_angle_from_position(valve_angles["left"])),
+            Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, target_component="C",
+                             command_value=get_angle_from_position(valve_angles["right"])),
+        ])
+        await self.wait_until_idle(pump="")
+        # actuate syringes
+        await self.send_multiple_commands([
+            Protocol1Command(
+                command=ML600Commands.ABSOLUTE_MOVE,
+                optional_parameter="S",
+                command_value=str(position),
+                parameter_value=set_speed,
+                target_component="B"
+            ),
+            Protocol1Command(
+                command=ML600Commands.ABSOLUTE_MOVE,
+                optional_parameter="S",
+                command_value=str(position),
+                parameter_value=set_speed,
+                target_component="C"
+            )
+        ])
+
+
 
 
 if __name__ == "__main__":
