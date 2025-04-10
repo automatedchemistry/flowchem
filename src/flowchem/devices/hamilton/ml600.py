@@ -799,7 +799,6 @@ class ML600(FlowchemDevice):
         position = self._volume_to_step_position(target_volume)
         logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {set_speed}")
         # switch valves
-        assert self.syringe_volume["left"] == self.syringe_volume["right"], "Syringes are not the same size, this can create unexpected behaviour"
         await self.wait_until_idle(pump="")
         await self.send_multiple_commands([
             Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, target_component="B",
