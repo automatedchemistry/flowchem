@@ -136,7 +136,7 @@ class ML600Pump(SyringePump):
         logger.debug(f"wait until pump idle")
         return await self.hw_device.wait_until_idle(pump=self.pump_code)
 
-    async def set_to_volume_dual_syringes(self, target_volume: str, rate: str, connection: str = ""):
+    async def set_to_volume_dual_syringes(self, target_volume: str, rate_left: str, rate_right: str,  connection: str = ""):
         """
         Executes a synchronized filling of both syringes.
 
@@ -153,4 +153,4 @@ class ML600Pump(SyringePump):
             connection = "[[null,0],[2,3]]"
         valve_angles = {"left": connection, "right": connection}
         logger.debug(f"Setting volume of both syringes to {target_volume} ml")
-        return await self.hw_device.set_to_volume_dual_syringes(target_volume=ureg(target_volume),rate=ureg(rate),valve_angles=valve_angles)
+        return await self.hw_device.set_to_volume_dual_syringes(target_volume=ureg(target_volume),rate_left=ureg(rate_left),rate_right=ureg(rate_right),valve_angles=valve_angles)

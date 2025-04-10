@@ -766,7 +766,7 @@ class ML600(FlowchemDevice):
     async def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
         return await self.pump_io.multiple_write_and_read_reply_async(list_of_commands)
 
-    async def set_to_volume_dual_syringes(self, target_volume: ureg, rate: ureg, valve_angles: dict[str, str | int]):
+    async def set_to_volume_dual_syringes(self, target_volume: ureg, rate_left: ureg, rate_right: ureg, valve_angles: dict[str, str | int]):
         """
         Executes a synchronized filling of both syringes.
 
@@ -794,10 +794,12 @@ class ML600(FlowchemDevice):
                     return str(data["angle"])
             return None
         assert self.dual_syringe is True, "Must be dual syringe to use this method."
-        speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
-        set_speed = self._validate_speed(speed)  # check desired speed is possible to execute
+        speed_right = self._flowrate_to_seconds_per_stroke(rate_right)  # in seconds/stroke
+        set_speed_right = self._validate_speed(speed_right)  # check desired speed is possible to execute
+        speed_left = self._flowrate_to_seconds_per_stroke(rate_left)  # in seconds/stroke
+        set_speed_left = self._validate_speed(speed_left)  # check desired speed is possible to execute
         position = self._volume_to_step_position(target_volume)
-        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {set_speed}")
+        logger.debug(f"Pumps {self.name} set to volume {target_volume} at speeds left: {set_speed_left} and right: {set_speed_right}")
         # switch valves
         await self.wait_until_idle(pump="")
         await self.send_multiple_commands([
@@ -813,14 +815,14 @@ class ML600(FlowchemDevice):
                 command=ML600Commands.ABSOLUTE_MOVE,
                 optional_parameter="S",
                 command_value=str(position),
-                parameter_value=set_speed,
+                parameter_value=set_speed_left,
                 target_component="B"
             ),
             Protocol1Command(
                 command=ML600Commands.ABSOLUTE_MOVE,
                 optional_parameter="S",
                 command_value=str(position),
-                parameter_value=set_speed,
+                parameter_value=set_speed_right,
                 target_component="C"
             )
         ])
