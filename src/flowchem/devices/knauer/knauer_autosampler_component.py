@@ -46,11 +46,12 @@ class AutosamplerGantry3D(gantry3D):
         self.add_api_route("/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
         self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
 
-    async def needle_vertical_offset(self, offset: str = "") -> bool:   #todo: mm?
+    async def needle_vertical_offset(self, offset: str = ""):   #todo: mm?
         """Needle offset in mm"""
         offset = ureg.Quantity(offset)
-        return self.hw_device.needle_vertical_offset(offset.m_as("mm"))
+        await self.hw_device.needle_vertical_offset(offset.m_as("mm"))
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -87,14 +88,14 @@ class AutosamplerGantry3D(gantry3D):
             logger.debug(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
             return True
         elif tray in NeedleHorizontalPosition.__dict__.keys():
-            await self.set_needle_position(position="tray")
+            await self.set_needle_position(position=tray)
         else:
             raise NotImplementedError
         await self.set_z_position("DOWN")
         logger.debug(f"Needle connected successfully to position: {tray}")
         return True
 
-    async def set_xy_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
+    async def set_xy_position(self, tray: str = "", row: str = "", column: str = "") -> bool:
         """
         Move the 3D gantry to the specified (x, y) coordinate of a specific plate.
 
@@ -106,7 +107,7 @@ class AutosamplerGantry3D(gantry3D):
         row: [1, 2, 3, 4, 5, 6, 7, 8]
         """
 
-        await super().set_x_position(position=row)
+        await super().set_x_position(position=int(row))
         await super().set_y_position(position=column)
         column_num = ord(column.upper()) - 64 # change column to int
 
@@ -115,7 +116,7 @@ class AutosamplerGantry3D(gantry3D):
 
         #traytype = self.hw_device.tray_type.upper()
         await self.hw_device._move_needle_vertical("UP")
-        await self.hw_device._move_tray(tray_type=tray,sample_position=row)
+        await self.hw_device._move_tray(tray_type=tray,sample_position=int(row))
         success = await self.hw_device._move_needle_horizontal("PLATE", plate=tray, well=column_num)
         if success:
             logger.debug(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
