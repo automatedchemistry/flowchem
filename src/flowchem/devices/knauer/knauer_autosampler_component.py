@@ -69,7 +69,7 @@ class AutosamplerGantry3D(gantry3D):
         logger.info(f"Needle moved succesfully to position: {position}")
         return True
 
-    async def connect_to_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
+    async def connect_to_position(self, tray: str = "", row: str = "", column: str = "") -> bool:
         """
         Move the 3D gantry to the specified (x, y) coordinate of a specific plate and connects to it.
 
