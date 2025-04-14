@@ -175,6 +175,7 @@ class HamiltonPumpIO:
         self.num_pump_connected: int | None = (
             None  # Set by `HamiltonPumpIO.initialize()`
         )
+        self._serial_lock = asyncio.Lock()
 
     @classmethod
     def from_config(cls, config):
@@ -269,37 +270,44 @@ class HamiltonPumpIO:
 
     async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
         """Send a command to the pump, read the replies and returns it, optionally parsed."""
-        self._serial.reset_input_buffer()
-        await self._write_async(f"{command.compile()}\r".encode("ascii"))
-        response = await self._read_reply_async()
+        async with self._serial_lock:
+            self._serial.reset_input_buffer()
+            await self._write_async(f"{command.compile()}\r".encode("ascii"))
+            response = await self._read_reply_async()
 
-        if not response:
-            raise InvalidConfigurationError(
-                f"No response received from pump! "
-                f"Maybe wrong pump address? (Set to {command.target_pump_num})"
-            )
+            if not response:
+                logger.error(
+                    f"No response received from pump! "
+                    f"Maybe wrong pump address? (Set to {command.target_pump_num})"
+                )
 
-        return self._parse_response(response)
+            return self._parse_response(response)
 
     async def multiple_write_and_read_reply_async(self, command: list[Protocol1Command] | Protocol1Command) -> str:
 
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
-        command_compiled = ""
-        self._serial.reset_input_buffer()
-        if type(command) != list:
-            command = [command]
-        for com in command:
-            command_compiled += com._multiple_compile()
-        com_comp = com.multiple_compile(command_compiled)
-        logger.info(f"COMMAND: {com_comp}")
-        await self._write_async(com_comp.encode("ascii"))
-        response = await self._read_reply_async()
+        async with self._serial_lock:
+            command_compiled = ""
+            self._serial.reset_input_buffer()
+            if type(command) != list:
+                command = [command]
+            for com in command:
+                command_compiled += com._multiple_compile()
+            com_comp = com.multiple_compile(command_compiled)
+            await self._write_async(com_comp.encode("ascii"))
+            response = await self._read_reply_async()
 
-        # Parse reply
-        parsed_response = self._parse_response(response)
+            if not response:
+                logger.error(
+                    f"No response received from pump! "
+                    f"Maybe wrong pump address? (Set to {command.target_pump_num})"
+                )
 
-        return parsed_response
+            # Parse reply
+            parsed_response = self._parse_response(response)
+
+            return parsed_response
 
 
 class ML600(FlowchemDevice):
