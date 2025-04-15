@@ -41,7 +41,8 @@ class ML600Pump(SyringePump):
         """Check if pump is moving.
         false means pump is not moving and buffer is empty. """
         # true might mean pump is moving, buffer still contain command or both
-        return await self.hw_device.get_pump_status(self.pump_code)
+        id_idle = await self.hw_device.is_idle(self.pump_code)
+        return not id_idle
 
     async def stop(self) -> bool:
         """Stop pump."""
