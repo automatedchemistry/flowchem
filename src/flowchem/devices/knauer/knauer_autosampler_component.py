@@ -81,13 +81,13 @@ class AutosamplerGantry3D(gantry3D):
         row: [1, 2, 3, 4, 5, 6, 7, 8]
         """
         tray = tray.upper()
-        if tray in SelectPlatePosition.__dict__.keys():
+        if tray in SelectPlatePosition.__dict__.keys() and row is not "" and column is not "":
             await self.set_z_position("UP")
             await self.set_xy_position(tray=tray,row=row,column=column)
             await self.set_z_position("DOWN")
             logger.debug(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
             return True
-        elif tray in NeedleHorizontalPosition.__dict__.keys():
+        elif tray in NeedleHorizontalPosition.__dict__.keys() and row is "" and column is "":
             await self.set_needle_position(position=tray)
         else:
             raise NotImplementedError
