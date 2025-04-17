@@ -11,7 +11,7 @@ from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 class ViciInjectionValve(SixPortTwoPositionValve):
     hw_device: ViciValve  # for typing's sake
 
-    def __init__(self, name: str, hw_device: ViciValve, pump_code: str = "") -> None:
+    def __init__(self, name: str, hw_device: ViciValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/timed_toggle", self.timed_toggle, methods=["PUT"])
 
@@ -24,5 +24,7 @@ class ViciInjectionValve(SixPortTwoPositionValve):
             translated = str(raw_position)
         return translated
 
-    async def timed_toggle(self, injection_time: str):
-        return self.hw_device.timed_toggle(injection_time)
+    async def timed_toggle(self, injection_time: str) -> bool:
+
+        await self.hw_device.timed_toggle(injection_time=injection_time)
+        return True
