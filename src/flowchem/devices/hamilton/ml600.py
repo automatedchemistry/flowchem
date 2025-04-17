@@ -250,13 +250,9 @@ class HamiltonPumpIO:
         """Split a received line in its components: status, reply."""
         status, reply = response[:1], response[1:]
 
-        assert status in (self.ACKNOWLEDGE, self.NEGATIVE_ACKNOWLEDGE)
         if status == self.NEGATIVE_ACKNOWLEDGE:
             logger.warning("Negative acknowledge received")
-            warnings.warn(
-                "Negative acknowledge reply: check command syntax!",
-                stacklevel=2,
-            )
+        assert status in (self.ACKNOWLEDGE, self.NEGATIVE_ACKNOWLEDGE)
 
         return reply.rstrip()  # removes trailing <cr>
 

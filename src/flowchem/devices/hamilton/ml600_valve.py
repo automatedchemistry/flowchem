@@ -33,6 +33,7 @@ class ML600LeftValve(FourPortFivePositionValve):
             translated = round(int(raw_position) / 45)
         return str(translated)
 
+
 class ML600RightValve(ThreePortFourPositionValve):
     hw_device: ML600  # for typing's sake
     identifier: str

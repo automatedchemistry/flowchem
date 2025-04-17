@@ -26,7 +26,7 @@ class ViciCommand:
     def __str__(self) -> str:
         """Provide a string representation of the command used, nice for logs."""
         address = str(self.valve_id) if self.valve_id is not None else ""
-        return f"{address} {self.command}{self.value}"
+        return f"{address}{self.command}{self.value}\r"
 
     def __bytes__(self) -> bytes:
         """Byte representation of the command used for serial communication."""
@@ -78,6 +78,7 @@ class ViciValcoValveIO:
         if reply_string:
             logger.debug(f"Reply received: {reply_string}")
         else:
+            logger.error("No response received from valve! Check valve address?")
             raise InvalidConfigurationError(
                 "No response received from valve! Check valve address?"
             )
@@ -88,10 +89,9 @@ class ViciValcoValveIO:
         """Write command to valve and read reply."""
         # Make sure input buffer is empty
         self._serial.reset_input_buffer()
-
+        logger.debug(f"Command {bytes(command)} sent!")
         # Send command
         await self._serial.write_async(bytes(command))
-        logger.debug(f"Command {command} sent!")
 
         if command.reply_lines == 0:
             return ""
@@ -183,12 +183,12 @@ class ViciValve(FlowchemDevice):
 
     async def learn_positions(self) -> None:
         """Initialize valve only, there is no reply -> reply_lines = 0."""
-        learn = ViciCommand(valve_id=self.address, command="LRN")
+        learn = ViciCommand(valve_id=self.address, command="LRN", reply_lines=0)
         await self.valve_io.write_and_read_reply(learn)
 
     async def home(self) -> None:
         """Initialize valve only: Move to Home position."""
-        home = ViciCommand(valve_id=self.address, command="HM")
+        home = ViciCommand(valve_id=self.address, command="HM", reply_lines=0)
         await self.valve_io.write_and_read_reply(home)
 
         # This seems necessary to make sure move is finished
@@ -196,12 +196,12 @@ class ViciValve(FlowchemDevice):
 
     async def version(self) -> str:
         """Return the current firmware version reported by the valve."""
-        version = ViciCommand(valve_id=self.address, command="VR", reply_lines=5)
+        version = ViciCommand(valve_id=self.address, command="VR", reply_lines=0)  #todo: put back to 5
         return await self.valve_io.write_and_read_reply(version)
 
     async def get_raw_position(self) -> str:
         """Represent the position of the valve."""
-        current_pos = ViciCommand(valve_id=self.address, command="CP")
+        current_pos = ViciCommand(valve_id=self.address, command="CP", reply_lines=0)
         return await self.valve_io.write_and_read_reply(current_pos)
 
     async def set_raw_position(self, position: str):
@@ -221,18 +221,22 @@ class ViciValve(FlowchemDevice):
             valve_id=self.address,
             command="DT",
             value=delay.magnitude,
+            reply_lines=0
         )
         await self.valve_io.write_and_read_reply(set_delay)
 
-        time_toggle = ViciCommand(valve_id=self.address, command="TT")
+        time_toggle = ViciCommand(valve_id=self.address, command="TT", reply_lines=0)
         await self.valve_io.write_and_read_reply(time_toggle)
 
 
 if __name__ == "__main__":
     import asyncio
 
-    valve1 = ViciValve.from_config(port="COM13", address=0, name="test1")
-    asyncio.run(valve1.initialize())
+    async def main():
+        valve1 = ViciValve.from_config(port="COM20", address=0, name="test1")
+        await valve1.initialize()
+        await valve1.timed_toggle("2500 ms")
+    asyncio.run(main())
 
     # Set position works with both strings and InjectionValvePosition
-    asyncio.run(valve1.set_raw_position("2"))
+    #asyncio.run(valve1.set_raw_position("2"))
