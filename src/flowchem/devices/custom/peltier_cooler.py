@@ -324,6 +324,17 @@ class PeltierLowCoolingDefaults(PeltierDefaults):
     T_MIN = -66
 
 
+class PeltierTubeReactor(PeltierDefaults):
+    HEATING_PID = [2, 0.03, 0]
+    COOLING_PID = HEATING_PID
+    BASE_TEMP = -10
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array(
+        [[-50, -45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 5, 10, 15, 20], [12, 11, 10, 9, 8, 7, 6, 5, 4, 2, 1, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1.5, 2, 3, 4, 4, 4]]).transpose()
+    T_MAX = 25
+    T_MIN = -55
+
+
 class PeltierCooler(FlowchemDevice):
     """Peltier Cooler module class."""
 
@@ -342,6 +353,8 @@ class PeltierCooler(FlowchemDevice):
                 self.peltier_defaults = PeltierDefaults()
             case "low_cooling":
                 self.peltier_defaults = PeltierLowCoolingDefaults()
+            case "tube_reactor":
+                self.peltier_defaults = PeltierTubeReactor()
 
         # ToDo check info
         self.device_info = DeviceInfo(
@@ -420,7 +433,7 @@ class PeltierCooler(FlowchemDevice):
 
     async def disable_slope(self):
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, 0)
-        assert int(reply) == 0
+        assert float(reply) == 0
 
     async def start_control(self):
         reply = await self.send_command_and_read_reply(PeltierCommands.SWITCH_ON)
@@ -513,3 +526,17 @@ class PeltierCooler(FlowchemDevice):
         await self._set_current_limit_cooling(float(settings[1]))
         await self._set_current_limit_heating(float(settings[2]))
 
+
+if __name__ == "__main__":
+    # asyncio.run(main())
+    from flowchem import ureg
+
+    conf = {
+    "port": "COM17",
+    "address": 20,
+    "name": "chiller",
+    "peltier_defaults": "tube_reactor",
+    }
+    chiller = PeltierCooler.from_config(**conf)
+    asyncio.run(chiller.initialize())
+    asyncio.run(chiller.set_temperature(ureg.Quantity("0 °C")))
