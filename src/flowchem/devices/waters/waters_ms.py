@@ -48,7 +48,7 @@ class WatersMS(FlowchemDevice):
         """Assign components."""
         self.components.append(WatersMSControl(name="mass_spectrometer", hw_device=self))
 
-    def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = False):
+    async def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = False):
         # Autolynx behaves weirdly, it expects a .txt file and that the fields are separated by tabs. A csv file
         # separated w commas however does not work... Autolynx has to be set to look for csv files
         file_path = self.queue_path/Path(queue_name)
