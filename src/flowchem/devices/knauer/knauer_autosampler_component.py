@@ -47,6 +47,26 @@ class AutosamplerGantry3D(gantry3D):
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
         self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
         self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
+        self.add_api_route("/tray_temperature", self.set_tray_temperature, methods=["PUT"])
+        self.add_api_route("/tray_temperature_control", self.set_tray_temperature_control, methods=["PUT"])
+        self.add_api_route("/tray_temperature", self.measure_tray_temperature, methods=["GET"])
+
+    async def set_tray_temperature(self, temperature: str = ""):
+        """Set tray temperature and start control. Limits = 4-22 °C"""
+        temp = ureg.Quantity(temperature).to("degC")
+        if not (4 * ureg.degC <= temp <= 22 * ureg.degC):
+            logger.error(f"Temperature {temp} out of allowed range (4-22 °C)")
+        await self.hw_device.set_tray_temperature(setpoint=temp.m_as("degC"))
+        return await self.hw_device.set_tray_temperature_control(onoff="on")
+
+    async def set_tray_temperature_control(self, onoff: str = ""):
+        """Start or end tray temperature control."""
+        return await self.hw_device.set_tray_temperature_control(onoff)
+
+    async def measure_tray_temperature(self) -> str:
+        """Get tray temperature in Celsius"""
+        temp = await self.hw_device.measure_tray_temperature()
+        return str(temp)
 
     async def needle_vertical_offset(self, offset: str = ""):   #todo: mm?
         """Needle offset in mm"""
