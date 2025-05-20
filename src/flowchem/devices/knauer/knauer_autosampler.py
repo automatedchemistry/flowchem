@@ -537,8 +537,8 @@ if __name__ == "__main__":
 
     AS = KnauerAutosampler(
         name="test-AS",
-        #ip_address="192.168.10.114",
-        port="COM3",
+        ip_address="192.168.10.114",
+        #port="COM3",  #AS upstairs with port island
         autosampler_id=61,
         tray_type="TRAY_48_VIAL",
         _syringe_volume="0.25 mL",
@@ -548,6 +548,7 @@ if __name__ == "__main__":
         print(await A_S.get_errors())
         await A_S.reset_errors()
         print(await A_S.get_raw_position(target_component="syringe_valve"))
+        print(await A_S.measure_tray_temperature())
     asyncio.run(execute_tasks(AS))
 
 
