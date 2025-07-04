@@ -94,18 +94,19 @@ def send_until_acknowledged(max_reaction_time=15):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            remaining_time = max_reaction_time
             start_time = time.time()
-            while remaining_time > 0:
+            while True:
                 try:
-                    # Await the decorated async function
-                    result = await func(*args, **kwargs)
-                    return result
-                except ASBusyError:
-                    # If the device is busy, wait and retry
+                    # Intentar ejecutar la función decorada
+                    return await func(*args, **kwargs)
+                except (ASBusyError, ConnectionError) as e:
+                    # Esperar y reintentar si está ocupado o si falló la conexión
                     elapsed_time = time.time() - start_time
-                    remaining_time = 10 - elapsed_time
-            raise ASError("Maximum reaction time exceeded")
+                    remaining_time = max_reaction_time - elapsed_time
+                    logger.warning(f"Retrying due to: {e} (remaining time: {remaining_time:.1f}s)")
+                    if remaining_time <= 0:
+                        raise ASError("Maximum reaction time exceeded while trying to communicate with the device")
+                    await asyncio.sleep(1)  # Esperar 1 segundo antes de reintentar
         return wrapper
     return decorator
 
@@ -124,7 +125,11 @@ class ASEthernetDevice:
         try:
             # Open a connection
             reader, writer = await asyncio.open_connection(self.ip_address, self.port)
+        except (ConnectionRefusedError, OSError, asyncio.TimeoutError) as e:
+            logger.error(f"Error opening connection to {self.ip_address}:{self.port} — {e}")
+            raise ConnectionError(f"Failed to connect to {self.ip_address}:{self.port} — {e}")
 
+        try:
             # Send the message
             writer.write(message.encode())
             await writer.drain()
@@ -132,28 +137,32 @@ class ASEthernetDevice:
             # Receive the reply in chunks
             reply = b""
             while True:
-                chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
+                try:
+                    chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
+                except ConnectionResetError as e:
+                    logger.error(f"Connection reset by remote device while reading: {e}")
+                    raise ConnectionError("Connection was reset by the autosampler")
+
                 if not chunk:
                     break
+
                 reply += chunk
+
                 try:
                     CommunicationFlags(chunk)
                     break
                 except ValueError:
                     pass
+
                 if CommunicationFlags.MESSAGE_END.value in chunk:
                     break
 
-            writer.close()
-            await writer.wait_closed() # Close the connection
-
             return reply
 
-        except asyncio.TimeoutError:
-            logger.error(f"No connection possible to device with IP {self.ip_address}")
-            raise ConnectionError(
-                f"No Connection possible to device with IP address {self.ip_address}"
-            )
+        finally:
+
+            writer.close()
+            await writer.wait_closed()
 
 
 class ASSerialDevice:
