@@ -7,7 +7,7 @@ from loguru import logger
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.knauer._common import KnauerEthernetDevice
+from flowchem.devices.knauer._common import KnauerDevice
 from flowchem.devices.knauer.knauer_valve_component import (
     Knauer6PortDistributionValve,
     Knauer12PortDistributionValve,
@@ -27,7 +27,7 @@ class KnauerValveHeads(Enum):
     SIXTEEN_PORT_SIXTEEN_POSITION = "16"
 
 
-class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
+class KnauerValve(KnauerDevice, FlowchemDevice):
     """Control Knauer multi position valves.
 
     Valve type can be 6, 12, 16, or it can be 6 ports, two positions, which will be simply 2 (two states)
@@ -38,9 +38,20 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     DIP switch for valve selection
     """
 
-    def __init__(self, ip_address=None, mac_address=None, **kwargs) -> None:
-        super().__init__(ip_address, mac_address, **kwargs)
-        self.eol = b"\r\n"
+    def __init__(
+            self,
+            serial_port=None,
+            ip_address=None,
+            mac_address=None,
+            name: str = "",
+            **kwargs
+    ) -> None:
+
+        # super().__init__(serial_port, ip_address, mac_address, **kwargs)
+        KnauerDevice.__init__(self, serial_port, ip_address, mac_address, **kwargs)
+        FlowchemDevice.__init__(self, name)
+
+        self.connection.eol = b"\r\n"
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Knauer",
@@ -49,8 +60,11 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
     async def initialize(self):
         """Initialize connection."""
-        # The connection is established in KnauerEthernetDevice.initialize()
+
+        # initialization in FlowchemDevice
         await super().initialize()
+        # The connection is established in KnauerEthernetDevice.initialize()
+        await self.connection.initialize()
 
         # Detect valve type
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
@@ -175,14 +189,16 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 if __name__ == "__main__":
     import asyncio
 
-    v = KnauerValve(ip_address="192.168.1.176")
+    # v = KnauerValve(mac_address="00:80:A3:CE:8B:BC", network="144.14.*.*")
+    # v = KnauerValve(ip_address="141.14.234.71")
+    v = KnauerValve(serial_port="COM12")
 
     async def main(valve):
         """Test function."""
         await valve.initialize()
-        await valve.set_raw_position("I")
+        await valve.set_raw_position("3")
         print(await valve.get_raw_position())
-        await valve.set_raw_position("L")
+        await valve.set_raw_position("6")
         print(await valve.get_raw_position())
 
     asyncio.run(main(v))

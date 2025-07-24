@@ -347,7 +347,7 @@ class R2(FlowchemDevice):
         """Set maximum system pressure: range 1,000 to 50,000 mbar."""
         if pressure.isnumeric():
             pressure = pressure + "mbar"
-            logger.warning("No units provided to set_temperature, assuming mbar.")
+            logger.warning("No units provided to set_pressure, assuming mbar.")
         set_p = ureg.Quantity(pressure)
 
         cmd = self.cmd.SET_MAX_PRESSURE.format(

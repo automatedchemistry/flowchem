@@ -19,9 +19,3 @@ class PhotoSensor(Sensor):
     async def acquire_signal(self):
         """Read from sensor, result to be expressed in % (optional)."""
         ...
-
-    async def power_on(self):
-        ...
-
-    async def power_off(self):
-        ...
