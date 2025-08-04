@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import Union
 
 from flowchem.components.technical.box import ElectronicBox
-
-if TYPE_CHECKING:
-    from .mpikg_switch_box import SwicthBoxMPIKG
 
 Channel = Union[int, str]
 DigitalValue = Union[int, bool]
@@ -40,7 +37,7 @@ class SwicthBoxMPIKGComponent(ElectronicBox):
                 actual_channel = int(channel)
             else:
                 raise ValueError(f"Channel must be an integer or digit string, got {channel!r}")
-        return await self.hw_device.get_channel(channel=channel)
+        return await self.hw_device.get_channel(channel=actual_channel)  # type:ignore[attr-defined]
 
     async def set_channel(self, channel: Channel, value: DigitalValue) -> bool:
         """Set a digital state on a channel.
@@ -65,4 +62,4 @@ class SwicthBoxMPIKGComponent(ElectronicBox):
         actual_value = False
         if isinstance(value, int):
             actual_value = value > DIGITAL_ON_THRESHOLD
-        return await self.hw_device.set_channel(channel=actual_channel, value=actual_value)
+        return await self.hw_device.set_channel(channel=actual_channel, value=actual_value)  # type:ignore[attr-defined]

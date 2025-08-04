@@ -104,7 +104,7 @@ class SwitchBoxCommand:
     reply_lines: int = 1
     value: int = 0
 
-    def compile(self)->str:
+    def compile(self)->bytes:
         """
         Create actual command byte by prepending box address to command.
         """
@@ -152,7 +152,7 @@ class SwicthBoxIO:
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
-            raise InvalidConfigurationError(
+            raise InvalidConfiguration(
                 f"Could not open serial port {port} with configuration {configuration}"
             ) from serial_exception
 
@@ -161,7 +161,7 @@ class SwicthBoxIO:
     async def _write(self, command: SwitchBoxCommand):
         """ Writes a command to the box """
         command_compiled = command.compile()
-        logger.debug(f"Sending {command_compiled}")
+        logger.debug(f"Sending {command_compiled!r}")
         try:
             await self._serial.write_async(command_compiled)
         except aioserial.SerialException as e:
@@ -210,11 +210,11 @@ class SwicthBoxIO:
                 "No response received from box, check port address!"
             )
         if response.startswith("ERROR"):
-            logger.error(f"Error in the command '{command}' sent to the Swicth Box -> {asw}")
+            logger.error(f"Error in the command '{command}' sent to the Swicth Box")
         return response
 
 
-class SwicthBoxMPIKG(FlowchemDevice):
+class SwitchBoxMPIKG(FlowchemDevice):
     """ Swicth Box MPIKG module class """
     def __init__(
             self,
@@ -247,7 +247,7 @@ class SwicthBoxMPIKG(FlowchemDevice):
         )
         self.components.append(SwicthBoxMPIKGComponent("box", self))
         logger.info(
-            f"Connected to SwicthBoxMPIKG on port {self.box_io._serial.port}!")
+            f"Connected to SwitchBoxMPIKG on port {self.box_io._serial.port}!")
 
     async def set_channel(self, channel: int = 0, value=False):
         status = await self.box_io.write_and_read_reply(
@@ -269,7 +269,7 @@ class SwicthBoxMPIKG(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    box = SwicthBoxMPIKG.from_config(port="COM8")
+    box = SwitchBoxMPIKG.from_config(port="COM8")
 
     async def main():
         """Test function."""
