@@ -1,6 +1,7 @@
 """ Control module for Eletronic Switch Box develop by MPIKG (Eletronic Lab) """
 from __future__ import annotations
 
+from flowchem.devices.custom.mpikg_switch_box_component import SwicthBoxMPIKGComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
@@ -244,14 +245,18 @@ class SwicthBoxMPIKG(FlowchemDevice):
             command=SwitchBoxCommand(request=InfRequest.GET,
                                      variable=VaribleType.VERSION)
         )
+        self.components.append(SwicthBoxMPIKGComponent("box", self))
+        logger.info(
+            f"Connected to SwicthBoxMPIKG on port {self.box_io._serial.port}!")
 
     async def set_channel(self, channel: int = 0, value=False):
-        await self.box_io.write_and_read_reply(
+        status = await self.box_io.write_and_read_reply(
             command=SwitchBoxCommand(channel=channel,
                                      request=InfRequest.SET,
                                      variable=VaribleType.DAC,
                                      value=4095)
         )
+        return status.startswith("OK")
 
 
     async def get_channel(self, channel: int = 0) -> bool:
