@@ -1,5 +1,6 @@
 from __future__ import annotations
 from flowchem.components.fakecomponentclass.fakecomponent import FakeComponent
+from flowchem.components.sensors.sensor import Sensor
 from flowchem.devices.flowchem_device import FlowchemDevice
 import time
 
@@ -53,7 +54,7 @@ class FakeSpecificComponent(FakeComponent):
         return True  # If everything works appropriately the function will return a True
 
 
-class FakeSpecificComponent2(FakeComponent):
+class FakeSpecificComponent2(Sensor):
 
     hw_device: FakeDeviceExample  # for typing's sake
 

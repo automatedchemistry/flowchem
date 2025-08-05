@@ -21,7 +21,7 @@ def api_dev(xprocess):
 
 
 def test_whatchdog(api_dev):
-    dev = api_dev['fake-device']['FakeComponent2']
+    dev = api_dev['fake-device']['FakeSpecificComponent2']
     dev.put("watch", params={"api": "fake_receive_data", "greater_than": 1})
     time.sleep(4)
     dev.put("stop-watch")
