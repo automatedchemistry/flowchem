@@ -391,7 +391,7 @@ class ML600(FlowchemDevice):
             )
         )
 
-    async def initialize(self, init_speed: str = "200 sec / stroke"):
+    async def initialize(self):
         """Initialize pump and its components."""
         await self.pump_io.initialize()
         await self.wait_until_system_idle()
