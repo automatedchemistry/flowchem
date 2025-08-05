@@ -161,9 +161,9 @@ class HamiltonPumpIO:
     async def initialize(self, hw_initialization: bool = True):
         """Ensure connection with pump and initialize it (if hw_initialization is True)."""
         self.num_pump_connected = await self._assign_pump_address()
-        # if hw_initialization:
-        #     await self.all_hw_init()  # initialization take more than 8.5 sec for one instrument
-        #     await asyncio.sleep(8)  # this might be necessary due to checking request_done sometime fail with "" return
+        if hw_initialization:
+            await self.all_hw_init()  # initialization take more than 8.5 sec for one instrument
+            await asyncio.sleep(8)  # this might be necessary due to checking request_done sometime fail with "" return
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
