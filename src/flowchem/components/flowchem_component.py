@@ -115,3 +115,11 @@ class FlowchemComponent:
         """
         return self.component_info
 
+    def get_function_by_route(self, route_path: str):
+        route_path = f"/{self.component_info.parent_device}/{self.name}/{route_path}"
+        for route in self._router.routes:
+            if hasattr(route, 'path') and hasattr(route, 'endpoint') and route.path == route_path:
+                return route.endpoint
+        return None
+
+
