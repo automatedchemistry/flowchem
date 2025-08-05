@@ -6,6 +6,8 @@
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 [![DOI](https://zenodo.org/badge/300656785.svg)](https://zenodo.org/badge/latestdoi/300656785)
 
+![Flowchem logo](https://raw.githubusercontent.com/cambiegroup/flowchem/main/docs/_static/flowchem_logo.svg)
+
 Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
 Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
 

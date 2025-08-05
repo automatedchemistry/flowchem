@@ -1,6 +1,6 @@
 # Tests
 
-The tests are meant to run with `pytest`.
+The tests are meant to be run with `pytest`.
 
 All tests that do *not* require access to any hardware devices are automatically run for every pull request against the main branch.
 
@@ -17,8 +17,11 @@ The device tests available with their respective markers are described below:
 | FlowIR     | Tests requiring a connection to a FlowIR.              |
 | KPump      | Tests for Azura compact.                               |
 | FakeDevice | Tests for FakeDevice, just an example how tests works. |
+| CVC3000    | Tests requiring a connection to CVC3000                |
+| Manson     | Tests requiring a Manson Power Control                 |
 
-```{important}
+
+```{warning}
 The configuration file needs to be changed to match your hardware.
 Each configuration file is placed in the folder of the corresponding device.
 ```

@@ -6,5 +6,5 @@
 
 ./valve_logic
 
-./code_structure/modules
+./code_structure/flowchem
 ```
