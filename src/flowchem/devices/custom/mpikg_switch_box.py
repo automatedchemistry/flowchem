@@ -6,11 +6,27 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from loguru import logger
 from enum import StrEnum
 import aioserial
 import asyncio
+
+from scipy.stats import variation
+
+BEFE_RELE_BITS = 16
+ADC_VOLTS = 5
+DAC_BITS = 12
+DAC_VOLTS = 10
+
+def bit_to_int(bits: list[int]) -> int:
+    return int("".join(str(b) for b in bits), 2)
+
+def int_to_bit_list(value: int, length: int = 16) -> list[int]:
+    bits = list(map(int, bin(value)[2:]))  # convert to binary string, strip "0b", then to list of ints
+    if length is not None:  # pad with leading zeros if length is given
+        bits = [0] * (length - len(bits)) + bits
+    return bits
 
 
 class SwicthBoxException(Exception):
@@ -32,26 +48,6 @@ class VaribleType(StrEnum):
     # --------------------------------------------------<\r>
     # <\n>- help or ?         -> Show this page<\r>
     # <\n>- reset             -> reset the Device (softreset)<\r>
-    # <\n><\r>
-    # <\n>-------   Port Befehle   ----------------------<\r>
-    # <\n>- set a:x           -> set PortA Byte Decimal(x:0-65535)<\r>
-    # <\n>- set b:x           -> set PortB Byte Decimal(x:0-65535)<\r>
-    # <\n>- set c:x           -> set PortC Byte Decimal(x:0-65535)<\r>
-    # <\n>- set d:x           -> set PortD Byte Decimal(x:0-65535)<\r>
-    # <\n>- set abcd:a,b,c,d  -> set Ports A,B,C und D<\r>
-    # <\n>- get abcd          -> get Ports A,B,C und D<\r>
-    # <\n>- get a             -> get PortA Byte Decimal<\r>
-    # <\n>- get b             -> get PortB Byte Decimal<\r>
-    # <\n>- get c             -> get PortC Byte Decimal<\r>
-    # <\n>- get d             -> get PortD Byte Decimal<\r>
-    # <\n>- set starta:x      -> set PortA Startwert (x:0-65535)<\r>
-    # <\n>- set startb:x      -> set PortB Startwert (x:0-65535)<\r>
-    # <\n>- set startc:x      -> set PortC Startwert (x:0-65535)<\r>
-    # <\n>- set startd:x      -> set PortD Startwert (x:0-65535)<\r>
-    # <\n>- get starta        -> get PortA Startwert Decimal<\r>
-    # <\n>- get startb        -> get PortB Startwert Decimal<\r>
-    # <\n>- get startc        -> get PortC Startwert Decimal<\r>
-    # <\n>- get startd        -> get PortC Startwert Decimal<\r>
     # <\n><\r>
     # <\n>------    ADC/DAC Commands        ----------<\r>
     # <\n>- set dac1:x        -> set Dac1 (x:0-4095)(0-10V)<\r>
@@ -77,30 +73,73 @@ class VaribleType(StrEnum):
 
     VERSION = "ver"
 
+    # ------  ADC/DAC Commands  ------
+    ADC = "adc"
+    DAC = "dac"  # (0-4095)(0-10V)
+
+
+class BefhelePorts(StrEnum):
+    # <\n>-------   Port Befehle   ----------------------<\r>
+    # <\n>- set a:x           -> set PortA Byte Decimal(x:0-65535)<\r>
+    # <\n>- set b:x           -> set PortB Byte Decimal(x:0-65535)<\r>
+    # <\n>- set c:x           -> set PortC Byte Decimal(x:0-65535)<\r>
+    # <\n>- set d:x           -> set PortD Byte Decimal(x:0-65535)<\r>
+    # <\n>- set abcd:a,b,c,d  -> set Ports A,B,C und D<\r>
+    # <\n>- get abcd          -> get Ports A,B,C und D<\r>
+    # <\n>- get a             -> get PortA Byte Decimal<\r>
+    # <\n>- get b             -> get PortB Byte Decimal<\r>
+    # <\n>- get c             -> get PortC Byte Decimal<\r>
+    # <\n>- get d             -> get PortD Byte Decimal<\r>
+    # <\n>- set starta:x      -> set PortA Startwert (x:0-65535)<\r>
+    # <\n>- set startb:x      -> set PortB Startwert (x:0-65535)<\r>
+    # <\n>- set startc:x      -> set PortC Startwert (x:0-65535)<\r>
+    # <\n>- set startd:x      -> set PortD Startwert (x:0-65535)<\r>
+    # <\n>- get starta        -> get PortA Startwert Decimal<\r>
+    # <\n>- get startb        -> get PortB Startwert Decimal<\r>
+    # <\n>- get startc        -> get PortC Startwert Decimal<\r>
+    # <\n>- get startd        -> get PortC Startwert Decimal<\r>
+    # <\n><\r>
     # -------   Port Befehle   -------
     # PortX Byte Decimal(x:0-65535)
     A = "a"
     B = "b"
     C = "c"
     D = "d"
-
-    # Startwert (x:0-65535)
+    ABCD = "abcd"
     START_A = "starta"
     START_B = "startb"
     START_C = "startc"
     START_D = "startd"
 
-    # ------  ADC/DAC Commands  ------
-    VOLTAGE = "adc"
-    DAC = "dac"  # (0-4095)(0-10V)
+
+@dataclass
+class SwitchBoxBefehleCommand:
+    """ Class representing a box command for Befehele Ports and its expected reply """
+    request: InfRequest = InfRequest.SET
+    port: BefhelePorts = BefhelePorts.A
+    bitsnumber: int = 0
+    bitsnumber_list: list[int] = field(default_factory=list)
+
+    def compile(self) -> bytes:
+        if self.request == InfRequest.SET:
+            if self.port == BefhelePorts.ABCD:
+                command = f"{self.request} {self.port}:"
+                for bits in self.bitsnumber_list:
+                    command += f"{bits},"
+                command = command[:-1]
+            else:
+                command = f"{self.request} {self.port}:{self.bitsnumber}"
+        elif self.request == InfRequest.GET:
+            command = f"{self.request} {self.port}"
+        return f"{command}\r".encode()
 
 
 @dataclass
-class SwitchBoxCommand:
-    """ Class representing a box command and its expected reply """
+class SwitchBoxGeneralCommand:
+    """ Class representing a box command ADC/DAC Commands and its expected reply """
     channel: int = 0
     request: InfRequest = InfRequest.SET
-    variable: VaribleType = VaribleType.VOLTAGE
+    variable: VaribleType = VaribleType.ADC
     reply_lines: int = 1
     value: int = 0
 
@@ -109,12 +148,12 @@ class SwitchBoxCommand:
         Create actual command byte by prepending box address to command.
         """
         if self.request == InfRequest.SET:
-            if self.variable in {VaribleType.VOLTAGE, VaribleType.DAC}:
+            if self.variable in {VaribleType.ADC, VaribleType.DAC}:
                 command = f"{self.request} {self.variable}{self.channel}:{self.value}"
             else:
                 command = f"{self.request} {self.variable}:{self.value}"
         else:
-            if self.variable in {VaribleType.VOLTAGE, VaribleType.DAC}:
+            if self.variable in {VaribleType.ADC, VaribleType.DAC}:
                 command = f"{self.request} {self.variable}{self.channel}"
             else:
                 command = f"{self.request} {self.variable}"
@@ -249,23 +288,128 @@ class SwitchBoxMPIKG(FlowchemDevice):
         logger.info(
             f"Connected to SwitchBoxMPIKG on port {self.box_io._serial.port}!")
 
-    async def set_channel(self, channel: int = 0, value=False):
+    """ Port Befehle """
+
+    async def set_hele_port(
+            self,
+            values: list[int],
+            switch_to_low_after: float = -1,
+            port: str = "a"
+    ):
+
+        # verify values
+        if any(c not in [0, 1, 2] for c in values):
+            logger.error("Values should be in [0, 1, 2]")
+            return False
+        if len(values) > 8:
+            logger.error(f"Port only have 8 channels - It was provide {len(values)}!")
+            return False
+        while len(values) < 8:
+            values.append(0)
+        # verify port
+        port = port.lower()
+        if port not in BefhelePorts:
+            logger.error(f"There is not port {port} in device {self.name}!")
+            return False
+
+        bits = [0] * BEFE_RELE_BITS  # channes 1 to 8
+        for i, v in enumerate(values):
+            if v == 2:
+                """ Full power """
+                bits[-(i - 1) - 8] = 1
+                bits[-(i - 1)] = 1
+            else:
+                bits[-(i - 1) - 8] = v
+                bits[-(i - 1)] = 0
+
+        bitcommand = bit_to_int(bits)
+
+        status = await self.box_io.write_and_read_reply(
+            command=SwitchBoxBefehleCommand(port=port, request=InfRequest.SET, bitsnumber=bitcommand)
+        )
+        if not status.startswith("OK"):
+            return False
+        if switch_to_low_after > 0:
+            for i, v in enumerate(values):
+                if bits[-(i - 1) - 8] == 1:
+                    bits[-(i - 1)] = 0
+
+        asyncio.sleep(switch_to_low_after)
+
+        bitcommand = bit_to_int(bits)
+        status = await self.box_io.write_and_read_reply(
+            command=SwitchBoxBefehleCommand(port=port, request=InfRequest.SET, bitsnumber=bitcommand)
+        )
+        return status.startswith("OK")
+
+    async def set_hele_single_channel(
+            self,
+            channel: int,
+            value: int = 2,
+            keep_port_status = True,
+            switch_to_low_after: float = -1
+    ):
+        channels = [i + 1 for i in range(8)]
+        status = await self.get_hele_channel()
+        if 0 < channel / 8 < 1:
+            port = "A"
+            ch = channel
+        elif 1 < channel / 8 < 2:
+            port = "B"
+            ch = channel
+        elif 1 < channel / 8 < 2:
+            port = "C"
+            ch = channel
+        elif 1 < channel / 8 < 2:
+            port = "D"
+            ch = channel
+        else:
+            logger.error(f"There is not channel {channel} in device {self.name}!")
+            return False
+
+    async def get_hele_channel(self):
+        asw = await self.box_io.write_and_read_reply(
+            command=SwitchBoxCommand(port=BefhelePorts.ABCD, request=InfRequest.GET)
+        )
+        asw.replace(" ", "")
+        result = {}
+        for ports in asw.split(","):
+            bitcommand = int_to_bit_list(int(ports.split(":")[1]))
+            result[ports.split(":")[0].lower()] = bitcommand[:8] + bitcommand[8:]
+
+    """ ADC/DAC Commands """
+
+    async def get_adc(self):
+        """ Analog  Digital Command """
+        asw = await self.box_io.write_and_read_reply(
+            command=SwitchBoxGeneralCommand(
+                channel="x", request=InfRequest.GET, variable=VaribleType.ADC)
+        )
+        asw.replace(" ", "")
+        result = {}
+        for ports in asw.split(";"):
+            bitcommand = int_to_bit_list(float(ports.split(":")[1]))
+            result[ports.split(":")[0][1:].lower()] = bitcommand[:8] + bitcommand[8:]
+        return result
+
+    async def get_dac(self, channel: int = 1, volts: bool = True):
+        asw = await self.box_io.write_and_read_reply(
+            command=SwitchBoxGeneralCommand(channel=channel,
+                                     request=InfRequest.GET,
+                                     variable=VaribleType.DAC)
+        )
+        bit = int(asw.split(':')[-1])
+        if volts:
+            return DAC_BITS / bit * DAC_VOLTS
+
+    async def set_dac(self, channel: int = 0, volts: float = 5):
         status = await self.box_io.write_and_read_reply(
             command=SwitchBoxCommand(channel=channel,
                                      request=InfRequest.SET,
                                      variable=VaribleType.DAC,
-                                     value=4095)
+                                     value=int(value * DAC_BITS / DAC_VOLTS))
         )
         return status.startswith("OK")
-
-
-    async def get_channel(self, channel: int = 0) -> bool:
-        response = await self.box_io.write_and_read_reply(
-            command=SwitchBoxCommand(channel=channel,
-                                     request=InfRequest.GET,
-                                     variable=VaribleType.DAC)
-        )
-        return int(response.split(":")[1]) > 4000
 
 
 if __name__ == "__main__":
