@@ -1,7 +1,101 @@
-""" Control module for Eletronic Switch Box develop by MPIKG (Eletronic Lab) """
+"""
+Control module for Eletronic Switch Box develop by MPIKG (Eletronic Lab)
+
+### Serial Commands to the box device
+
+Port Befehle
+
+* These control the current state of the box’s 32 digital output lines, grouped into four “ports” (A, B, C, D).
+* Each port is 16 bits wide (0–65535 decimal), and you can set or read them individually (a, b, c, d) or all at once (abcd).
+
+| **Command** | **channel** | **Value**            | **return**           |
+|-------------|-------------|----------------------|----------------------|
+| set         | a           | 0-65535 Byte Decimal |                      |
+| set         | b           | 0-65535 Byte Decimal |                      |
+| set         | c           | 0-65535 Byte Decimal |                      |
+| set         | d           | 0-65535 Byte Decimal |                      |
+| set         | abcd        | 0-65535 Byte Decimal |                      |
+| get         | a           |                      | 0-65535 Byte Decimal |
+| get         | b           |                      | 0-65535 Byte Decimal |
+| get         | c           |                      | 0-65535 Byte Decimal |
+| get         | d           |                      | 0-65535 Byte Decimal |
+| get         | abcd        |                      | 0-65535 Byte Decimal |
+
+Example::
+```shell
+set a:65535  # Turns all 8 outputs in Port A ON
+get b        # Reads the current 16-bit value of Port B
+```
+
+PortA Startwert
+* These define the power-on default for each port (what state it should start in when the device is powered up or reset).\
+* They are stored in the device’s memory.
+* Same structure as the Port Commands table, but prefixed with start.
+
+| **Command** | **channel** | **Value**            | **return**           |
+|-------------|-------------|----------------------|----------------------|
+| set         | starta      | 0-65535 Byte Decimal |                      |
+| set         | startb      | 0-65535 Byte Decimal |                      |
+| set         | startc      | 0-65535 Byte Decimal |                      |
+| set         | startd      | 0-65535 Byte Decimal |                      |
+| get         | starta      |                      | 0-65535 Byte Decimal |
+| get         | startb      |                      | 0-65535 Byte Decimal |
+| get         | startc      |                      | 0-65535 Byte Decimal |
+| get         | startd      |                      | 0-65535 Byte Decimal |
+
+Example::
+```shell
+set starta:65535
+get startc
+```
+
+ADC (Analog-Digital) Commands
+
+* Commands here are for analog outputs — setting a voltage from 0 to 10 V using a 12-bit value (0–4095).
+* You can control each channel individually (x = 1–32).
+
+| **Command** | **channel**   | **Value**      | **return** |
+|-------------|---------------|----------------|------------|
+| set         | dacx (x=1-32) | 0-4095 (0-10V) |            |
+| get         | dacx (x=1-32) |                | 0-4095     |
+
+DAC (Digital-Analog) Commands
+* Commands read analog input voltages (0–5 V)
+* Useful for monitoring sensor inputs connected to the box.
+
+| **Command** | **channel** | **return** |
+|-------------|-------------|------------|
+| get         | dacx        | 0-5 Volt   |
+| get         | dac0        | 0-5 Volt   |
+| get         | dac1        | 0-5 Volt   |
+| get         | dac2        | 0-5 Volt   |
+| get         | dac3        | 0-5 Volt   |
+| get         | dac4        | 0-5 Volt   |
+| get         | dac5        | 0-5 Volt   |
+| get         | dac6        | 0-5 Volt   |
+| get         | dac7        | 0-5 Volt   |
+
+Example::
+```shell
+set dac1:4095
+get dac8
+```
+
+Special commands
+
+Get version and help
+
+| **Command** | **return** |
+|-------------|------------|
+| get         | ver        |
+| help        |            |
+
+"""
 from __future__ import annotations
 
-from flowchem.devices.custom.mpikg_switch_box_component import SwicthBoxMPIKGComponent
+from flowchem.devices.custom.mpikg_switch_box_component import (
+    SwitchBoxADC, SwitchBoxHele, SwitchBoxDAC
+)
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
@@ -12,11 +106,9 @@ from enum import StrEnum
 import aioserial
 import asyncio
 
-from scipy.stats import variation
-
 BEFE_RELE_BITS = 16
 ADC_VOLTS = 5
-DAC_BITS = 12
+DAC_BITS = 4096
 DAC_VOLTS = 10
 
 def bit_to_int(bits: list[int]) -> int:
@@ -44,32 +136,7 @@ class InfRequest(StrEnum):
     SET = "set"
 
 
-class VaribleType(StrEnum):
-    # --------------------------------------------------<\r>
-    # <\n>- help or ?         -> Show this page<\r>
-    # <\n>- reset             -> reset the Device (softreset)<\r>
-    # <\n><\r>
-    # <\n>------    ADC/DAC Commands        ----------<\r>
-    # <\n>- set dac1:x        -> set Dac1 (x:0-4095)(0-10V)<\r>
-    # <\n>- set dac2:x        -> set Dac2 (x:0-4095)(0-10V)<\r>
-    # <\n>- get dac1          -> get Dac1 value (0-4095)<\r>
-    # <\n>- get dac2          -> get Dac2 value (0-4095)<\r>
-    # <\n><\r>
-    # <\n>--------------------------------------------<\r>
-    # <\n>- get adcx          -> get ADC0..ADC7 value (0-5 Volt)<\r>
-    # <\n>- get adc0          -> get ADC0 value (0-5 Volt)<\r>
-    # <\n>- get adc1          -> get ADC1 value (0-5 Volt)<\r>
-    # <\n>- get adc2          -> get ADC2 value (0-5 Volt)<\r>
-    # <\n>- get adc3          -> get ADC3 value (0-5 Volt)<\r>
-    # <\n>- get adc4          -> get ADC4 value (0-5 Volt)<\r>
-    # <\n>- get adc5          -> get ADC5 value (0-5 Volt)<\r>
-    # <\n>- get adc6          -> get ADC6 value (0-5 Volt)<\r>
-    # <\n>- get adc7          -> get ADC7 value (0-5 Volt)<\r>
-    # <\n><\r>
-    # <\n>- get ver           -> Shows programversion<\r>
-    # <\n>- test on           -> Hardware test ON<\r>
-    # <\n>- test off          -> Hardware test OFF<\r>
-    # <\n>----------------------------------------------
+class VariableType(StrEnum):
 
     VERSION = "ver"
 
@@ -79,28 +146,6 @@ class VaribleType(StrEnum):
 
 
 class BefhelePorts(StrEnum):
-    # <\n>-------   Port Befehle   ----------------------<\r>
-    # <\n>- set a:x           -> set PortA Byte Decimal(x:0-65535)<\r>
-    # <\n>- set b:x           -> set PortB Byte Decimal(x:0-65535)<\r>
-    # <\n>- set c:x           -> set PortC Byte Decimal(x:0-65535)<\r>
-    # <\n>- set d:x           -> set PortD Byte Decimal(x:0-65535)<\r>
-    # <\n>- set abcd:a,b,c,d  -> set Ports A,B,C und D<\r>
-    # <\n>- get abcd          -> get Ports A,B,C und D<\r>
-    # <\n>- get a             -> get PortA Byte Decimal<\r>
-    # <\n>- get b             -> get PortB Byte Decimal<\r>
-    # <\n>- get c             -> get PortC Byte Decimal<\r>
-    # <\n>- get d             -> get PortD Byte Decimal<\r>
-    # <\n>- set starta:x      -> set PortA Startwert (x:0-65535)<\r>
-    # <\n>- set startb:x      -> set PortB Startwert (x:0-65535)<\r>
-    # <\n>- set startc:x      -> set PortC Startwert (x:0-65535)<\r>
-    # <\n>- set startd:x      -> set PortD Startwert (x:0-65535)<\r>
-    # <\n>- get starta        -> get PortA Startwert Decimal<\r>
-    # <\n>- get startb        -> get PortB Startwert Decimal<\r>
-    # <\n>- get startc        -> get PortC Startwert Decimal<\r>
-    # <\n>- get startd        -> get PortC Startwert Decimal<\r>
-    # <\n><\r>
-    # -------   Port Befehle   -------
-    # PortX Byte Decimal(x:0-65535)
     A = "a"
     B = "b"
     C = "c"
@@ -116,19 +161,21 @@ class BefhelePorts(StrEnum):
 class SwitchBoxBefehleCommand:
     """ Class representing a box command for Befehele Ports and its expected reply """
     request: InfRequest = InfRequest.SET
-    port: BefhelePorts = BefhelePorts.A
-    bitsnumber: int = 0
-    bitsnumber_list: list[int] = field(default_factory=list)
+    port: str = BefhelePorts.A.value
+    bits_command: int = 0
+    bits_command_list: list[int] = field(default_factory=list)
+    reply_lines: int = 1
 
     def compile(self) -> bytes:
+        command = ""
         if self.request == InfRequest.SET:
             if self.port == BefhelePorts.ABCD:
                 command = f"{self.request} {self.port}:"
-                for bits in self.bitsnumber_list:
+                for bits in self.bits_command_list:
                     command += f"{bits},"
                 command = command[:-1]
             else:
-                command = f"{self.request} {self.port}:{self.bitsnumber}"
+                command = f"{self.request} {self.port}:{self.bits_command}"
         elif self.request == InfRequest.GET:
             command = f"{self.request} {self.port}"
         return f"{command}\r".encode()
@@ -137,9 +184,9 @@ class SwitchBoxBefehleCommand:
 @dataclass
 class SwitchBoxGeneralCommand:
     """ Class representing a box command ADC/DAC Commands and its expected reply """
-    channel: int = 0
+    channel: int | str = 0
     request: InfRequest = InfRequest.SET
-    variable: VaribleType = VaribleType.ADC
+    variable: VariableType = VariableType.ADC
     reply_lines: int = 1
     value: int = 0
 
@@ -148,19 +195,19 @@ class SwitchBoxGeneralCommand:
         Create actual command byte by prepending box address to command.
         """
         if self.request == InfRequest.SET:
-            if self.variable in {VaribleType.ADC, VaribleType.DAC}:
+            if self.variable in {VariableType.ADC, VariableType.DAC}:
                 command = f"{self.request} {self.variable}{self.channel}:{self.value}"
             else:
                 command = f"{self.request} {self.variable}:{self.value}"
         else:
-            if self.variable in {VaribleType.ADC, VaribleType.DAC}:
+            if self.variable in {VariableType.ADC, VariableType.DAC}:
                 command = f"{self.request} {self.variable}{self.channel}"
             else:
                 command = f"{self.request} {self.variable}"
         return f"{command}\r".encode()
 
 
-class SwicthBoxIO:
+class SwitchBoxIO:
     """ Setup with serial parameters, low level IO"""
 
     DEFAULT_CONFIG = {
@@ -186,7 +233,7 @@ class SwicthBoxIO:
     def from_config(cls, port, **serial_kwargs):
         """Create SwicthBoxIO from config."""
         # Merge default serial settings with provided ones.
-        configuration = dict(SwicthBoxIO.DEFAULT_CONFIG, **serial_kwargs)
+        configuration = dict(SwitchBoxIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
@@ -197,7 +244,7 @@ class SwicthBoxIO:
 
         return cls(serial_object)
 
-    async def _write(self, command: SwitchBoxCommand):
+    async def _write(self, command: SwitchBoxGeneralCommand | SwitchBoxBefehleCommand):
         """ Writes a command to the box """
         command_compiled = command.compile()
         logger.debug(f"Sending {command_compiled!r}")
@@ -219,7 +266,7 @@ class SwicthBoxIO:
             chunk = await self._serial.readline_async(200)
             logger.debug(f"Read line: {repr(chunk)} ")
             chunk = chunk.decode("ascii")
-            # Stripping newlines etc allows to skip empty lines and clean output
+            # Stripping newlines etc. allows to skip empty lines and clean output
             chunk = chunk.strip()
 
             if chunk:
@@ -236,7 +283,7 @@ class SwicthBoxIO:
             raise InvalidConfiguration from e
 
     async def write_and_read_reply(
-        self, command: SwitchBoxCommand
+        self, command: SwitchBoxGeneralCommand | SwitchBoxBefehleCommand
     ) -> str:
         """ Main SwicthBocIO method. Sends a command to the box, read the replies and returns it, optionally parsed """
         async with self.lock:
@@ -254,10 +301,10 @@ class SwicthBoxIO:
 
 
 class SwitchBoxMPIKG(FlowchemDevice):
-    """ Swicth Box MPIKG module class """
+    """ Switch Box MPIKG module class """
     def __init__(
             self,
-            box_io: SwicthBoxIO,
+            box_io: SwitchBoxIO,
             name: str = ""
     ) -> None:
         super().__init__(name)
@@ -275,16 +322,20 @@ class SwitchBoxMPIKG(FlowchemDevice):
             name: str = "",
             **serial_kwargs,
     ):
-        swicth_io = SwicthBoxIO.from_config(port, **serial_kwargs)
+        switch_io = SwitchBoxIO.from_config(port, **serial_kwargs)
 
-        return cls(box_io=swicth_io, name=name)
+        return cls(box_io=switch_io, name=name)
 
     async def initialize(self):
         self.device_info.version = await self.box_io.write_and_read_reply(
-            command=SwitchBoxCommand(request=InfRequest.GET,
-                                     variable=VaribleType.VERSION)
+            command=SwitchBoxGeneralCommand(request=InfRequest.GET,
+                                            variable=VariableType.VERSION)
         )
-        self.components.append(SwicthBoxMPIKGComponent("box", self))
+        self.components.extend([
+            SwitchBoxADC("adc", self),
+            SwitchBoxDAC("dac", self),
+            SwitchBoxHele("hele", self)
+        ])
         logger.info(
             f"Connected to SwitchBoxMPIKG on port {self.box_io._serial.port}!")
 
@@ -296,9 +347,29 @@ class SwitchBoxMPIKG(FlowchemDevice):
             switch_to_low_after: float = -1,
             port: str = "a"
     ):
+        """Set all 8 relay channels of a given port.
+
+        Each channel can be set to:
+          * 0 → off
+          * 1 → half power (power1 only)
+          * 2 → full power (power1 + power2)
+
+        Args:
+            values (list[int]): List of up to 8 integers (0, 1, or 2) defining
+                channel states. Shorter lists are zero-padded.
+            switch_to_low_after (float, optional): Time in seconds after which
+                channels set to full power (2) will be reduced to half power (1).
+                Default = -1 (disabled).
+            port (str, optional): Port identifier ("a", "b", "c", "d").
+                Default = "a".
+
+        Returns:
+            bool: True if the device acknowledged the command with "OK",
+            False otherwise.
+        """
 
         # verify values
-        if any(c not in [0, 1, 2] for c in values):
+        if port not in [p.value for p in BefhelePorts]:
             logger.error("Values should be in [0, 1, 2]")
             return False
         if len(values) > 8:
@@ -312,33 +383,45 @@ class SwitchBoxMPIKG(FlowchemDevice):
             logger.error(f"There is not port {port} in device {self.name}!")
             return False
 
-        bits = [0] * BEFE_RELE_BITS  # channes 1 to 8
+        """
+        Bits are mapped as:
+        bits_power1: [ch8, ch7, ch6, ch5, ch4, ch3, ch2, ch1]
+        bits_power2: [ch8, ch7, ch6, ch5, ch4, ch3, ch2, ch1]
+        """
+        bits_power1 = [0] * int(BEFE_RELE_BITS / 2)  # channels 8 to 1
+        bits_power2 = [0] * int(BEFE_RELE_BITS / 2)  # channels 8 to 1
         for i, v in enumerate(values):
             if v == 2:
                 """ Full power """
-                bits[-(i - 1) - 8] = 1
-                bits[-(i - 1)] = 1
-            else:
-                bits[-(i - 1) - 8] = v
-                bits[-(i - 1)] = 0
+                bits_power1[-(i + 1)] = 1
+                bits_power2[-(i + 1)] = 1
+            elif v == 1:
+                bits_power1[-(i + 1)] = 1
 
-        bitcommand = bit_to_int(bits)
+        bits_command = bit_to_int(bits_power1+bits_power2)
 
         status = await self.box_io.write_and_read_reply(
-            command=SwitchBoxBefehleCommand(port=port, request=InfRequest.SET, bitsnumber=bitcommand)
+            command=SwitchBoxBefehleCommand(
+                port=port,
+                request=InfRequest.SET,
+                bits_command=bits_command
+            )
         )
         if not status.startswith("OK"):
             return False
         if switch_to_low_after > 0:
             for i, v in enumerate(values):
-                if bits[-(i - 1) - 8] == 1:
-                    bits[-(i - 1)] = 0
+                if bits_power2[-(i + 1)] == 1:
+                    bits_power2[-(i + 1)] = 0
 
-        asyncio.sleep(switch_to_low_after)
+        await asyncio.sleep(switch_to_low_after)
 
-        bitcommand = bit_to_int(bits)
+        bits_command = bit_to_int(bits_power1+bits_power2)
         status = await self.box_io.write_and_read_reply(
-            command=SwitchBoxBefehleCommand(port=port, request=InfRequest.SET, bitsnumber=bitcommand)
+            command=SwitchBoxBefehleCommand(
+                port=port,
+                request=InfRequest.SET,
+                bits_command=bits_command)
         )
         return status.startswith("OK")
 
@@ -349,78 +432,151 @@ class SwitchBoxMPIKG(FlowchemDevice):
             keep_port_status = True,
             switch_to_low_after: float = -1
     ):
-        channels = [i + 1 for i in range(8)]
-        status = await self.get_hele_channel()
-        if 0 < channel / 8 < 1:
-            port = "A"
-            ch = channel
-        elif 1 < channel / 8 < 2:
-            port = "B"
-            ch = channel
-        elif 1 < channel / 8 < 2:
-            port = "C"
-            ch = channel
-        elif 1 < channel / 8 < 2:
-            port = "D"
-            ch = channel
+        """
+        Set a single relay channel.
+
+        Args:
+            channel (int): Channel index [1–32].
+            value (int, optional): Desired state (0=off, 1=half power, 2=full power).
+                Default = 2.
+            keep_port_status (bool, optional): If True, preserves the state of other
+                channels in the same port. If False, all other channels are reset
+                to 0. Default = True.
+            switch_to_low_after (float, optional): If >0 and value=2 (full power),
+                the channel is automatically reduced to 1 after the delay.
+                Default = -1 (disabled).
+
+        Returns:
+            bool: True if the command succeeded, False otherwise.
+        """
+        status = await self.get_hele_channels()
+        if 0 < channel <= 8:
+            port, ch = "a", channel
+        elif 8 < channel <= 16:
+            port, ch = "b", channel - 8
+        elif 16 < channel <= 24:
+            port, ch = "c", channel - 16
+        elif 24 < channel <= 32:
+            port, ch = "d", channel - 24
         else:
             logger.error(f"There is not channel {channel} in device {self.name}!")
             return False
 
-    async def get_hele_channel(self):
+        values = status[port] if keep_port_status else [0] * 8
+        values[ch - 1] = value
+
+        if switch_to_low_after and value == 2:
+            if await self.set_hele_port(
+                    values=values,
+                    port=port.lower()
+            ):
+                values[ch - 1] = 1
+                return await self.set_hele_port(
+                    values=values,
+                    port=port.lower()
+                )
+            else:
+                return False
+
+        else:
+            return await self.set_hele_port(
+                values=values,
+                port=port.lower()
+            )
+
+    async def get_hele_channels(self):
+        """
+        Query the current relay status of all ports.
+
+        Returns:
+            dict[str, list[int]]: Mapping of port IDs ("a", "b", "c", "d") to
+            lists of 8 integers (0, 1, 2) describing each channel state.
+        """
         asw = await self.box_io.write_and_read_reply(
-            command=SwitchBoxCommand(port=BefhelePorts.ABCD, request=InfRequest.GET)
+            command=SwitchBoxBefehleCommand(port=BefhelePorts.ABCD, request=InfRequest.GET)
         )
-        asw.replace(" ", "")
+        asw = asw.replace(" ", "")
         result = {}
         for ports in asw.split(","):
-            bitcommand = int_to_bit_list(int(ports.split(":")[1]))
-            result[ports.split(":")[0].lower()] = bitcommand[:8] + bitcommand[8:]
+            bits_command = int_to_bit_list(int(ports.split(":")[1]))
+            result[ports.split(":")[0].lower()] = [a + b for a, b in zip(bits_command[:8], bits_command[8:])][::-1]
+        return result
 
     """ ADC/DAC Commands """
 
     async def get_adc(self):
-        """ Analog  Digital Command """
+        """
+        Read all ADC (Analog  Digital Channels) channels.
+
+        Returns:
+            dict[str, float]: Mapping of channel IDs (e.g. "ADC1", "ADC2") to measured
+            voltage values.
+        """
         asw = await self.box_io.write_and_read_reply(
             command=SwitchBoxGeneralCommand(
-                channel="x", request=InfRequest.GET, variable=VaribleType.ADC)
+                channel="x", request=InfRequest.GET, variable=VariableType.ADC)
         )
-        asw.replace(" ", "")
+        asw = asw.replace(" ", "")
         result = {}
         for ports in asw.split(";"):
-            bitcommand = int_to_bit_list(float(ports.split(":")[1]))
-            result[ports.split(":")[0][1:].lower()] = bitcommand[:8] + bitcommand[8:]
+            value = float(ports.split(":")[1])
+            result[ports.split(":")[0][1:]] = value
         return result
 
     async def get_dac(self, channel: int = 1, volts: bool = True):
+        """
+        Read the DAC output of a channel.
+
+        Args:
+            channel (int, optional): DAC channel index (1 or 2). Default = 1.
+            volts (bool, optional): If True, return the value in volts.
+                If False, return the raw integer value. Default = True.
+
+        Returns:
+            float | int: DAC output in volts (if volts=True) or raw bits (if volts=False).
+        """
         asw = await self.box_io.write_and_read_reply(
             command=SwitchBoxGeneralCommand(channel=channel,
-                                     request=InfRequest.GET,
-                                     variable=VaribleType.DAC)
+                                            request=InfRequest.GET,
+                                            variable=VariableType.DAC)
         )
         bit = int(asw.split(':')[-1])
         if volts:
-            return DAC_BITS / bit * DAC_VOLTS
+            return bit / DAC_BITS * DAC_VOLTS
 
-    async def set_dac(self, channel: int = 0, volts: float = 5):
+    async def set_dac(self, channel: int = 1, volts: float = 5):
+        """
+        Set DAC output voltage.
+
+        Args:
+            channel (int, optional): DAC channel index (1 or 2). Default = 0.
+            volts (float, optional): Target voltage. Default = 5 V.
+
+        Returns:
+            bool: True if the command succeeded, False otherwise.
+        """
         status = await self.box_io.write_and_read_reply(
-            command=SwitchBoxCommand(channel=channel,
-                                     request=InfRequest.SET,
-                                     variable=VaribleType.DAC,
-                                     value=int(value * DAC_BITS / DAC_VOLTS))
+            command=SwitchBoxGeneralCommand(
+                channel=channel,
+                request=InfRequest.SET,
+                variable=VariableType.DAC,
+                value=int(volts * DAC_BITS / DAC_VOLTS)
+            )
         )
         return status.startswith("OK")
 
 
 if __name__ == "__main__":
     box = SwitchBoxMPIKG.from_config(port="COM8")
-
     async def main():
         """Test function."""
         await box.initialize()
         print(box.device_info.version)
-        await box.set_channel(channel=1, value=True)
-        value = await box.get_channel(channel=1)
-        print(value)
+        await box.set_hele_port(values=[2, 0, 0, 0, 1, 1, 1, 0], switch_to_low_after=2, port="b")
+        await box.set_hele_single_channel(channel=12, value=2, switch_to_low_after=2)
+        result = await box.get_adc()
+        await box.set_dac(channel=1, volts=3)
+        result = await box.get_dac(channel=1)
+        print(result)
 
     asyncio.run(main())
