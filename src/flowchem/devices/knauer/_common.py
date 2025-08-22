@@ -1,5 +1,7 @@
 """Module for communication with Knauer devices."""
 import asyncio
+from asyncio import Lock
+import aioserial
 
 from loguru import logger
 
@@ -55,7 +57,7 @@ class KnauerEthernetDevice:
         ip_address = available_devices.get(mac_address)
         if ip_address is None:
             raise InvalidConfigurationError(
-                f"{self.__class__.__name__}:{self.name}\n"  # type: ignore
+                # f"{self.__class__.__name__}:{self.name}\n"  # type: ignore
                 f"Device with MAC address={mac_address} not found!\n"
                 f"[Available: {available_devices}]"
             )
@@ -86,3 +88,93 @@ class KnauerEthernetDevice:
             reply = await self._reader.readuntil(separator=b"\r")
         logger.debug(f"READ <<< '{reply.decode().strip()}' ")
         return reply.decode("ascii").strip()
+
+
+class KnauerSerialDevice:
+
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 9600,
+        "parity": aioserial.PARITY_NONE,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.EIGHTBITS,
+    }
+
+    def __init__(self, serial_port, **kwargs):
+
+        super().__init__(**kwargs)
+        self.port = serial_port
+        # Merge default settings, including serial, with provided ones.
+        # configuration = KnauerSerialDevice.DEFAULT_CONFIG | serial_port
+        KnauerSerialDevice.DEFAULT_CONFIG["port"] = serial_port
+        configuration = KnauerSerialDevice.DEFAULT_CONFIG
+
+        try:
+            self._serial = aioserial.AioSerial(**configuration)
+        except aioserial.SerialException as ex:
+            raise InvalidConfigurationError(
+                f"Cannot connect to the Knauer Device on the port <{serial_port}>"
+            ) from ex
+
+        # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by the subclasses
+        self.eol = b""
+
+        # Lock communication between write and read reply
+        self._serial_lock = Lock()
+
+    async def _write(self, command: str):
+        """Write a command to the pump."""
+        logger.debug(f"run eol: {self.eol}")
+        await self._serial.write_async(command.encode("ascii") + self.eol)
+        logger.debug(f"Sent command: {command!r}")
+
+    async def _read_reply(self) -> str:
+        """Read the pump reply from serial communication."""
+        reply_string = await self._serial.readline_async()
+        logger.debug(f"Reply received: {reply_string.decode('ascii').rstrip()}")
+        return reply_string.decode("ascii")
+
+    async def _send_and_receive(self, command: str) -> str:
+        """Send a command to the pump, read the replies and return it, optionally parsed."""
+        self._serial.reset_input_buffer()  # Clear input buffer, discarding all that is in the buffer.
+        async with self._serial_lock:
+            await self._write(command)
+            logger.debug(f"Command {command} sent!")
+
+            failure = 0
+            while True:
+                response = await self._read_reply()
+                if not response:
+                    failure += 1
+                    logger.warning(f"{failure} time of failure!")
+                    logger.error(f"Command {command} is not working")
+                    await asyncio.sleep(0.2)
+                    self._serial.reset_input_buffer()
+                    await self._write(command)
+                    # Allows 4 failures...
+                    if failure > 3:
+                        raise InvalidConfigurationError(
+                            "No response received from KnauerDevices!"
+                        )
+                else:
+                    break
+
+        logger.debug(f"Reply received: {response}")
+        return response.rstrip()
+
+    async def initialize(self):
+        """Ensure connection."""
+        pass
+
+class KnauerDevice:
+    def __init__(self, serial_port, ip_address, mac_address, network="", **kwargs):
+
+        if serial_port:
+            self.connection = KnauerSerialDevice(serial_port,  **kwargs)
+        else:
+            self.connection = KnauerEthernetDevice(ip_address, mac_address, network, **kwargs)
+
+    def __getattr__(self, name):
+        if hasattr(self.connection, name):
+            return getattr(self.connection, name)
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute'{name}'")

@@ -30,7 +30,8 @@ from flowchem.server.core import Flowchem
     "host",
     type=str,
     default="0.0.0.0",
-    help="Server host. 0.0.0.0 is used to bind to all addresses, do not use for internet-exposed devices!",
+    help="Server host. please start at localhost: 127.0.0.1. "
+         "0.0.0.0 is used to bind to all addresses, do not use for internet-exposed devices!",
 )
 @click.option("-d", "--debug", is_flag=True, help="Print debug info.")
 @click.version_option()
