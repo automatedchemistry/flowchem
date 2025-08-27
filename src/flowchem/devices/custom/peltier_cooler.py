@@ -334,6 +334,16 @@ class PeltierTubeReactor(PeltierDefaults):
     T_MAX = 25
     T_MIN = -55
 
+class PeltierTubeReactor_Chiller2(PeltierDefaults):
+    HEATING_PID = [2, 0.03, 0]
+    COOLING_PID = HEATING_PID
+    BASE_TEMP = -24.7
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array(
+        [[-55, -50, -40, -30, -20, -10, 0, 10, 20], [8.5, 7, 5.5, 3, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 2, 3.5, 3.5, 3.5, 3.5]]).transpose()
+    T_MAX = 25
+    T_MIN = -55
+
 
 class PeltierCooler(FlowchemDevice):
     """Peltier Cooler module class."""
@@ -355,6 +365,8 @@ class PeltierCooler(FlowchemDevice):
                 self.peltier_defaults = PeltierLowCoolingDefaults()
             case "tube_reactor":
                 self.peltier_defaults = PeltierTubeReactor()
+            case "tube_reactor_chiller_2":
+                self.peltier_defaults = PeltierTubeReactor_Chiller2()
 
         # ToDo check info
         self.device_info = DeviceInfo(
