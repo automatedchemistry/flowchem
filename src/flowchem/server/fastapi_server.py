@@ -27,7 +27,7 @@ class FastAPIServer:
         self.configuration_dict: dict = {}
 
         self._add_root_redirect()
-        self._add_configuration_retrive()
+        self._add_configuration_retrieve()
 
         logger.debug("HTTP ASGI server app created")
 
@@ -37,12 +37,17 @@ class FastAPIServer:
             """Redirect root to `/docs` to enable interaction w/ API."""
             return RedirectResponse(url="/docs")
 
-    def _add_configuration_retrive(self) -> None:
+    def _add_configuration_retrieve(self) -> None:
         @self.app.get(
             "/config",
             tags=["system"],
         )
         def config():
+            """
+            Return the current server configuration as a dictionary.
+            This endpoint provides configuration data used by the server,
+            such as device settings and parameters.
+            """
             return self.configuration_dict
 
     def add_background_tasks(self, repeated_tasks: RepeatedTaskInfo):
