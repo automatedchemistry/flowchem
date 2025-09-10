@@ -114,9 +114,7 @@ class SensorBase(FlowchemComponent):
         if api in self._methods:
             logger.warning(f"Overwriting existing watch configuration for {api}.")
 
-        if self.threading and self.threading.is_alive():
-            self._loop = False
-            self.threading.join()
+        self.stop_watch()
 
         self._sample_time = sample_time
 
@@ -145,6 +143,8 @@ class SensorBase(FlowchemComponent):
         if self.threading and self.threading.is_alive():
 
             self._loop = False
+
+            self.threading.join()
 
     def __run_loop(self):
 
@@ -180,18 +180,18 @@ class SensorBase(FlowchemComponent):
                         a = self._methods[method]['less_than']
                         b = self._methods[method]['greater_than']
 
-                        if self.__inspect(value, greater=b, less=a):
+                        if self.__out_of_bound(value, greater=b, less=a):
                             logger.error(f"The {method} of the component/device: {self.name}/"
                                          f"{self.hw_device.name} should obey the rule: "
                                          f"{a}< value <{b}, however it returned: {value}")
 
                 toc = time.perf_counter()
 
-        # After finishe the whatching
+        # After finishe the watching
         self._methods = {}
 
     @staticmethod
-    def __inspect(value: float, greater: Optional[float] = None, less: Optional[float] = None) -> bool:
+    def __out_of_bound(value: float, greater: Optional[float] = None, less: Optional[float] = None) -> bool:
 
         if greater:
             if value > greater:

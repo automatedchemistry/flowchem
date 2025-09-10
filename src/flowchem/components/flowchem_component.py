@@ -120,6 +120,5 @@ class FlowchemComponent:
         for route in self._router.routes:
             if hasattr(route, 'path') and hasattr(route, 'endpoint') and route.path == route_path:
                 return route.endpoint
-        return None
 
 
