@@ -6,11 +6,9 @@ import string
 import warnings
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING
 
 import aioserial
 from loguru import logger
-from enum import Enum
 
 from flowchem import ureg
 from pint import Quantity
@@ -20,7 +18,6 @@ from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 from flowchem.utils.people import dario, jakob, wei_hsin, miguel
-from pint.registry import Quantity
 
 
 class ML600Commands(Enum):
