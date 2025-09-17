@@ -189,9 +189,9 @@ class ML600Pump(SyringePump):
             bool: True if the pump reports a valid status after the move,
             False otherwise.
         """
-        volume = ureg.Quantity(volume)
-        rate = ureg.Quantity(rate)
-        await self.hw_device.set_to_volume(volume, rate, self.pump_code)
+        volume_ureg = ureg.Quantity(volume)
+        rate_ureg = ureg.Quantity(rate)
+        await self.hw_device.set_to_volume(volume_ureg, rate_ureg, self.pump_code)
         return await self.hw_device.get_pump_status(self.pump_code)
 
     async def get_current_volume(self) -> float:

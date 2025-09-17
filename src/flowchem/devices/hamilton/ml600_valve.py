@@ -41,7 +41,7 @@ class ML600LeftValve(FourPortFivePositionValve):
     identifier = "B"
 
 
-    def _change_connections(self, raw_position: str, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int | str, reverse: bool = False) -> str:
         """
         Translate the raw position to the corresponding degree for the valve or reverse.
 
@@ -85,7 +85,7 @@ class ML600RightValve(ThreePortFourPositionValve):
     hw_device: ML600  # for typing's sake
     identifier = "C"
 
-    def _change_connections(self, raw_position: str, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int | str, reverse: bool = False) -> str:
         """
         Translate the raw position to the corresponding degree for the valve or reverse.
 
