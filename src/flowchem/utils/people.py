@@ -1,6 +1,5 @@
 from pydantic import NameEmail
 
-
 __all__ = ["dario", "jakob", "wei_hsin", "samuel_saraiva", "miguel"]
 
 

@@ -118,8 +118,6 @@ class AutosamplerGantry3D(gantry3D):
         await super().set_z_position(position=position)
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
-        if not isinstance(position, str):
-            raise TypeError
         success = await self.hw_device._move_needle_vertical(move_to=position)
         if success:
             logger.info(f"Needle moved successfully to {position} direction.")
@@ -145,11 +143,9 @@ class AutosamplerGantry3D(gantry3D):
         else:
             return False
 
-
 class AutosamplerPump(SyringePump):
     """
     Control a Knauer Auto-sampler component .
-
     Attributes:
         hw_device (KnauerAutosampler): The hardware device for the Knauer CNC component.
     """
@@ -193,7 +189,7 @@ class AutosamplerPump(SyringePump):
             return True
         else:
             return False
-
+          
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
         """Can the pump reverse its normal flow direction?"""

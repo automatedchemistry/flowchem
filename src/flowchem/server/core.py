@@ -85,7 +85,9 @@ class Flowchem:
         logger.info("Initializing device connection(s)...")
 
         # Run `initialize` async method of all hw devices in parallel
-        await asyncio.gather(*[dev.initialize() for dev in self.devices])
+        #await asyncio.gather(*[dev.initialize() for dev in self.devices])
+        for dev in self.devices:
+            await dev.initialize()
         logger.info("Device(s) connected")
 
         # Create entities for the configured devices.

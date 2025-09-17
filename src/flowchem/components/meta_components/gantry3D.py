@@ -77,6 +77,7 @@ class gantry3D(FlowchemComponent):
         Args:
             position (float | str): Target position for the Z-axis.
         """
+
         if isinstance(position, str) and position.isnumeric():
             position = float(position) if "." in position else int(position)
         await self.z_axis.set_position(position)
