@@ -1,6 +1,7 @@
 # Knauer DAD
 Diode Array Detector from Knauer.
 
-```{eval-rst}
-.. openapi:: ./knauer_dad.yml
+```{toctree}
+:maxdepth: 1
+knauer_dad
 ```

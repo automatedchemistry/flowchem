@@ -15,5 +15,6 @@ from .vacuubrand import *
 from .vapourtec import *
 from .vicivalco import *
 from .custom import *
+from .fakedevice import *
 from .runze import *
 from .waters import *

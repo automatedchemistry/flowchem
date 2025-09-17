@@ -76,3 +76,24 @@ devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
 
 The example shown in section [example](examples/reaction_optimization.md) presents one way of how the 
 protocols can be constructed.
+
+### Direct approach
+
+To efficiently discover devices exposed by a FlowChem server—especially when dealing with a large number of devices or multiple servers on the intranet—we recommend using the direct approach. In this approach, the user manually provides the IP address (or URL) of the desired server.
+
+This address can be obtained from the FastAPI web interface (see illustration below).
+
+![Accessing the server](access_url.JPG)
+Figure: Accessing the server URL via FastAPI interface
+
+Once the address is known, the function below (get_flowchem_devices_from_url) can be used to create clients for each available device on the server:
+
+```python
+from flowchem.client.client import get_flowchem_devices_from_url
+
+devices = get_flowchem_devices_from_url(url="http://141.14.234.35:8000/")
+
+devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
+```
+
+This function queries the OpenAPI specification exposed by the server and returns a dictionary of initialized FlowchemDeviceClient instances, each corresponding to one device.

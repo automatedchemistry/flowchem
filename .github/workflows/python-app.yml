@@ -47,3 +47,6 @@ jobs:
 
       - name: Run pytest
         run: python -m pytest --cov=flowchem --cov-fail-under=40
+
+      - name: Generate API docs
+        run: sphinx-apidoc -o docs/development/foundations/code_structure src

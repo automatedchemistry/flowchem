@@ -4,6 +4,7 @@ from importlib.metadata import metadata, version
 
 from fastapi import APIRouter, FastAPI
 from loguru import logger
+from typing import Any
 from starlette.responses import RedirectResponse
 
 from flowchem.components.device_info import DeviceInfo
@@ -26,8 +27,10 @@ class FastAPIServer:
             },
         )
         self.base_url = rf"http://{host}:{port}"
+        self.configuration_dict: dict[str, Any] = {}
 
         self._add_root_redirect()
+        self._add_configuration_retrieve()
 
         logger.debug("HTTP ASGI server app created")
 
@@ -36,6 +39,19 @@ class FastAPIServer:
         def home_redirect_to_docs(request):
             """Redirect root to `/docs` to enable interaction w/ API."""
             return RedirectResponse(url="/docs")
+
+    def _add_configuration_retrieve(self) -> None:
+        @self.app.get(
+            "/startup_config",
+            tags=["system"],
+        )
+        def config():
+            """
+            Return the startup config server configuration as a dictionary.
+            This endpoint provides configuration data used by the server,
+            such as device settings and parameters.
+            """
+            return self.configuration_dict
 
     def add_background_tasks(self, repeated_tasks: Iterable[RepeatedTaskInfo]):
         """Schedule repeated tasks to run upon server startup."""

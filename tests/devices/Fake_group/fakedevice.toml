@@ -1,0 +1,3 @@
+[device.test]
+type = "FakeDeviceExample"
+another_attribute = "786563"

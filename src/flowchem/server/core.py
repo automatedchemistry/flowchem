@@ -79,6 +79,7 @@ class Flowchem:
 
     async def setup(self, config: BytesIO | Path):
         self.config = parse_config(config)
+        self.http.configuration_dict = self.config
         self.devices = instantiate_device_from_config(self.config)
 
         """Initialize connection to devices and create API endpoints."""

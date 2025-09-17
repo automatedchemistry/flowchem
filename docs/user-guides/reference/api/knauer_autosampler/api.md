@@ -1,6 +1,7 @@
 # Knauer Autosampler
 Autosampler from Knauer.
 
-```{eval-rst}
-.. openapi:: ./autosampler.yml
+```{toctree}
+:maxdepth: 1
+autosampler
 ```

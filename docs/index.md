@@ -1,12 +1,10 @@
-# Flowchem
-
 :::{figure-md} flowchem
 <img src="_static/flowchem_logo.svg" alt="Flowchem" class="bg-primary mb-1" width="100%">
 
-Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
-Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
+Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs. Flowchem acts as a unifying layer exposing devices using different command syntax and protocols under a single API.
+:::
 
-::::{grid} 1 2 3 4
+::::{grid}
 
 :::{grid-item}
 :columns: auto
@@ -57,6 +55,7 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 ```
 :::
 ::::
+
 
 ## Contents
 ```{toctree}

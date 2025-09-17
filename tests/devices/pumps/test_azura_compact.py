@@ -35,7 +35,7 @@ async def pump():
     return pump
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_pumphead(pump: AzuraCompact):
     assert await pump.get_headtype() in AzuraPumpHeads
@@ -45,13 +45,13 @@ async def test_pumphead(pump: AzuraCompact):
     assert await pump.get_headtype() == AzuraPumpHeads.FLOWRATE_FIFTY_ML
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_headtype(pump: AzuraCompact):
     assert await pump.get_headtype() in AzuraPumpHeads
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_flow_rate(pump: AzuraCompact):
     await pump.set_flow_rate(ureg.Quantity("1.25 ml/min"))
@@ -66,7 +66,7 @@ async def test_flow_rate(pump: AzuraCompact):
     await pump.stop()
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_analog_control(pump: AzuraCompact):
     await pump.enable_analog_control(True)
@@ -75,7 +75,7 @@ async def test_analog_control(pump: AzuraCompact):
     assert await pump.is_analog_control_enabled() is False
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_is_running(pump: AzuraCompact):
     await pump.set_flow_rate(ureg.Quantity("1 ml/min"))
@@ -84,14 +84,14 @@ async def test_is_running(pump: AzuraCompact):
     await pump.stop()
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_motor_current(pump: AzuraCompact):
     await pump.stop()
     assert await pump.read_motor_current() == 0
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_correction_factor(pump: AzuraCompact):
     init_val = await pump.get_correction_factor()
@@ -100,7 +100,7 @@ async def test_correction_factor(pump: AzuraCompact):
     await pump.set_correction_factor(init_val)
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_adjusting_factor(pump: AzuraCompact):
     init_val = await pump.get_adjusting_factor()
@@ -109,7 +109,7 @@ async def test_adjusting_factor(pump: AzuraCompact):
     await pump.set_adjusting_factor(init_val)
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_autostart(pump: AzuraCompact):
     await pump.enable_autostart()
@@ -117,7 +117,7 @@ async def test_autostart(pump: AzuraCompact):
     await pump.enable_autostart(False)
 
 
-@pytest.mark.KPump
+@pytest.mark.AzuraPump
 @pytest.mark.asyncio
 async def test_start_in(pump: AzuraCompact):
     await pump.require_start_in()
