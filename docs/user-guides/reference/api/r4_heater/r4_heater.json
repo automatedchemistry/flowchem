@@ -1,0 +1,792 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Flowchem - ",
+        "description": "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API.",
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0a3"
+    },
+    "paths": {
+        "/my-h4heater/": {
+            "get": {
+                "tags": [
+                    "my-h4heater"
+                ],
+                "summary": "Get Device Info",
+                "operationId": "get_device_info_fake_device__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor1/": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_fake_device_reactor1__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor1/temperature": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Set Temperature",
+                "description": "Set the target temperature for this channel using a natural language string.\n\nArgs:\n    temp (str): The desired temperature as a string (e.g., '50C', '75.5C').\n\nReturns:\n    Awaitable: Result of the set temperature operation from the hardware device.",
+                "operationId": "set_temperature_fake_device_reactor1_temperature_put",
+                "parameters": [
+                    {
+                        "name": "temp",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Temp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Temperature",
+                "description": "Retrieve the current temperature of this channel in Celsius.\n\nReturns:\n    float: The current temperature in Celsius.",
+                "operationId": "get_temperature_fake_device_reactor1_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Fake Device Reactor1 Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor1/power-on": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power On",
+                "description": "Turn on the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power on operation from the hardware device.",
+                "operationId": "power_on_fake_device_reactor1_power_on_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor1/power-off": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power off operation from the hardware device.",
+                "operationId": "power_off_fake_device_reactor1_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor1/target-reached": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Is Target Reached",
+                "description": "Check if the set temperature target has been reached for this channel.\n\nReturns:\n    bool: True if the target temperature has been reached, False otherwise.",
+                "operationId": "is_target_reached_fake_device_reactor1_target_reached_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Is Target Reached Fake Device Reactor1 Target Reached Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor2/": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_fake_device_reactor2__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor2/temperature": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Set Temperature",
+                "description": "Set the target temperature for this channel using a natural language string.\n\nArgs:\n    temp (str): The desired temperature as a string (e.g., '50C', '75.5C').\n\nReturns:\n    Awaitable: Result of the set temperature operation from the hardware device.",
+                "operationId": "set_temperature_fake_device_reactor2_temperature_put",
+                "parameters": [
+                    {
+                        "name": "temp",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Temp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Temperature",
+                "description": "Retrieve the current temperature of this channel in Celsius.\n\nReturns:\n    float: The current temperature in Celsius.",
+                "operationId": "get_temperature_fake_device_reactor2_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Fake Device Reactor2 Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor2/power-on": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power On",
+                "description": "Turn on the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power on operation from the hardware device.",
+                "operationId": "power_on_fake_device_reactor2_power_on_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor2/power-off": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power off operation from the hardware device.",
+                "operationId": "power_off_fake_device_reactor2_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor2/target-reached": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Is Target Reached",
+                "description": "Check if the set temperature target has been reached for this channel.\n\nReturns:\n    bool: True if the target temperature has been reached, False otherwise.",
+                "operationId": "is_target_reached_fake_device_reactor2_target_reached_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Is Target Reached Fake Device Reactor2 Target Reached Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor3/": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_fake_device_reactor3__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor3/temperature": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Set Temperature",
+                "description": "Set the target temperature for this channel using a natural language string.\n\nArgs:\n    temp (str): The desired temperature as a string (e.g., '50C', '75.5C').\n\nReturns:\n    Awaitable: Result of the set temperature operation from the hardware device.",
+                "operationId": "set_temperature_fake_device_reactor3_temperature_put",
+                "parameters": [
+                    {
+                        "name": "temp",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Temp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Temperature",
+                "description": "Retrieve the current temperature of this channel in Celsius.\n\nReturns:\n    float: The current temperature in Celsius.",
+                "operationId": "get_temperature_fake_device_reactor3_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Fake Device Reactor3 Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor3/power-on": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power On",
+                "description": "Turn on the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power on operation from the hardware device.",
+                "operationId": "power_on_fake_device_reactor3_power_on_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor3/power-off": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power off operation from the hardware device.",
+                "operationId": "power_off_fake_device_reactor3_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor3/target-reached": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Is Target Reached",
+                "description": "Check if the set temperature target has been reached for this channel.\n\nReturns:\n    bool: True if the target temperature has been reached, False otherwise.",
+                "operationId": "is_target_reached_fake_device_reactor3_target_reached_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Is Target Reached Fake Device Reactor3 Target Reached Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor4/": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_fake_device_reactor4__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor4/temperature": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Set Temperature",
+                "description": "Set the target temperature for this channel using a natural language string.\n\nArgs:\n    temp (str): The desired temperature as a string (e.g., '50C', '75.5C').\n\nReturns:\n    Awaitable: Result of the set temperature operation from the hardware device.",
+                "operationId": "set_temperature_fake_device_reactor4_temperature_put",
+                "parameters": [
+                    {
+                        "name": "temp",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Temp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Get Temperature",
+                "description": "Retrieve the current temperature of this channel in Celsius.\n\nReturns:\n    float: The current temperature in Celsius.",
+                "operationId": "get_temperature_fake_device_reactor4_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Fake Device Reactor4 Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor4/power-on": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power On",
+                "description": "Turn on the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power on operation from the hardware device.",
+                "operationId": "power_on_fake_device_reactor4_power_on_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor4/power-off": {
+            "put": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off the temperature control for this channel.\n\nReturns:\n    Awaitable: Result of the power off operation from the hardware device.",
+                "operationId": "power_off_fake_device_reactor4_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-h4heater/reactor4/target-reached": {
+            "get": {
+                "tags": [
+                    "my-h4heater",
+                    "my-h4heater"
+                ],
+                "summary": "Is Target Reached",
+                "description": "Check if the set temperature target has been reached for this channel.\n\nReturns:\n    bool: True if the target temperature has been reached, False otherwise.",
+                "operationId": "is_target_reached_fake_device_reactor4_target_reached_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Is Target Reached Fake Device Reactor4 Target Reached Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ComponentInfo": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "default": ""
+                    },
+                    "parent_device": {
+                        "type": "string",
+                        "title": "Parent Device",
+                        "default": ""
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Type",
+                        "default": ""
+                    },
+                    "owl_subclass_of": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Owl Subclass Of",
+                        "default": [
+                            "http://purl.obolibrary.org/obo/OBI_0000968"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "ComponentInfo",
+                "description": "Metadata associated with flowchem components."
+            },
+            "DeviceInfo": {
+                "properties": {
+                    "manufacturer": {
+                        "type": "string",
+                        "title": "Manufacturer",
+                        "default": ""
+                    },
+                    "model": {
+                        "type": "string",
+                        "title": "Model",
+                        "default": ""
+                    },
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "default": ""
+                    },
+                    "serial_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ],
+                        "title": "Serial Number",
+                        "default": "unknown"
+                    },
+                    "components": {
+                        "additionalProperties": {
+                            "type": "string",
+                            "minLength": 1,
+                            "format": "uri"
+                        },
+                        "type": "object",
+                        "title": "Components",
+                        "default": {}
+                    },
+                    "backend": {
+                        "type": "string",
+                        "title": "Backend",
+                        "default": "flowchem v. 1.0.0a3"
+                    },
+                    "authors": {
+                        "items": {
+                            "type": "string",
+                            "format": "name-email"
+                        },
+                        "type": "array",
+                        "title": "Authors",
+                        "default": []
+                    },
+                    "additional_info": {
+                        "type": "object",
+                        "title": "Additional Info",
+                        "default": {}
+                    }
+                },
+                "type": "object",
+                "title": "DeviceInfo",
+                "description": "Metadata associated with hardware devices."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

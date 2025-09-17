@@ -1,11 +1,11 @@
 # Flowchem
 
+:::{figure-md} flowchem
+<img src="_static/flowchem_logo.svg" alt="Flowchem" class="bg-primary mb-1" width="100%">
+
 Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
 Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
 
-<!--
-See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getbootstrap.com/docs/5.0/layout/grid/
--->
 ::::{grid} 1 2 3 4
 
 :::{grid-item}
@@ -19,7 +19,15 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 :::{grid-item}
 :columns: auto
 
-```{button-ref} learning/tutorial
+```{button-ref} /user-guides/How-ToGuide/index
+:color: secondary
+:tooltip: How-ToGuides - oriented practical steps
+```
+:::
+:::{grid-item}
+:columns: auto
+
+```{button-ref} /user-guides/tutorials/index
 :color: secondary
 :tooltip: Introductory tutorial - learning-oriented practical steps
 ```
@@ -27,64 +35,48 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 :::{grid-item}
 :columns: auto
 
-```{button-ref} examples/index
+```{button-ref} /user-guides/reference/index
 :color: secondary
-:tooltip: Introductory tutorial - task-oriented practical steps
+:tooltip: Reference - information to research
 ```
 :::
 :::{grid-item}
 :columns: auto
 
-```{button-ref} api/index
+```{button-ref} /user-guides/explanation/index
 :color: secondary
 :tooltip: API reference - information-oriented theoretical knowledge
 ```
 :::
+:::{grid-item}
+:columns: auto
+
+```{button-ref} /user-guides/examples/reaction_optimization
+:color: secondary
+:tooltip: Real example
+```
+:::
 ::::
-
-## Supported devices
-The list of all supported devices [is available here](devices/supported_devices)!
-
-## Install flowchem
-To install flowchem, ensure you have Python installed, then run:
-```shell
-pip install flowchem
-```
-More information on [installing flowchem](./getting_started.md).
-
-## Tutorial
-Follow the [Introduction tutorial](./learning/tutorial.md) for a hands-on introduction to flowchem:
-
-<!--
-## Examples
-See some example of the use of flowchem in automated reaction control systems!
-
-```{button-ref} Example 1
-:color: primary
-```
-```{button-ref} Example 2
-:color: primary
-```
--->
-
-<!--
-TODO: add ref to paper once out.
-## Citation
-If you use flowchem for your paper, please remember to cite it!
--->
 
 ## Contents
 ```{toctree}
 :maxdepth: 2
 :caption: User Guide
+./tldr
 
-getting_started
+./getting_started
 
-learning/tutorial
+./user-guides/How-ToGuide/index
 
-devices/supported_devices
+./user-guides/tutorials/index
 
-examples/index
+./user-guides/reference/index
+
+./user-guides/explanation/index
+
+./user-guides/examples/reaction_optimization
+
+./user-guides/tools
 
 ```
 
@@ -92,7 +84,8 @@ examples/index
 :maxdepth: 2
 :caption: Development
 
-contribute
-api/index
+./development/additional/index
+
+./development/foundations/index
 
 ```

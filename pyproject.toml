@@ -1,25 +1,34 @@
 [build-system]
-requires = ["setuptools>64", "wheel", "pip>=22"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "flowchem"
-version = "1.0.0a3"
+version = "1.1.0-post1"
+
 description = "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API."
 readme = "README.md"
 requires-python = ">=3.10"
-license =  { text = "MIT" }
+license = "MIT"
+license-files = ['LICEN[CS]E*',]
 keywords = ["chemistry", "automation", "laboratory", "science"]
 authors = [
     { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
     { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
     { name = "Wei-Hsin Hsu", email = "98024191+cynthiabour@users.noreply.github.com" },
+    { name = "Samuel Saraiva", email = "88909409+samuelvitorsaraiva@users.noreply.github.com" },
 ]
 maintainers = [
-  { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" }
+    { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
+    { name = "Samuel Saraiva", email = "88909409+samuelvitorsaraiva@users.noreply.github.com" }
 ]
 classifiers = [
-    "License :: OSI Approved :: MIT License"
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent"
 ]
 dependencies = [
     "aioserial>=1.3.1",
@@ -38,15 +47,66 @@ dependencies = [
     "pyserial>=3",
     "requests",
     "rich_click>=1.6.1",
-    'tomli; python_version<"3.11"',
+    "tomli; python_version < \"3.11\"",
     "uvicorn>=0.19.0",
     "zeroconf>=0.71.0",
     "python-multipart>=0.0.20",
 ]
 
 [project.optional-dependencies]
-all = ["flowchem[dev,test,phidget,docs]"]
-ci = ["flowchem[dev,test,docs]"]
+all = [
+    "black",
+    "data-science-types",
+    "lxml-stubs",
+    "mypy",
+    "pre-commit",
+    "ruff>=0.0.252",
+    "types-lxml",
+    "types-PyYAML",
+    "types-requests",
+    "flowchem-test>=0.1b4",
+    "httpx",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xprocess",
+    "phidget22>=1.7.20211005",
+    "furo",
+    "mistune==0.8.4",
+    "myst-parser",
+    "sphinx",
+    "sphinx-design",
+    "sphinx-autodoc-typehints",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-openapi"
+]
+ci = [
+    "black",
+    "data-science-types",
+    "lxml-stubs",
+    "mypy",
+    "pre-commit",
+    "ruff>=0.0.252",
+    "types-lxml",
+    "types-PyYAML",
+    "types-requests",
+    "flowchem-test>=0.1b4",
+    "httpx",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xprocess",
+    "furo",
+    "mistune==0.8.4",
+    "myst-parser",
+    "sphinx",
+    "sphinx-design",
+    "sphinx-autodoc-typehints",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-openapi"
+]
 dev = [
     "black",
     "data-science-types",
@@ -91,16 +151,20 @@ flowchem = "flowchem.__main__:main"
 flowchem-autodiscover = "flowchem.utils.device_finder:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
-packages.find.where = ["src"]
-package-data.flowchem = ["py.typed"]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+flowchem = ["py.typed"]
 
 [tool.mypy]
 ignore_missing_imports = true
 python_version = "3.11"
 
 [tool.pytest.ini_options]
-testpaths = "tests"
+testpaths = ["tests"]
 asyncio_mode = "auto"
 # Note: pytest cov is not compatible with the pycharm debugger in tests
 addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --no-cov"
@@ -108,10 +172,12 @@ markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
     "FlowIR: tests requiring a connection to a FlowIR.",
-    "KPump: tests for Azura compact" ]
+    "KPump: tests for Azura compact"
+    ]
 
 [tool.ruff]
 line-length = 120
 # Allow imports relative to the "src" and "test" directories.
 src = ["src", "test"]
-per-file-ignores."__init__.py" = ["F403"]
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F403"]

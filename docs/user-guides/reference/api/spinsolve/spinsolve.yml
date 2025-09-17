@@ -1,0 +1,249 @@
+openapi: 3.0.2
+info:
+  title: Flowchem - devices
+  description: Flowchem is a python library to control a variety of instruments commonly
+    found in chemistry labs.
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: 0.1.0a3
+paths:
+  /spinsolve-1/nmr-control/solvent:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get solvent
+      description: "Get current solvent."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/solvent/:
+    put:
+      tags:
+      - spinsolve-1
+      - spinsolve-1
+      summary: Set solvent
+      description: "Set solvent."
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: Solvent name
+            type: string
+          name: solvent
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /spinsolve-1/nmr-control/sample-name:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get sample
+      description: "Get current sample."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/sample-name/:
+    put:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Set sample
+      description: "Set the sample name (it will appear in `acqu.par`)."
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: Sample name
+            type: string
+          name: sample
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/user-data:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get user data
+      description: "Get user data. These will appear in `acqu.par`."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/user-data/:
+    put:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Set user data
+      description: "Set user data. The items provide will appear in `acqu.par`."
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: User data
+            type: string
+          name: data
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/protocol-list:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get protocols list
+      description: "Return known protocol names."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/spectrum-folder:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get result folder
+      description: "Get the result folder with the given ID or the last one if no ID is specified. Empty str if 
+      not existing."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/is-busy:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Is running
+      description: "Return True if a protocol is running, otherwise False."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/acquire-spectrum/:
+    put:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Acquire Spectrum
+      description: "Acquire an NMR spectrum.
+
+        Return an ID to be passed to get_result_folder, it will return the result folder after acquisition end.
+        "
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: Background tasks - from FastAPI
+            type: string
+          name: background_tasks
+          in: query
+        - required: false
+          schema:
+            title: Protocol
+            type: string
+            default: H
+          name: protocol
+          in: query
+        - required: false
+          schema:
+            title: User data
+            type: string
+            default: None
+          name: options
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/stop/:
+    put:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Set user data
+      description: "Set user data. The items provide will appear in `acqu.par`."
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: User data
+            type: string
+          name: data
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+components:
+  schemas:
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      title: ValidationError
+      required:
+      - loc
+      - msg
+      - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string

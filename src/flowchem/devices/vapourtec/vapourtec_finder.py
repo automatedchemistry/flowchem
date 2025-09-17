@@ -19,8 +19,8 @@ def r4_finder(serial_port) -> set[str]:
     try:
         r4 = R4Heater(port=serial_port)
     except InvalidConfigurationError as ic:
-        logger.error("config")
-        raise ic
+        logger.error("config - {}".format(ic.args[0]))
+        return set()
 
     try:
         asyncio.run(r4.initialize())
@@ -40,5 +40,6 @@ def r4_finder(serial_port) -> set[str]:
         )
     else:
         cfg = ""
-
+    logger.info(f"Close the serial port: <{serial_port}>")
+    r4._serial.close()
     return set(cfg)

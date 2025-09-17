@@ -1,0 +1,333 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Flowchem - ",
+        "description": "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API.",
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0a3"
+    },
+    "paths": {
+        "/my-chiller/": {
+            "get": {
+                "tags": [
+                    "my-chiller"
+                ],
+                "summary": "Get Device Info",
+                "operationId": "get_device_info_fake_device__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-chiller/temperature-control/": {
+            "get": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_fake_device_temperature_control__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-chiller/temperature-control/temperature": {
+            "put": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Set Temperature",
+                "description": "Set the target temperature to the given value.\n\nArgs:\n    temp (str): The desired temperature as a string in natural language.\n\nReturns:\n    bool: True if the temperature was successfully set, False otherwise.",
+                "operationId": "set_temperature_fake_device_temperature_control_temperature_put",
+                "parameters": [
+                    {
+                        "name": "temp",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Temp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Get Temperature",
+                "description": "Get the current temperature.\n\nReturns:\n    float: The current temperature in Celsius.",
+                "operationId": "get_temperature_fake_device_temperature_control_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Fake Device Temperature Control Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-chiller/temperature-control/power-on": {
+            "put": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Power On",
+                "description": "Turn on the temperature control.\n\nReturns:\n    bool: True if the command was successfully sent, False otherwise.",
+                "operationId": "power_on_fake_device_temperature_control_power_on_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-chiller/temperature-control/power-off": {
+            "put": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off the temperature control.\n\nReturns:\n    bool: True if the command was successfully sent, False otherwise.",
+                "operationId": "power_off_fake_device_temperature_control_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-chiller/temperature-control/target-reached": {
+            "get": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Is Target Reached",
+                "description": "Check if the set temperature target has been reached.\n\nReturns:\n    bool: True if the target temperature has been reached, False otherwise.",
+                "operationId": "is_target_reached_fake_device_temperature_control_target_reached_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Is Target Reached Fake Device Temperature Control Target Reached Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ComponentInfo": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "default": ""
+                    },
+                    "parent_device": {
+                        "type": "string",
+                        "title": "Parent Device",
+                        "default": ""
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Type",
+                        "default": ""
+                    },
+                    "owl_subclass_of": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Owl Subclass Of",
+                        "default": [
+                            "http://purl.obolibrary.org/obo/OBI_0000968"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "ComponentInfo",
+                "description": "Metadata associated with flowchem components."
+            },
+            "DeviceInfo": {
+                "properties": {
+                    "manufacturer": {
+                        "type": "string",
+                        "title": "Manufacturer",
+                        "default": ""
+                    },
+                    "model": {
+                        "type": "string",
+                        "title": "Model",
+                        "default": ""
+                    },
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "default": ""
+                    },
+                    "serial_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ],
+                        "title": "Serial Number",
+                        "default": "unknown"
+                    },
+                    "components": {
+                        "additionalProperties": {
+                            "type": "string",
+                            "minLength": 1,
+                            "format": "uri"
+                        },
+                        "type": "object",
+                        "title": "Components",
+                        "default": {}
+                    },
+                    "backend": {
+                        "type": "string",
+                        "title": "Backend",
+                        "default": "flowchem v. 1.0.0a3"
+                    },
+                    "authors": {
+                        "items": {
+                            "type": "string",
+                            "format": "name-email"
+                        },
+                        "type": "array",
+                        "title": "Authors",
+                        "default": []
+                    },
+                    "additional_info": {
+                        "type": "object",
+                        "title": "Additional Info",
+                        "default": {}
+                    }
+                },
+                "type": "object",
+                "title": "DeviceInfo",
+                "description": "Metadata associated with hardware devices."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

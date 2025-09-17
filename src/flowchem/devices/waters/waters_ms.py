@@ -1,38 +1,43 @@
 """
-This is an ugly attempt to control a Waters Xevo MS via Autolynx.
+Control a Waters Xevo MS via Autolynx.
 When the MS is running and Autolynx is running, measuring an MS only requires putting a csv file with specific header
 into a specific (and installation dependent) folder.
 The Aim of this code is to supply a class that deals with creating the file with right experiment code and fields and
 dropping it to the right folder.
 https://www.waters.com/webassets/cms/support/docs/71500123505ra.pdf
 """
-from pathlib import Path
 import subprocess
-import asyncio
 from pathlib import Path
-from shutil import which
-
-from loguru import logger
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.people import jakob, miguel
 
 from .waters_ms_component import WatersMSControl
 
-# autolynx queue file is also where the conversion should happen - just set duration and a bit after that issue the conversion command
+
 class WatersMS(FlowchemDevice):
     """
-    Control class for Waters Xevo MS via Autolynx.
+    Interface to control Waters Xevo MS through AutoLynx queue files.
 
-    While MS and Autolynx are running, running samples only requires putting a csv file with specific header into a specific (and installation dependent) folder.
+    This class creates and writes a properly formatted tab-delimited queue file that
+    AutoLynx reads to start MS data acquisition. It can also optionally invoke
+    post-run data conversion via ProteoWizard's `msconvert`.
+
+    Args:
+        name (str): Name of the device.
+        path_to_AutoLynxQ (str): Path to the AutoLynx queue folder.
+        ms_exp_file (str): Name of the MS experiment method file.
+        tune_file (str): Name of the tune method file.
+        inlet_method (str): Name of the inlet method file.
     """
     def __init__(self,
                  name: str = "Waters_MS",
-                 path_to_AutoLynxQ: str = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
+                 path_to_AutoLynxQ: str = r"PATH/TO/AutoLynxQ",
                  ms_exp_file: str = "",
                  tune_file: str = "",
                  inlet_method: str = "inlet_method",
                  ) -> None:
+
         super().__init__(name=name)
         # Metadata
         self.device_info.authors = [jakob, miguel]
@@ -48,7 +53,22 @@ class WatersMS(FlowchemDevice):
         """Assign components."""
         self.components.append(WatersMSControl(name="mass_spectrometer", hw_device=self))
 
-    async def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = False):
+    async def record_mass_spec(self,
+                               sample_name: str,
+                               run_duration: int = 0,
+                               queue_name = "next.txt",
+                               do_conversion: bool = False,
+                               output_dir=r"PATH/TO/open_format_ms"):
+        """
+        Create and drop a queue file for AutoLynx to initiate MS acquisition.
+
+        Args:
+            sample_name (str): Base name for the output MS data file.
+            run_duration (int): Estimated duration of the MS acquisition (in seconds).
+            queue_name (str): Name of the AutoLynx queue file to write.
+            do_conversion (bool): If True, automatically convert raw data to mzML format after delay.
+            output_dir (str): Directory to store converted `.mzML` files.
+        """
         # Autolynx behaves weirdly, it expects a .txt file and that the fields are separated by tabs. A csv file
         # separated w commas however does not work... Autolynx has to be set to look for csv files
         file_path = self.queue_path/Path(queue_name)
@@ -56,25 +76,45 @@ class WatersMS(FlowchemDevice):
             f.write(self.fields)
             f.write(f"\n{sample_name}{self.rows}")
         if do_conversion:
-            c = Converter(output_dir=r"W:\BS-FlowChemistry\data\open_format_ms")
+            c = Converter(output_dir=output_dir)
             # get filename
             # get run duration
             c.convert_masspec(str(sample_name), run_delay=run_duration+60)
 
 
-# convert to mzml C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit>
+# convert to mzml 64-bit
 class Converter:
+    """
+    Handles conversion of proprietary Waters `.raw` MS data to `.mzML` format.
 
-    def __init__(self, path_to_executable = r"C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit",
-                 output_dir = r"W:\BS-FlowChemistry\data\open_format_ms",
-                 raw_data=r"W:\BS-FlowChemistry\data\MS_Jakob.PRO\Data"):
+    This is done via the `msconvert` utility from ProteoWizard, optionally delayed to
+    allow MS acquisition to complete.
+
+    Args:
+        path_to_executable (str): Path to the folder containing `msconvert.exe`.
+        output_dir (str): Output directory for converted `.mzML` files.
+        raw_data (str): Directory containing `.raw` data from the MS.
+    """
+    def __init__(self, path_to_executable = r"PATH/TO/ProteoWizard 64-bit",
+                 output_dir = r"PATH/TO/open_format_ms",
+                 raw_data=r"PATH/TO/Data"):
         self.raw_data = raw_data
         self.exe = path_to_executable
         self.output_dir = output_dir
 
 # open subprocess in this location
     def convert_masspec(self, filename, run_delay: int = 0):
+        """
+        Convert a `.raw` MS data file to `.mzML` using msconvert.
 
+        Args:
+            filename (str): Filename of the `.raw` file to convert (with or without `.raw` extension).
+            run_delay (int): Optional delay (in seconds) before running the conversion command.
+                             Useful for waiting until acquisition is complete.
+
+        Raises:
+            AssertionError: If `run_delay` is not within the range 0–9999 seconds.
+        """
         assert 0 <= run_delay <= 9999
         if ".raw" not in filename:
             filename = filename + ".raw"
@@ -86,13 +126,11 @@ class Converter:
             exe_str = f"ping -n {run_delay} 127.0.0.1 >NUL && {exe_str}"
 
         subprocess.Popen(exe_str, cwd=self.exe, shell=True)
-        #x.run(exe_str, shell=True, capture_output=False, timeout=3)
 
 
 if __name__ == "__main__":
-    # seems to work - now, a comparison is needed of what is present already and what new
-    proprietary_data_path = Path(r"W:\BS-FlowChemistry\data\MS_Jakob.PRO\Data")
-    open_data_path = Path(r"W:\BS-FlowChemistry\data\open_format_ms")
+    proprietary_data_path = Path(r"PATH/TO/Data")
+    open_data_path = Path(r"PATH/TO/open_format_ms")
     conv = Converter(output_dir=str(open_data_path))
     converted = []
     prop=[]
@@ -102,8 +140,8 @@ if __name__ == "__main__":
         converted.append(j.stem)
     unique = set(converted).symmetric_difference(set(prop))
     print(unique)
-    for i in unique:
-        x=proprietary_data_path.rglob(i.strip() + ".raw")
+    for i in unique: # type: ignore
+        x=proprietary_data_path.rglob(i.strip() + ".raw") # type: ignore
         print(x)
         try:
             conv.convert_masspec(str(next(x)))

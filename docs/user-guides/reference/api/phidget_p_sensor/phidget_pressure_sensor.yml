@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  title: 'Flowchem - '
+  description: Flowchem is a library to control instruments and devices commonly found
+    in chemistry labs via an interoperable web API.
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0a3
+paths:
+  /my-phidgetPressure/:
+    get:
+      tags:
+      - my-phidgetPressure
+      summary: Get Device Info
+      operationId: get_device_info_fake_device__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceInfo'
+  /my-phidgetPressure/pressure-sensor/:
+    get:
+      tags:
+      - my-phidgetPressure
+      - my-phidgetPressure
+      summary: Get Component Info
+      description: "Retrieve the component's metadata.\n\nThis endpoint provides information\
+        \ about the component, such as its name and associated hardware device.\n\n\
+        Returns:\n--------\nComponentInfo\n    Metadata about the component."
+      operationId: get_component_info_fake_device_pressure_sensor__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComponentInfo'
+  /my-phidgetPressure/pressure-sensor/power-on:
+    put:
+      tags:
+      - my-phidgetPressure
+      - my-phidgetPressure
+      summary: Power On
+      description: 'Power on the sensor.
+
+
+        Returns:
+
+        --------
+
+        None'
+      operationId: power_on_fake_device_pressure_sensor_power_on_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /my-phidgetPressure/pressure-sensor/power-off:
+    put:
+      tags:
+      - my-phidgetPressure
+      - my-phidgetPressure
+      summary: Power Off
+      description: 'Power off the sensor.
+
+
+        Returns:
+
+        --------
+
+        None'
+      operationId: power_off_fake_device_pressure_sensor_power_off_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /my-phidgetPressure/pressure-sensor/read-pressure:
+    get:
+      tags:
+      - my-phidgetPressure
+      - my-phidgetPressure
+      summary: Read Pressure
+      description: "Read the pressure from the sensor and return it in the specified\
+        \ units.\n\nArgs:\n    units (str): The units to express the pressure in.\
+        \ Default is \"bar\".\n\nReturns:\n    float: The pressure reading expressed\
+        \ in the specified units."
+      operationId: read_pressure_fake_device_pressure_sensor_read_pressure_get
+      parameters:
+      - name: units
+        in: query
+        required: false
+        schema:
+          type: string
+          default: bar
+          title: Units
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    ComponentInfo:
+      properties:
+        name:
+          type: string
+          title: Name
+          default: ''
+        parent_device:
+          type: string
+          title: Parent Device
+          default: ''
+        type:
+          type: string
+          title: Type
+          default: ''
+        owl_subclass_of:
+          items:
+            type: string
+          type: array
+          title: Owl Subclass Of
+          default:
+          - http://purl.obolibrary.org/obo/OBI_0000968
+      type: object
+      title: ComponentInfo
+      description: Metadata associated with flowchem components.
+    DeviceInfo:
+      properties:
+        manufacturer:
+          type: string
+          title: Manufacturer
+          default: ''
+        model:
+          type: string
+          title: Model
+          default: ''
+        version:
+          type: string
+          title: Version
+          default: ''
+        serial_number:
+          anyOf:
+          - type: string
+          - type: integer
+          title: Serial Number
+          default: unknown
+        components:
+          additionalProperties:
+            type: string
+            minLength: 1
+            format: uri
+          type: object
+          title: Components
+          default: {}
+        backend:
+          type: string
+          title: Backend
+          default: flowchem v. 1.0.0a3
+        authors:
+          items:
+            type: string
+            format: name-email
+          type: array
+          title: Authors
+          default: []
+        additional_info:
+          type: object
+          title: Additional Info
+          default: {}
+      type: object
+      title: DeviceInfo
+      description: Metadata associated with hardware devices.
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

@@ -15,10 +15,22 @@ from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 
 class KnauerInjectionValve(SixPortTwoPositionValve):
+    """
+    Control a Knauer Injection Valve.
+
+    Attributes:
+        hw_device (KnauerValve): The hardware device for the Knauer valve.
+    """
     hw_device: KnauerValve  # for typing's sake
 
     def __init__(self, name: str, hw_device: KnauerValve) -> None:
-        """Create a ValveControl object."""
+        """
+        Initialize the KnauerInjectionValve component.
+
+        Args:
+            name (str): The name of the component.
+            hw_device (KnauerValve): The hardware device instance for controlling the Knauer valve.
+        """
         super().__init__(name, hw_device)
 
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
@@ -64,6 +76,18 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int | str, reverse: bool = False):
+        """
+        Change connections based on the valve's raw position.
+        The raw_position is the device-specific position naming
+
+        Args:
+            raw_position (int or str): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+            For this class the raw_position is the same of the monitor position
+
+        Returns:
+            int: The mapped position.
+        """
         if reverse:
             return int(raw_position) - 1
         else:
@@ -89,6 +113,16 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int | str, reverse: bool = False):
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (int): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            int: The mapped position.
+        """
         if reverse:
             return int(raw_position) - 1
         else:

@@ -43,6 +43,7 @@ def device_url_from_service_info(
         device_ip = ipaddress.ip_address(active_ip[0])
         return AnyHttpUrl(f"http://{device_ip}:{service_info.port}/{device_name}")
 
+
 class FlowchemCommonDeviceListener(ServiceListener):
     def __init__(self, response_ips=False) -> None:
         self.flowchem_devices: dict[str, AnyHttpUrl] = {}

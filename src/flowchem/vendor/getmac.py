@@ -99,8 +99,8 @@ def get_mac_address(
     * localhost/127.0.0.1 will always return '00:00:00:00:00:00'
     Args:
         interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
-        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
-        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
+        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g. 192.168.0.1)
+        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g. ff02::1:ffe7:7f19)
         hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request (bool): Send a UDP packet to a remote host to populate
         the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can

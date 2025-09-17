@@ -1,0 +1,283 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Flowchem - ",
+        "description": "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API.",
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0a3"
+    },
+    "paths": {
+        "/my-cvc3000/": {
+            "get": {
+                "tags": [
+                    "my-cvc3000"
+                ],
+                "summary": "Get Device Info",
+                "operationId": "get_device_info_fake_device__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-cvc3000/FakeComponent/": {
+            "get": {
+                "tags": [
+                    "my-cvc3000",
+                    "my-cvc3000"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_fake_device_FakeComponent__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-cvc3000/FakeComponent/fake_send_command": {
+            "put": {
+                "tags": [
+                    "my-cvc3000",
+                    "my-cvc3000"
+                ],
+                "summary": "Fake Send Command",
+                "description": "Send a specific command to the some - FakeDevice.\n\nThis function demonstrates how the commands can be sent through the API build\n\n        Parameters:\n                parameter_1 (str): Some string\n                parameter_2 (str): Some string\n\n        Returns:\n                status (bool): If everything works appropriately the function will return a True\n\n\n\nThis is related to the FakeComponent_FakeDevice from FakeDevice:\n\n        Parameters:\n                parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)\n                parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)",
+                "operationId": "fake_send_command_fake_device_FakeComponent_fake_send_command_put",
+                "parameters": [
+                    {
+                        "name": "parameter_1",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "",
+                            "title": "Parameter 1"
+                        }
+                    },
+                    {
+                        "name": "parameter_2",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "",
+                            "title": "Parameter 2"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Fake Send Command Fake Device Fakecomponent Fake Send Command Put"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-cvc3000/FakeComponent/fake_receive_data": {
+            "get": {
+                "tags": [
+                    "my-cvc3000",
+                    "my-cvc3000"
+                ],
+                "summary": "Fake Receive Data",
+                "description": "Receive specific data from the FakeDevice.\n\nThis function demonstrates how the commands request of data can be sent through the API build\n\n\n\nReceive specific data from the FakeDevice.\n\nThis function demonstrates how the commands request of data can be sent through the API build",
+                "operationId": "fake_receive_data_fake_device_FakeComponent_fake_receive_data_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Fake Receive Data Fake Device Fakecomponent Fake Receive Data Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ComponentInfo": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "default": ""
+                    },
+                    "parent_device": {
+                        "type": "string",
+                        "title": "Parent Device",
+                        "default": ""
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Type",
+                        "default": ""
+                    },
+                    "owl_subclass_of": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Owl Subclass Of",
+                        "default": [
+                            "http://purl.obolibrary.org/obo/OBI_0000968"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "ComponentInfo",
+                "description": "Metadata associated with flowchem components."
+            },
+            "DeviceInfo": {
+                "properties": {
+                    "manufacturer": {
+                        "type": "string",
+                        "title": "Manufacturer",
+                        "default": ""
+                    },
+                    "model": {
+                        "type": "string",
+                        "title": "Model",
+                        "default": ""
+                    },
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "default": ""
+                    },
+                    "serial_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ],
+                        "title": "Serial Number",
+                        "default": "unknown"
+                    },
+                    "components": {
+                        "additionalProperties": {
+                            "type": "string",
+                            "minLength": 1,
+                            "format": "uri"
+                        },
+                        "type": "object",
+                        "title": "Components",
+                        "default": {}
+                    },
+                    "backend": {
+                        "type": "string",
+                        "title": "Backend",
+                        "default": "flowchem v. 1.0.0a3"
+                    },
+                    "authors": {
+                        "items": {
+                            "type": "string",
+                            "format": "name-email"
+                        },
+                        "type": "array",
+                        "title": "Authors",
+                        "default": []
+                    },
+                    "additional_info": {
+                        "type": "object",
+                        "title": "Additional Info",
+                        "default": {}
+                    }
+                },
+                "type": "object",
+                "title": "DeviceInfo",
+                "description": "Metadata associated with hardware devices."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

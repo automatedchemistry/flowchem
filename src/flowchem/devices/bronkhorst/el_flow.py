@@ -20,6 +20,38 @@ def isfloat(num):
 
 
 class EPC(FlowchemDevice):
+    """
+    A class to represent an Electronic Pressure Controller (EPC) device from Bronkhorst.
+
+    Attributes:
+    -----------
+    DEFAULT_CONFIG : dict
+        Default configuration for the EPC device.
+    port : str
+        The port to which the EPC device is connected (Serial connection).
+    channel : int
+        The communication channel of the EPC device.
+        Some instruments are a single node (one address) but contain multiple channels (for multiple sensors). To
+        connect to a specific channel, specify the channel when creating an instrument instance. If no channel is
+        specified the first channel will be used.
+    address : int
+        The address of the EPC device.
+    max_pressure : float
+        The maximum pressure of the EPC device in bar.
+    id : str
+        The identifier of the connected EPC device.
+
+    Methods:
+    --------
+    initialize():
+        Initialize the EPC device and set it to 0 bar.
+    set_pressure(pressure: str):
+        Set the pressure of the EPC device.
+    get_pressure() -> float:
+        Get the current pressure of the EPC device in bar.
+    get_pressure_percentage() -> float:
+        Get the current pressure of the EPC device as a percentage of the maximum pressure.
+    """
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
     def __init__(
@@ -30,6 +62,22 @@ class EPC(FlowchemDevice):
         address: int = 0x80,
         max_pressure: float = 10,  # bar = 100 % = 32000
     ) -> None:
+        """
+        Constructs all the necessary attributes for the EPC object.
+
+        Parameters:
+        -----------
+        port : str
+            The port to which the EPC device is connected.
+        name : str, optional
+            The name of the EPC device (default is an empty string).
+        channel : int, optional
+            The communication channel of the EPC device (default is 1).        # Todo - explain better it
+        address : int, optional
+            The address of the EPC device (default is 0x80).                   # Todo - explain better it
+        max_pressure : float, optional
+            The maximum pressure of the EPC device in bar (default is 10).     # Todo - explain better it
+        """
         self.port = port
         self.channel = channel
         self.address = address
@@ -51,12 +99,19 @@ class EPC(FlowchemDevice):
         logger.debug(f"Connected {self.id} to {self.port}")
 
     async def initialize(self):
-        """Initialize device."""
+        """Initialize the EPC device and set it to 0 bar."""
         await self.set_pressure("0 bar")
         self.components.append(EPCComponent("EPC", self))
 
     async def set_pressure(self, pressure: str):
-        """Set the setpoint of the instrument (0-32000 = 0-max pressure = 0-100%)."""
+        """
+        Set the pressure setpoint of the EPC device.
+
+        Parameters:
+        -----------
+        pressure : str
+            The desired pressure to set. If no units are provided, bar is assumed.
+        """
         if pressure.isnumeric() or isfloat(pressure):
             pressure = pressure + "bar"
             logger.warning("No units provided to set_pressure, assuming bar.")
@@ -72,17 +127,60 @@ class EPC(FlowchemDevice):
             logger.debug(f"set the pressure to {set_n / 320}%")
 
     async def get_pressure(self) -> float:
-        """Get current flow rate in ml/min."""
+        """
+        Get the current pressure of the EPC device in bar.
+
+        Returns:
+        --------
+        float
+            The current pressure in bar.
+        """
         m_num = float(self.el_press.measure)
         return m_num / 32000 * self.max_pressure
 
     async def get_pressure_percentage(self) -> float:
-        """Get current flow rate in percentage."""
+        """
+        Get the current pressure of the EPC device as a percentage of the maximum pressure.
+
+        Returns:
+        --------
+        float
+            The current pressure as a percentage of the maximum pressure.
+        """
         m_num = float(self.el_press.measure)
         return m_num / 320
 
 
 class MFC(FlowchemDevice):
+    """
+   A class to represent a Mass Flow Controller (MFC) device.
+
+   Attributes:
+   -----------
+   DEFAULT_CONFIG : dict
+       Default configuration for the MFC device.
+   port : str
+       The port to which the MFC device is connected.
+   channel : int
+       The communication channel of the MFC device.
+   address : int
+       The address of the MFC device.
+   max_flow : float
+       The maximum flow rate of the MFC device in ml/min.
+   id : str
+       The identifier of the connected MFC device.
+
+   Methods:
+   --------
+   initialize():
+       Ensure connection and initialize the MFC device.
+   set_flow_setpoint(flowrate: str):
+       Set the flow rate setpoint of the MFC device.
+   get_flow_setpoint() -> float:
+       Get the current flow rate of the MFC device in ml/min.
+   get_flow_percentage() -> float:
+       Get the current flow rate of the MFC device as a percentage of the maximum flow rate.
+   """
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
     def __init__(
@@ -93,6 +191,22 @@ class MFC(FlowchemDevice):
         address: int = 0x80,
         max_flow: float = 9,  # ml / min = 100 % = 32000
     ) -> None:
+        """
+        Constructs all the necessary attributes for the MFC object.
+
+        Parameters:
+        -----------
+        port : str
+            The port to which the MFC device is connected.
+        name : str, optional
+            The name of the MFC device (default is an empty string).
+        channel : int, optional
+            The communication channel of the MFC device (default is 1).
+        address : int, optional
+            The address of the MFC device (default is 0x80).
+        max_flow : float, optional
+            The maximum flow rate of the MFC device in ml/min (default is 9).
+        """
         self.port = port
         self.channel = channel
         self.address = address
@@ -113,14 +227,21 @@ class MFC(FlowchemDevice):
         logger.debug(f"Connected {self.id} to {self.port}")
 
     async def initialize(self):
-        """Ensure connection."""
+        """Ensure connection and initialize the MFC device."""
         await self.set_flow_setpoint("0 ul/min")
         self.components.append(
             MFCComponent("MFC", self),
         )
 
     async def set_flow_setpoint(self, flowrate: str):
-        """Set the setpoint of the instrument in ml/min (0-32000 = 0-max flowrate = 0-100%)."""
+        """
+        Set the flow rate setpoint of the MFC device in ml/min.
+
+        Parameters:
+        -----------
+        flowrate : str
+            The desired flow rate to set. If no units are provided, ml/min is assumed.
+        """
         if flowrate.isnumeric() or isfloat(flowrate):
             flowrate = flowrate + "ml/min"
             logger.warning(
@@ -139,12 +260,26 @@ class MFC(FlowchemDevice):
             logger.debug(f"set the flow rate to {set_n / 320}%")
 
     async def get_flow_setpoint(self) -> float:
-        """Get current flow rate in ml/min."""
+        """
+        Get the current flow rate of the MFC device in ml/min.
+
+        Returns:
+        --------
+        float
+            The current flow rate in ml/min.
+        """
         m_num = float(self.el_flow.measure)
         return m_num / 32000 * self.max_flow
 
     async def get_flow_percentage(self) -> float:
-        """Get current flow rate in percentage."""
+        """
+        Get the current flow rate of the MFC device as a percentage of the maximum flow rate.
+
+        Returns:
+        --------
+        float
+            The current flow rate as a percentage of the maximum flow rate.
+        """
         m_num = float(self.el_flow.measure)
         return m_num / 320
 

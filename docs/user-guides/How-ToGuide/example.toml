@@ -1,0 +1,4 @@
+[device.my-knauer-valve]  # This is the valve identifier
+type = "KnauerValve"  # The actual valve type will be detected automatically
+#ip_address = "169.254.31.44"  # Onyl one of either ip_address or mac_address need to be provided
+mac_address = "00:80:A3:CE:7E:CB"  #  Onyl one of either ip_address or mac_address need to be provided

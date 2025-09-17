@@ -40,5 +40,6 @@ def ml600_finder(serial_port) -> set[str]:
                 syringe_volume = "XXX ml" # Specify syringe volume here!\n""",
             ),
         )
-
+    logger.info(f"Close the serial port: <{serial_port}>")
+    link._serial.close()
     return dev_config

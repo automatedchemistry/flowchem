@@ -34,5 +34,6 @@ def chiller_finder(serial_port) -> set[str]:
                 port = "{serial_port}"\n""",
         ),
     )
-
+    logger.info(f"Close the serial port: <{serial_port}>")
+    chill._serial.close()
     return dev_config

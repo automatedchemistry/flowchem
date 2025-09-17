@@ -55,6 +55,8 @@ class gantry3D(FlowchemComponent):
         Args:
             position (float | str): Target position for the X-axis.
         """
+        if isinstance(position, str) and position.isnumeric():
+            position = float(position) if "." in position else int(position)
         await self.x_axis.set_position(position)
 
     async def set_y_position(self, position: int | float | str) -> None:
@@ -64,15 +66,21 @@ class gantry3D(FlowchemComponent):
         Args:
             position (float | str): Target position for the Y-axis.
         """
+        if isinstance(position, str) and position.isnumeric():
+            position = float(position) if "." in position else int(position)
         await self.y_axis.set_position(position)
 
-    async def set_z_position(self, position: int | float | str) -> None:
+    async def set_z_position(self, position: int | float | str) -> bool:
         """
         Set the position of the Z-axis.
 
         Args:
             position (float | str): Target position for the Z-axis.
         """
+
+        if isinstance(position, str) and position.isnumeric():
+            position = float(position) if "." in position else int(position)
         await self.z_axis.set_position(position)
+        return True
 
 

@@ -15,19 +15,20 @@ def elite11_finder(serial_port) -> set[str]:
     # Static counter for device type across different serial ports
     if "counter" not in elite11_finder.__dict__:
         elite11_finder.counter = 0  # type: ignore
+    cfg: set[str] = set()
 
     try:
         link = HarvardApparatusPumpIO(port=serial_port)
     except InvalidConfigurationError:
         # This is necessary only on failure to release the port for the other inspector
-        return set()
+        return cfg
 
     # Check for echo
     link._serial.write(b"\r\n")
     if link._serial.readline() != b"\n":
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()
-        return set()
+        return cfg
 
     # Parse status prompt
     pump = link._serial.readline().decode("ascii")
@@ -44,19 +45,22 @@ def elite11_finder(serial_port) -> set[str]:
     except InvalidConfigurationError:
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()
-        return set()
+        return cfg
 
     logger.info(f"Elite11 found on <{serial_port}>")
 
     # Local variable for enumeration
     elite11_finder.counter += 1  # type: ignore
-    cfg = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
-    cfg += dedent(
+    msg = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
+    msg += dedent(
         f"""
-               type = "Elite11"
-               port = "{serial_port}"
-               address = {address}
-               syringe_diameter = "XXX mm" # Specify syringe diameter!
-               syringe_volume = "YYY ml" # Specify syringe volume!\n\n""",
+                   type = "Elite11"
+                   port = "{serial_port}"
+                   address = {address}
+                   syringe_diameter = "XXX mm" # Specify syringe diameter!
+                   syringe_volume = "YYY ml" # Specify syringe volume!\n\n""",
     )
-    return set(cfg)
+    logger.info(f"Close the serial port: <{serial_port}>")
+    link._serial.close()
+    cfg.add(msg)
+    return cfg

@@ -50,7 +50,53 @@ class AzuraPumpHeads(Enum):
 
 # noinspection DuplicatedCode
 class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
-    """Control module for Knauer Azura Compact pumps."""
+    """
+    Control module for Knauer Azura Compact pumps.
+
+    This class handles the initialization, control, and communication with the Knauer Azura Compact pumps.
+    It includes methods to set and get parameters such as flow rate, pressure, and pump head type.
+    The class supports asynchronous operations to ensure non-blocking communication with the device.
+
+    Attributes:
+        ip_address (str): The IP address of the pump.
+        mac_address (str): The MAC address of the pump.
+        max_pressure (str): Maximum pressure limit for the pump.
+        min_pressure (str): Minimum pressure limit for the pump.
+
+    Methods:
+        initialize(): Initialize connection and configure the pump.
+        error_present(reply: str) -> bool: Check if there are errors in the device's reply.
+        create_and_send_command(message, setpoint: int | None = None, setpoint_range: tuple | None = None): Create and
+        send a command to the pump.
+        get_headtype() -> AzuraPumpHeads: Return the pump's head type.
+        set_headtype(head_type: AzuraPumpHeads): Set the pump's head type.
+        get_flow_rate() -> float: Get the current flow rate in ml/min.
+        set_flow_rate(rate: pint.Quantity): Set the flow rate.
+        get_minimum_pressure(): Get the minimum pressure setting.
+        set_minimum_pressure(value: str = "0 bar"): Set the minimum pressure.
+        get_maximum_pressure() -> str: Get the maximum pressure setting.
+        set_maximum_pressure(value: str): Set the maximum pressure.
+        set_minimum_motor_current(setpoint=None): Set the minimum motor current.
+        is_start_in_required(): Check if START IN is required for the pump to operate.
+        require_start_in(value: bool = True): Configure START IN requirement.
+        is_autostart_enabled(): Check if autostart is enabled.
+        enable_autostart(value: bool = True): Enable or disable autostart.
+        get_adjusting_factor(): Get the adjusting factor.
+        set_adjusting_factor(setpoint: int | None = None): Set the adjusting factor.
+        get_correction_factor(): Get the correction factor.
+        set_correction_factor(setpoint=None): Set the correction factor.
+        read_pressure() -> pint.Quantity: Read the current pressure from the sensor.
+        read_extflow() -> float: Read the external flow rate from analog input.
+        read_errors() -> list[int]: Read the last 5 error codes.
+        read_motor_current(): Read the motor current in percent.
+        infuse(): Start the pump.
+        stop(): Stop the pump.
+        is_running(): Check if the pump is running.
+        set_local(state: bool = True): Relinquish remote control.
+        remote_control(state: bool = True): Enable or disable remote control.
+        is_analog_control_enabled(): Check if analog control is enabled.
+        enable_analog_control(value: bool): Enable or disable external flow control via analog input.
+    """
 
     def __init__(
         self,

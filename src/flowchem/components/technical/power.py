@@ -1,4 +1,4 @@
-"""Power control, sets both voltage and current. (Could be split in two, unnecessarty for now)."""
+"""Power control, sets both voltage and current. (Could be split in two, unnecessary for now)."""
 from __future__ import annotations
 
 from flowchem.components.flowchem_component import FlowchemComponent
@@ -36,7 +36,7 @@ class PowerControl(PowerSwitch):
         name: str,
         hw_device: FlowchemDevice,
     ) -> None:
-        """Create a TemperatureControl object."""
+        """Create a PowerSwitch object."""
         super().__init__(name, hw_device)
 
         self.add_api_route("/power-on", self.power_on, methods=["PUT"])
@@ -51,7 +51,7 @@ class PowerControl(PowerSwitch):
         self.add_api_route("/voltage", self.set_voltage, methods=["PUT"])
 
     async def set_current(self, current: str):
-        """Set the target current to the given string in natural language."""
+        """Set the target current to the given string in "magnitude and unit" format."""
         ...
 
     async def get_current(self) -> float:  # type: ignore
@@ -59,7 +59,7 @@ class PowerControl(PowerSwitch):
         ...
 
     async def set_voltage(self, voltage: str):
-        """Set the target voltage to the given string in natural language."""
+        """Set the target voltage to the given string in "magnitude and unit" format."""
         ...
 
     async def get_voltage(self) -> float:  # type: ignore

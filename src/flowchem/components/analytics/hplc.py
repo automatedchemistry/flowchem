@@ -10,8 +10,32 @@ if TYPE_CHECKING:
 
 
 class HPLCControl(FlowchemComponent):
+    """
+    A component for controlling an HPLC (High Performance Liquid Chromatography) system.
+
+    Attributes:
+    -----------
+    hw_device : FlowchemDevice
+        The hardware device (HPLC) this component interfaces with.
+
+    Methods:
+    --------
+    send_method(method_name: str):
+        Submit a method to the HPLC system. This is useful when automatic actions, like switching a valve, are triggered.
+    run_sample(sample_name: str, method_name: str):
+        Run an HPLC sample using the specified sample and method.
+    """
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """HPLC Control component. Sends methods, starts run, do stuff."""
+        """
+        Constructs all the necessary attributes for the HPLCControl object.
+
+        Parameters:
+        -----------
+        name : str
+            The name of the HPLC control component.
+        hw_device : FlowchemDevice
+            The hardware device (HPLC) this component interfaces with.
+        """
         super().__init__(name, hw_device)
         self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])
         self.add_api_route("/send-method", self.send_method, methods=["PUT"])
@@ -23,12 +47,37 @@ class HPLCControl(FlowchemComponent):
         self.component_info.type = "HPLC Control"
 
     async def send_method(self, method_name):
-        """Submit method to HPLC.
+        """
+        Set or load a analytical method to the HPLC system.
 
-        This is e.g. useful when the injection is automatically triggerd when switching a valve.
+        This method is useful for scenarios where an injection is automatically triggered, such as when switching a valve.
+
+        Note that the commands is wrapped in the run sample
+
+        Parameters:
+        -----------
+        method_name : str
+            The name of the method to be submitted.
+
+        Returns:
+        --------
+        None
         """
         ...
 
     async def run_sample(self, sample_name: str, method_name: str):
-        """Run HPLC sample with the provided sample name and method."""
+        """
+        Run an HPLC sample using the provided sample name and method.
+
+        Parameters:
+        -----------
+        sample_name : str
+            The name of the sample to run.
+        method_name : str
+            The name of the method to use for running the sample.
+
+        Returns:
+        --------
+        None
+        """
         ...

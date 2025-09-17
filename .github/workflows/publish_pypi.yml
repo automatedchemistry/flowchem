@@ -1,48 +1,124 @@
-name: Publish Python 🐍 distributions 📦 to PyPI
-on:
+name: 🐍 Build & Publish Python Distributions to TestPyPI & PyPI
+
+on: 
   push:
-    branches: [main]
+    branches:
+      - main
     tags:
-      - '*'
+      - 'v*'
 
 jobs:
-  build-n-publish:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+  build:
+    name: Build distribution 📦
     runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        
+    - name: Upgrade pip and install build
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install build --user
+
+    - name: Install toml tool
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: python -m pip install toml
+    - name: Check tag version matches project version
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+        CODE_VERSION=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['project']['version'])")
+        TAG_VERSION="${TAG_VERSION}"
+        CODE_VERSION="${CODE_VERSION}"
+        echo "Tag version: $TAG_VERSION"
+        echo "Code version: $CODE_VERSION"
+        if [ "$TAG_VERSION" != "$CODE_VERSION" ]; then
+          echo "::error::Tag version ($TAG_VERSION) does not match code version ($CODE_VERSION)"
+          exit 1
+        fi
+
+    - name: Build a binary wheel and a source tarball
+      run: |
+        python3 -m build
+        echo "version=$(python setup.py --version)" >> $GITHUB_ENV
+    - name: Store the distribution packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+
+  publish-to-pypi:
+    name: >-
+      Publish Python 🐍 distribution 📦 to PyPI
+    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/flowchem
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@master
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install pypa/build
-        run: |
-          python -m pip install build --user
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
 
-      - name: Build a binary wheel and a source tarball
-        run: |
-          python -m build --sdist --wheel --outdir dist/ .
-
-      - name: Publish distribution 📦 to Test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
-
-      - name: Publish distribution 📦 to PyPI
-        if: startsWith(github.ref_name, 'v')
-        uses: pypa/gh-action-pypi-publish@release/v1
-
-  build-release-github:
+  publish-to-testpypi:
+    name: Publish Python 🐍 distribution 📦 to TestPyPI
+    needs:
+    - build
     runs-on: ubuntu-latest
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/flowchem
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
     steps:
-      - uses: actions/checkout@master
-      - name: Publish release 📦 to GitHub
-        if: startsWith(github.ref_name, 'v')
-        uses: elgohr/Github-Release-Action@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    - name: Publish distribution 📦 to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: True
+
+  github-release:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Create GitHub Release
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
         with:
-          title: flowchem_${{  github.ref_name }}
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish release 📦 to GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ needs.build.outputs.version }}
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

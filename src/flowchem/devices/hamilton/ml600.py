@@ -12,6 +12,7 @@ from loguru import logger
 from enum import Enum
 
 from flowchem import ureg
+from pint import Quantity
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
@@ -54,7 +55,6 @@ class ML600Commands(Enum):
     # strongly encouraged since mapping is clear if initial/0 position is clear and rotor/stator are known
     VALVE_BY_ANGLE_CW = "LA0"
     VALVE_BY_ANGLE_CCW = "LA1"
-
     # STATUS REQUEST
     # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
     REQUEST_DONE = "F"
@@ -591,7 +591,7 @@ class ML600(FlowchemDevice):
         pump = "B" if not pump else pump
         status = await self.system_status(checking_mapping[pump])
         logger.info(f"pump {pump} is busy: {status}")
-        return status
+        return status # type: ignore
 
     async def get_valve_status(self, valve: str = "") -> bool | dict[str, bool]:
         """Ture means valve is busy. False means valve is idle."""

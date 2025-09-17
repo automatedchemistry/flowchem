@@ -5,6 +5,14 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
+
+# Build the files to DocString reference
+# sphinx-apidoc -o docs/development/foundations/code_structure src
+# Build html
+# sphinx-build -b html -v docs docs/_build/html
+# start docs/_build/html/index.html
+
+
 import datetime
 import os
 import sys
@@ -19,7 +27,7 @@ ROOT_DIR = os.path.abspath(os.path.join(CONF_DIR, os.pardir))
 # -- Project information -----------------------------------------------------
 project = "flowchem"
 YEAR = datetime.date.today().strftime("%Y")
-author = "Dario Cambié"
+author = "Dario Cambié, Jakob Wolf, Wei-Hsin Hsu, Samuel Saraiva"
 copyright = f"{YEAR}, {author}"
 release = metadata.version("flowchem")
 
@@ -55,21 +63,24 @@ myst_enable_extensions = [
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
+
 # -- Options for HTML output -------------------------------------------------
 # html_logo = "http://placekitten.com/200/90"
-html_theme = "furo"
-html_theme_options = {
-    "light_css_variables": {
-        "primary-color": "#005555",
-    },
-    "dark_css_variables": {
-        "primary-color": "#e5c07b",
-    },
-}
-html_show_copyright = False
-html_show_sphinx = False
+#html_theme = "furo"
+#html_theme_options = {
+#    "light_css_variables": {
+#        "primary-color": "#005555",
+#    },
+#    "dark_css_variables": {
+#        "primary-color": "#e5c07b",
+#    },
+#}
+#html_show_copyright = False
+#html_show_sphinx = False
 
-html_static_path = ["_static"]
-html_css_files = [
-    "flowchem.css",
-]
+#html_static_path = ["_static"]
+#html_css_files = [
+#    "flowchem.css",
+#]

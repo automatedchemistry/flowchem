@@ -35,6 +35,23 @@ class ML600LeftValve(FourPortFivePositionValve):
 
 
 class ML600RightValve(ThreePortFourPositionValve):
+    """
+    Represents the right valve of the ML600 pump with specific translation for raw positions.
+
+    This valve has 4 possible positions each separated by 90 degrees.
+
+    Attributes:
+    -----------
+    hw_device : ML600
+        The hardware device instance associated with this valve.
+    identifier : str
+        The identifier for this valve, set to "C".
+
+    Methods:
+    --------
+    _change_connections(raw_position: int, reverse: bool = False) -> int:
+        Translate the raw position to the corresponding degree or reverse.
+    """
     hw_device: ML600  # for typing's sake
     identifier: str
 
@@ -43,6 +60,7 @@ class ML600RightValve(ThreePortFourPositionValve):
         self.identifier = identifier
 
     def _change_connections(self, raw_position: str, reverse: bool = False) -> str:
+
         if not reverse:
             translated = (int(raw_position) + 2) * 90
             if translated >= 360:

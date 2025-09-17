@@ -1,4 +1,4 @@
-"""Entry-point module for the command line prefixer, called in case you use `python -m flowchem`.
+"""Entry-point module for the command line prefixes, called in case you use `python -m flowchem`.
 Why does this file exist, and why `__main__`? For more info, read:
 - https://www.python.org/dev/peps/pep-0338/
 - https://docs.python.org/3/using/cmdline.html#cmdoption-m.
@@ -73,6 +73,7 @@ def main(device_config_file, logfile, host, debug):
             timeout_keep_alive=3600,
         )
         server = uvicorn.Server(config)
+        logger.info("Click on http://127.0.0.1:8000 to access device server.")
         await server.serve()
 
     asyncio.run(main_loop())

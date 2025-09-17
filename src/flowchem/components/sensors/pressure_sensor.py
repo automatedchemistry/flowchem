@@ -5,9 +5,31 @@ from .sensor import Sensor
 
 
 class PressureSensor(Sensor):
-    """A pressure sensor."""
+    """
+    A class to represent a pressure sensor.
+
+    Attributes:
+    -----------
+    hw_device : FlowchemDevice
+        The hardware device this sensor is interfacing with.
+
+    Methods:
+    --------
+    read_pressure(units: str = "bar"):
+        Read the current pressure from the sensor and return it in the specified units.
+    """
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        """
+        Constructs all the necessary attributes for the PressureSensor object.
+
+        Parameters:
+        -----------
+        name : str
+            The name of the pressure sensor.
+        hw_device : FlowchemDevice
+            The hardware device this sensor is interfacing with.
+        """
         super().__init__(name, hw_device)
         self.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
 
@@ -17,5 +39,17 @@ class PressureSensor(Sensor):
         )
 
     async def read_pressure(self, units: str = "bar"):
-        """Read from sensor, result to be expressed in units (optional)."""
+        """
+        Read the current pressure from the sensor and return it in the specified units.
+
+        Parameters:
+        -----------
+        units : str, optional
+            The units in which to return the pressure (default is bar).
+
+        Returns:
+        --------
+        float
+            The current pressure in the specified units.
+        """
         ...

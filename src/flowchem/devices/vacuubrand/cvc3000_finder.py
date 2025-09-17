@@ -31,5 +31,6 @@ def cvc3000_finder(serial_port) -> set[str]:
             type = "CVC3000"
             port = "{serial_port}"\n\n"""
     )
-
+    logger.info(f"Close the serial port: <{serial_port}>")
+    cvc._serial.close()
     return set(dev_config)

@@ -1,14 +1,14 @@
 # Getting started
-This guide will help you with the installation of flowchem.
 
-## Overview
-In a typical scenario, flowchem:
-1. reads a configuration file listing the devices to be controlled and their settings;
-2. creates connections with each device and ensures a reproducible state at start-up;
-3. provides access to the capabilities of each device (such as pumping, heating etc...) via a web interface.
+Flowchem's package assists the user in building the automation of your platform. Here, the 
+platform is understandable as a conjunct of devices, generally of different suppliers, that must work synchronized to 
+accomplish a task. In other words, to perform an experimental process automatically. 
+
+If you're already familiar with the package or want to get straight to the point, just follow the instructions in this 
+[ltdr](tldr.md).
 
 :::{figure-md} flowchem-architecture
-<img src="./_static/architecture_v1.svg" alt="Flowchem software architecture (devices/config/server)" class="bg-primary mb-1" width="100%">
+<img src="architecture_v1.svg" alt="Flowchem software architecture (devices/config/server)" class="bg-primary mb-1" width="100%">
 
 **Figure 1** Schematic representation of flowchem software architecture.
 A heterogeneous collection of devices is physically connected to a control PC.
@@ -16,115 +16,76 @@ The configuration file in TOML format specifies the connection parameters for ea
 After running flowchem with that configuration, a web server is started to control each device via a single API.
 :::
 
-### Interoperability
+## Key features of the flowchem
+
+1. **Easy configuration**
+
+Flowchem was designed to use a simple, editable configuration file. This file contains the names of the devices 
+connected to the computer and key details about each one, such as their connection addresses.
+
+2. **Abstraction**
+
+Flowchem was built using a class hierarchy for each component. Each device inherits common methods and attributes 
+shared among similar devices. If needed, some devices can be easily replaced with an equivalent one without losing 
+functionality. These equivalent devices can come from different suppliers but perform the same function, like two 
+different pumps.
+
+3. **Reproducible**
+
+Flowchem creates connections with each device and ensures a reproducible state at start-up;
+
+4. **Multithreading**
+
+Flowchem provides access to the capabilities of each device (such as pumping, heating etc...) via a web interface.
+Flowchem was developed to work with multithreading using the 
+[Asynchronous package](https://docs.python.org/3/library/asyncio.html). This means commands can be sent 
+asynchronously, and each device will run in its own thread. This setup helps prevent the entire system from crashing 
+if an error occurs with one device.
+
+5. **Interoperability**:
+
 Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
 written in different languages and from almost any operative system, including Android and iOS.
 A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
-## Install flowchem
-Flowchem requires a Python version of 3.10 or later.
-You can get the latest version of Python from [python.org](https://www.python.org/downloads/).
+For direct immersion into the package, we recommend that the reader follow the flowchart presented below. The link to 
+the documentation cited in the flowchart is listed below.
 
-To get started with flowchem run (preferably in a dedicated [virtual environment](https://peps.python.org/pep-0405/)):
-```shell
-pip install flowchem
-```
-or install it with [pipx](https://pypa.github.io/pipx/), a tool to install and run python applications in isolated
-environments:
-```shell
-pip install pipx
-pipx ensurepath
-pipx install flowchem
-```
-<!--
-The use of `pipx` is recommended because it:
-* installs flowchem in a virtualenv, without interfering with other packages installed globally;
-* ensure that the `flowchem` and `flowchem-autodiscover` commands are available system-wide, by adding the pipx binary
-  folder to the system PATH (the `pipx ensurepath` step).-->
+:::{figure-md} flowchart
+<img src="decision.JPG" alt="Suggestion of follow the documetation" class="bg-primary mb-1" width="100%">
 
-To verify the installation has been completed successfully you can run `flowchem --version`.
-
-## Flowchem configuration
-Flowchem needs a configuration file with the connection parameter of the device to be controlled.
-In its simplest form, the configuration file looks like this:
-```toml
-[device.example1]
-type = "FakeDevice"
-```
-Where `example1` is the device name and `FakeDevice` the device type.
-
-### Running flowchem
-Now create a file with that content (or get it from the [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples))
-and run the `flowchem` command followed by the name of the file.
-```shell
-flowchem flowchem_config.toml
-```
-
-In your terminal, you will see some debug information, ending with a line like this one:
-```shell
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-```
-
-This means that the flowchem server has been started correctly.
-You can visit [http://127.0.0.1:8000](http://127.0.0.1:8000) to see a list of commands available for your test device.
-
-```{note}
-The device name is used as first subdirectory in the URL of the commands relative to this device.
-For example, in this case, the commands relative to our test device will be available under `http://localhost:8000/example1/`.
-```
-```{note}
-For every request sent to the flowchem server, you will see some diagnostic output in the terminal.
-While you can normally ignore this output, it can provide useful information in case of errors.
-```
-
-### Device autoconfiguration
-To be able to write a configuration file, you need to know the type of device you want to connect to and some connection
-parameters.
-
-Flowchem is capable of auto-detecting some devices and instrument, and to generate a valid configuration stub for them.
-To find any device already connected to the PC where flowchem is installed, run the autodiscover tool:
-```shell
-flowchem-autodiscover
-```
-And reply to the prompts.
-If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created.
-
-
-```{note}
-Some additional information is generally still necessary even for auto-detected devices.
-```
-
-
-Complete the missing information (if any) in this file, and then you will be ready to use flowchem!
-
-```{note}
-`flowchem_config.toml` is written in [TOML format](https://en.wikipedia.org/wiki/TOML),
-the syntax of this language is intuitive and designed to be human-editable.
-If you follow this guide you will not need to learn anything about the TOML syntax, but you can just copy and modify the
-examples provided.
-```
-
-:::{note}
-Not all the devices supported by flowchem can be auto discovered, so you might need to edit the configuration
-file manually for some device types.
+**Figure 2** Flowchart with a suggested reading of the documentation 
 :::
 
-## Run flowchem
-With flowchem installed and a configuration file created, you are ready to start your flowchem server.
+[Kindly start](user-guides/tutorials/start.md) - Friendly introduction to the flowchem;
 
-Run `flowchem` followed by the location of the configuration file:
-```shell
-flowchem flowchem_config.toml
-```
+[Install flowchem](user-guides/tutorials/installation.md) - How to install the flowchem;
 
-In your terminal, you will see some debug information, ending with a line like this one:
-```shell
-INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-```
+[Configure the file](user-guides/How-ToGuide/configuration.md) - How to create a configuration file;
 
-This means that the flowchem server has been started correctly.
-You can visit [http://127.0.0.1:8000](http://127.0.0.1:8000) to see a list of commands available for the device you
-configured.
+[Work with the API](user-guides/How-ToGuide/using_api.md) - How to work with the API server;
 
-For every request sent to the flowchem server, you will see some diagnostic output in the terminal.
-While you can normally ignore this output, it can provide useful information in case of errors.
+[Add new devices](development/additional/add_device/index.md) - How add new devices (to skilled people in the flowchem);
+
+[Run flowchem with a real device](user-guides/How-ToGuide/realdevice.md) - Showcase with a real device;
+
+[See a real example of usage](user-guides/examples/reaction_optimization.md) - Example where flowchem was 
+applied.
+
+Questions in flowchart:
+
+1. **What is your background in Python?** To use this package, the user is not required to have a deep knowledge of 
+   code programming. However, basic concepts are fundamental. If your coding background is poor, we kindly ask you to read and follow the instructions in the "[Kindly start](user-guides/tutorials/start.md)" section.
+
+2. **Do you have a device to test it now?** You can test the flowchem on your device if it is plugged into your 
+   computer. If you don't have a device to test, no worries. You can do it at another time.
+
+4. If you have a device to test, **is this device implemented in flowchem?**. You can inspect this documentation to see 
+   if your device is present in the [reference section](user-guides/reference/devices/supported_devices.md).
+
+5. If your device is not implemented, **do you want to do it?**, be aware of some key points:
+   - This documentation provides [guidance to implement new devices](development/additional/add_device/index.md), however, 
+     it requires a certain level of knowledge in Python.
+   - We recommend that before tackling this task, the user explores, reads, and understands the user guide section and 
+   the [foundation of the package](development/foundations/foundation.md). We recommend the user to simply try the 
+   package and follow provided material.

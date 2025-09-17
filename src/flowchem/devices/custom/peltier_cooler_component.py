@@ -20,7 +20,7 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
         super().__init__(name, hw_device, temp_limits)
 
     async def set_temperature(self, temperature: str):
-        """Set the target temperature to the given string in natural language."""
+        """Set the target temperature to the given string in "magnitude and unit" format."""
         set_t = await super().set_temperature(temperature)
         return await self.hw_device.set_temperature(set_t)
 

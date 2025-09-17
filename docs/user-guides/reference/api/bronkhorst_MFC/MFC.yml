@@ -1,0 +1,205 @@
+openapi: 3.1.0
+info:
+  title: 'Flowchem - '
+  description: Flowchem is a library to control instruments and devices commonly found
+    in chemistry labs via an interoperable web API.
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0a3
+paths:
+  /my-MFC/:
+    get:
+      tags:
+      - my-MFC
+      summary: Get Device Info
+      operationId: get_device_info_fake_device__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceInfo'
+  /my-MFC/MFC/:
+    get:
+      tags:
+      - my-MFC
+      - my-MFC
+      summary: Get Component Info
+      description: Return metadata.
+      operationId: get_component_info_fake_device_MFC__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComponentInfo'
+  /my-MFC/MFC/get-flow-rate:
+    get:
+      tags:
+      - my-MFC
+      - my-MFC
+      summary: Get Flow Setpoint
+      description: "Get the current flow rate in ml/min.\n\nReturns:\n--------\nfloat\n\
+        \    The current flow rate in ml/min."
+      operationId: get_flow_setpoint_fake_device_MFC_get_flow_rate_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: number
+                title: Response Get Flow Setpoint Fake Device Mfc Get Flow Rate Get
+  /my-MFC/MFC/set-flow-rate:
+    put:
+      tags:
+      - my-MFC
+      - my-MFC
+      summary: Set Flow Setpoint
+      description: "Set the flow rate to the instrument; default unit is ml/min.\n\
+        \nParameters:\n-----------\nflowrate : str\n    The desired flow rate to set.\n\
+        \nReturns:\n--------\nbool\n    True if the flow rate setpoint was set successfully."
+      operationId: set_flow_setpoint_fake_device_MFC_set_flow_rate_put
+      parameters:
+      - name: flowrate
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Flowrate
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: boolean
+                title: Response Set Flow Setpoint Fake Device Mfc Set Flow Rate Put
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /my-MFC/MFC/stop:
+    put:
+      tags:
+      - my-MFC
+      - my-MFC
+      summary: Stop
+      description: "Stop the mass flow controller.\n\nReturns:\n--------\nbool\n \
+        \   True if the mass flow controller was stopped successfully."
+      operationId: stop_fake_device_MFC_stop_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: boolean
+                title: Response Stop Fake Device Mfc Stop Put
+components:
+  schemas:
+    ComponentInfo:
+      properties:
+        name:
+          type: string
+          title: Name
+          default: ''
+        parent_device:
+          type: string
+          title: Parent Device
+          default: ''
+        type:
+          type: string
+          title: Type
+          default: ''
+        owl_subclass_of:
+          items:
+            type: string
+          type: array
+          title: Owl Subclass Of
+          default:
+          - http://purl.obolibrary.org/obo/OBI_0000968
+      type: object
+      title: ComponentInfo
+      description: Metadata associated with flowchem components.
+    DeviceInfo:
+      properties:
+        manufacturer:
+          type: string
+          title: Manufacturer
+          default: ''
+        model:
+          type: string
+          title: Model
+          default: ''
+        version:
+          type: string
+          title: Version
+          default: ''
+        serial_number:
+          anyOf:
+          - type: string
+          - type: integer
+          title: Serial Number
+          default: unknown
+        components:
+          additionalProperties:
+            type: string
+            minLength: 1
+            format: uri
+          type: object
+          title: Components
+          default: {}
+        backend:
+          type: string
+          title: Backend
+          default: flowchem v. 1.0.0a3
+        authors:
+          items:
+            type: string
+            format: name-email
+          type: array
+          title: Authors
+          default: []
+        additional_info:
+          type: object
+          title: Additional Info
+          default: {}
+      type: object
+      title: DeviceInfo
+      description: Metadata associated with hardware devices.
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError

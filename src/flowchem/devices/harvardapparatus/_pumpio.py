@@ -41,7 +41,7 @@ class HarvardApparatusPumpIO:
         try:
             self._serial = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
-            logger.error(f"Cannot connect to the Pump on the port <{port}>")
+            logger.error(f"Cannot connect to the Pump on the port <{port}> issue:{serial_exception}")
             raise InvalidConfigurationError(
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from serial_exception
