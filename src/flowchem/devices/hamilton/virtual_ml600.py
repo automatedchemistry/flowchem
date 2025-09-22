@@ -46,17 +46,17 @@ class VirtualML600(FlowchemDevice):
         if config.get("valve_left_class") and not config.get("valve_left_class") in ValveType:
             logger.error(f"Invalid valve configuration in left valve of {self.name}! "
                          f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
-                         f"{ML600.DEFAULT_CONFIG["valve_left_class"]}!")
+                         f"{ML600.DEFAULT_CONFIG['valve_left_class']}!")
             config.pop("valve_left_class")
         if config.get("valve_rigth_class") and not config.get("valve_rigth_class") in ValveType:
             logger.error(f"Invalid valve configuration in rigth valve of {self.name}! "
                          f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
-                         f"{ML600.DEFAULT_CONFIG["valve_rigth_class"]}!")
+                         f"{ML600.DEFAULT_CONFIG['valve_rigth_class']}!")
             config.pop("valve_rigth_class")
         if config.get("valve_class") and not config.get("valve_class") in ValveType:
             logger.error(f"Invalid valve configuration in valve of {self.name}! "
                          f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
-                         f"{ML600.DEFAULT_CONFIG["valve_class"]}!")
+                         f"{ML600.DEFAULT_CONFIG['valve_class']}!")
             config.pop("valve_class")
         # This will merger the config into ML600.DEFAULT_CONFIG (in order to update)
         self.config = VirtualML600.DEFAULT_CONFIG | config
