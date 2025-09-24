@@ -1,0 +1,2 @@
+[device.fake-device]
+type = "FakeDeviceExample"
