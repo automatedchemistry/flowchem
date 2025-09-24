@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 import json
-from typing import Tuple
+from typing import Tuple, List, Optional
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -92,15 +92,15 @@ class Valve(FlowchemComponent):
     - a `set_position()` method
     - a `get_position()` method
 
-    This is explicit and informative in itself and requires no further intermittant helper mappings
+    This is explicit and informative in itself and requires no further intermittent helper mappings
     """
 
     def __init__(
             self,
             name: str,
             hw_device: "FlowchemDevice",
-            stator_ports: [(), ()], # type: ignore
-            rotor_ports: [(), ()], # type: ignore
+            stator_ports: [(), ()],  # type: ignore
+            rotor_ports: [(), ()],  # type: ignore
     ) -> None:
         """Create a valve object.
 
@@ -113,8 +113,7 @@ class Valve(FlowchemComponent):
             rotor and stator are both represented like:
             (   (1,2,3,4,5,6),          (0))
                 radial ports       middle ports
-                          should be equally distributed, with equally spaced angle in between. If this is not the
-                          case, add None
+            Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
              for missing port
 
             Exemple: 4 port 5 Position Valve
@@ -204,9 +203,19 @@ class Valve(FlowchemComponent):
         return connections
 
     def _change_connections(self, raw_position: int | str, reverse: bool = False):
-        # abstract valve mapping needs to be translated to device-specific position naming. This can be e.g.
+        # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (int | str): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            int: The mapped position.
+        """
         raise NotImplementedError
 
     def _connect_positions(self,
@@ -241,19 +250,20 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    async def get_position(self) -> list[list[int]]:
+    async def get_position(self) -> List[List[Optional[int]]]:
         """Get current valve position."""
         if not hasattr(self, "identifier"):
-            pos = await self.hw_device.get_raw_position() # type: ignore
+            pos = await self.hw_device.get_raw_position()  # type: ignore
         else:
             pos = await self.hw_device.get_raw_position(self.identifier) # type: ignore
-        pos = int(pos) if pos.isnumeric() else pos
+        if isinstance(pos, str) and pos.isnumeric():
+            pos = int(pos)
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
     async def set_position(self,
                            connect: str = "",
                            disconnect: str = "",
-                           ambiguous_switching: str | bool = False):
+                           ambiguous_switching: str | bool = False) -> bool:
         """Move valve to position, which connects named ports"""
         connect_tuple = return_tuple_from_input(connect)
         disconnect_tuple = return_tuple_from_input(disconnect)
@@ -266,6 +276,8 @@ class Valve(FlowchemComponent):
             await self.hw_device.set_raw_position(target_pos) # type: ignore
         else:
             await self.hw_device.set_raw_position(target_pos, target_component=self.identifier) # type: ignore
+        return True
+
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
