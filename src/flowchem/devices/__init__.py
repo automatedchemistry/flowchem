@@ -18,3 +18,4 @@ from .custom import *
 from .fakedevice import *
 from .runze import *
 from .waters import *
+from .biochem import *
