@@ -39,7 +39,7 @@ class FastAPIServer:
 
     def _add_configuration_retrieve(self) -> None:
         @self.app.get(
-            "/config",
+            "/startup_config",
             tags=["system"],
         )
         def config():
