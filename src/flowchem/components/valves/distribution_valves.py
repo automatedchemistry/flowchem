@@ -28,6 +28,7 @@ class SixPortDistributionValve(Valve):
             rotor_ports=[(7, None, None, None, None, None), (7,)],
         )
 
+
 class EightPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(
