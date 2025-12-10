@@ -1,8 +1,7 @@
-# Miscellaneous
+# Custom
 
 ```{toctree}
 :maxdepth: 1
 
-peltier
-
+mpikg_switch_box
 ```

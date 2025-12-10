@@ -1,11 +1,11 @@
 """Sensor device."""
 from __future__ import annotations
 
-from flowchem.components.sensor_core import SensorBase
+from flowchem.components.technical.ADC import AnalogDigitalConverter
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class Sensor(SensorBase):
+class Sensor(AnalogDigitalConverter):
     """
     A generic sensor device class.
 

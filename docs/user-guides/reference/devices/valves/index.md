@@ -6,4 +6,5 @@
 knauer_valve
 vici_valve
 runze_valve
+biochem_solenoid_valve
 ```
