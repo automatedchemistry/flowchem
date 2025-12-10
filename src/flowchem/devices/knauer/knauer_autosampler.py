@@ -4,7 +4,7 @@ Knauer Autosampler Control Module
 =================================
 
 This module provides an interface to control the Knauer Autosampler AS 6.1L via either Serial or Ethernet communication.
-It enables users to interact with the device by sending and receiving commands, configuring parameters like tray temperature, 
+It enables users to interact with the device by sending and receiving commands, configuring parameters like tray temperature,
 syringe volume, and controlling the movement of the needle and valves.
 
 Core Features
@@ -16,7 +16,7 @@ Core Features
 
 Main Components
 ---------------
-- `KnauerAutosampler`: Main class that encapsulates the Autosampler logic. Exposes methods to set/get parameters, 
+- `KnauerAutosampler`: Main class that encapsulates the Autosampler logic. Exposes methods to set/get parameters,
   initialize the device, and perform key operations like aspiration and dispensing.
 - `ASEthernetDevice`: TCP communication wrapper to interact with the Autosampler over Ethernet.
 - `ASSerialDevice`: Serial communication wrapper using `aioserial` for asynchronous operation.

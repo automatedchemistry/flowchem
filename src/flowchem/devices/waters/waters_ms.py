@@ -1,5 +1,5 @@
 """
-This is an ugly attempt to control a Waters Xevo MS via Autolynx.
+Control a Waters Xevo MS via Autolynx.
 When the MS is running and Autolynx is running, measuring an MS only requires putting a csv file with specific header
 into a specific (and installation dependent) folder.
 The Aim of this code is to supply a class that deals with creating the file with right experiment code and fields and
@@ -14,7 +14,7 @@ from flowchem.utils.people import jakob, miguel
 
 from .waters_ms_component import WatersMSControl
 
-# autolynx queue file is also where the conversion should happen - just set duration and a bit after that issue the conversion command
+
 class WatersMS(FlowchemDevice):
     """
     Interface to control Waters Xevo MS through AutoLynx queue files.
@@ -32,27 +32,13 @@ class WatersMS(FlowchemDevice):
     """
     def __init__(self,
                  name: str = "Waters_MS",
-                 path_to_AutoLynxQ: str = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
+                 path_to_AutoLynxQ: str = r"PATH/TO/AutoLynxQ",
                  ms_exp_file: str = "",
                  tune_file: str = "",
                  inlet_method: str = "inlet_method",
                  ) -> None:
 
         super().__init__(name=name)
-        """
-        Interface to control Waters Xevo MS through AutoLynx queue files.
-
-        This class creates and writes a properly formatted tab-delimited queue file that
-        AutoLynx reads to start MS data acquisition. It can also optionally invoke
-        post-run data conversion via ProteoWizard's `msconvert`.
-
-        Args:
-            name (str): Name of the device.
-            path_to_AutoLynxQ (str): Path to the AutoLynx queue folder.
-            ms_exp_file (str): Name of the MS experiment method file.
-            tune_file (str): Name of the tune method file.
-            inlet_method (str): Name of the inlet method file.
-        """
         # Metadata
         self.device_info.authors = [jakob, miguel]
         self.device_info.manufacturer = "Waters"
@@ -72,7 +58,7 @@ class WatersMS(FlowchemDevice):
                                run_duration: int = 0,
                                queue_name = "next.txt",
                                do_conversion: bool = False,
-                               output_dir="W:\BS-FlowChemistry\data\open_format_ms"):
+                               output_dir=r"PATH/TO/open_format_ms"):
         """
         Create and drop a queue file for AutoLynx to initiate MS acquisition.
 
@@ -96,8 +82,7 @@ class WatersMS(FlowchemDevice):
             c.convert_masspec(str(sample_name), run_delay=run_duration+60)
 
 
-
-# convert to mzml C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit>
+# convert to mzml 64-bit
 class Converter:
     """
     Handles conversion of proprietary Waters `.raw` MS data to `.mzML` format.
@@ -110,9 +95,9 @@ class Converter:
         output_dir (str): Output directory for converted `.mzML` files.
         raw_data (str): Directory containing `.raw` data from the MS.
     """
-    def __init__(self, path_to_executable = r"C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit",
-                 output_dir = r"W:\BS-FlowChemistry\data\open_format_ms",
-                 raw_data=r"W:\BS-FlowChemistry\data\MS_Jakob.PRO\Data"):
+    def __init__(self, path_to_executable = r"PATH/TO/ProteoWizard 64-bit",
+                 output_dir = r"PATH/TO/open_format_ms",
+                 raw_data=r"PATH/TO/Data"):
         self.raw_data = raw_data
         self.exe = path_to_executable
         self.output_dir = output_dir
@@ -141,13 +126,11 @@ class Converter:
             exe_str = f"ping -n {run_delay} 127.0.0.1 >NUL && {exe_str}"
 
         subprocess.Popen(exe_str, cwd=self.exe, shell=True)
-        #x.run(exe_str, shell=True, capture_output=False, timeout=3)
 
 
 if __name__ == "__main__":
-    # seems to work - now, a comparison is needed of what is present already and what new
-    proprietary_data_path = Path(r"W:\BS-FlowChemistry\data\MS_Jakob.PRO\Data")
-    open_data_path = Path(r"W:\BS-FlowChemistry\data\open_format_ms")
+    proprietary_data_path = Path(r"PATH/TO/Data")
+    open_data_path = Path(r"PATH/TO/open_format_ms")
     conv = Converter(output_dir=str(open_data_path))
     converted = []
     prop=[]

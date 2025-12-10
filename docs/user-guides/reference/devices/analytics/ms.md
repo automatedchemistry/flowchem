@@ -16,12 +16,9 @@ Configuration sample showing all possible parameters:
 type = "WatersMS"
 
 # Optional paramters (default shown)
-path_to_AutoLynxQ = "W:/BS-FlowChemistry7Equipment7Waters MS/AutoLynxQ" # Path to the AutoLynx queue folder.
+path_to_AutoLynxQ = "PATH/TO/AutoLynx/" # Path to the AutoLynx queue folder.
 ms_exp_file = ""  # Name of the MS experiment method file.
 tune_file = ""  # Name of the tune method file.
 inlet_method  = "inlet_method"  # Name of the inlet method file.
 ```
-
-## API methods
-See the [device API reference](../../api/clarity/api.md) for a description of the available methods.
 

@@ -1,7 +1,10 @@
 """FastAPI server for devices control."""
+from collections.abc import Iterable
 from importlib.metadata import metadata, version
+
 from fastapi import APIRouter, FastAPI
 from loguru import logger
+from typing import Any
 from starlette.responses import RedirectResponse
 
 from flowchem.components.device_info import DeviceInfo
@@ -24,7 +27,7 @@ class FastAPIServer:
             },
         )
         self.base_url = rf"http://{host}:{port}"
-        self.configuration_dict: dict = {}
+        self.configuration_dict: dict[str, Any] = {}
 
         self._add_root_redirect()
         self._add_configuration_retrieve()
@@ -44,20 +47,20 @@ class FastAPIServer:
         )
         def config():
             """
-            Return the current server configuration as a dictionary.
+            Return the startup config server configuration as a dictionary.
             This endpoint provides configuration data used by the server,
             such as device settings and parameters.
             """
             return self.configuration_dict
 
-    def add_background_tasks(self, repeated_tasks: RepeatedTaskInfo):
+    def add_background_tasks(self, repeated_tasks: Iterable[RepeatedTaskInfo]):
         """Schedule repeated tasks to run upon server startup."""
-        seconds_delay, task = repeated_tasks
-        @self.app.on_event("startup")
-        @repeat_every(seconds=seconds_delay)
-        async def my_task():
-            logger.debug(f"Running repeated task {task.__name__} every time...")
-            await task()
+        for seconds_delay, task in repeated_tasks:
+            @self.app.on_event("startup")
+            @repeat_every(seconds=seconds_delay)
+            async def my_task():
+                logger.debug("Running repeated task...")
+                await task()
 
     def add_device(self, device):
         """Add device to server."""

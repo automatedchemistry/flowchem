@@ -85,7 +85,7 @@ class RunzeValveIO:
 
     DEFAULT_CONFIG = {
         "timeout": 1,
-        "baudrate": 9600,  #The corresponding baudrate can be set through a factory command
+        "baudrate": 57600,  #The corresponding baudrate can be set through a factory command
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
@@ -135,6 +135,7 @@ class RunzeValveIO:
     def parse_response(response: str, raise_errors: bool = True) -> tuple[str,str]:
         """Split a received line in its components: status, reply."""
         status, parameters = response[4:6], response[6:8]
+
         status_strings = {
             "00": "Normal status",
             "01": "Frame error",
@@ -168,7 +169,7 @@ class RunzeValve(FlowchemDevice):
         self,
         valve_io: RunzeValveIO,
         name: str,
-        address: int = 0,
+        address: int = 1,
     ) -> None:
         super().__init__(name)
 
@@ -185,6 +186,7 @@ class RunzeValve(FlowchemDevice):
         )
 
     async def initialize(self):
+        await super().initialize()
 
         # Detect valve type
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
@@ -224,13 +226,17 @@ class RunzeValve(FlowchemDevice):
 
         for value in possible_ports:
             success = await self.set_raw_position(str(value), raise_errors=False)
-            if success:
-                valve_type = value
-                return RunzeValveHeads(str(valve_type))
 
-        if valve_type is None:
-            logger.error("Failed to recognize the valve type: no successful port value.")
-            raise ValueError("Unable to recognize the valve type. All port values failed.")
+            if success:
+                # Update the last successful value if the command succeeded
+                valve_type = value
+            else:
+                if valve_type is None:
+                    logger.error("Failed to recognize the valve type: no successful port value.")
+                    raise ValueError("Unable to recognize the valve type. All port values failed.")
+                break
+
+        return RunzeValveHeads(str(valve_type))
 
     async def _send_command_and_read_reply(
             self,
@@ -265,15 +271,13 @@ class RunzeValve(FlowchemDevice):
             command="44",
             parameter=int(position),
             raise_errors=raise_errors)
-        if status == "00" and raise_errors is True:
-            logger.info(f"Valve position set to: {position}")
         if status == "00":
+            logger.info(f"Valve position set to: {parameters}")
             return True
         else:
             return False
 
     async def set_address(self, address: int) -> str:
-        """Function to change valve's slave address."""
         status, parameters = await self._send_command_and_read_reply(command="00", parameter=address, is_factory_command=True)
         if status == "00":
             self.address = address

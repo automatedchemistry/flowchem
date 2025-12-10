@@ -35,7 +35,7 @@ class WatersMSControl(MSControl):
                          run_duration: int = 0,
                          queue_name: str = "next.txt",
                          do_conversion: bool = False,
-                         output_dir: str = "W:\BS-FlowChemistry\data\open_format_ms"):
+                         output_dir: str = "PATH/TO/open_format_ms"):
         """
         Trigger a mass spectrometry sample run.
 

@@ -1,9 +1,9 @@
 """Base FakeComponent."""
-from flowchem.components.sensor_core import SensorBase
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class FakeComponent(SensorBase):
+class FakeComponent(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """A generic FakeComponent."""
         super().__init__(name, hw_device)

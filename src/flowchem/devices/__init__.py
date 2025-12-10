@@ -17,4 +17,6 @@ from .vicivalco import *
 from .runze import *
 from .fakedevice import *
 from .custom import *
+from .fakedevice import *
+from .runze import *
 from .waters import *

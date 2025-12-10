@@ -12,6 +12,8 @@ __all__ = [
     "KnauerDAD",
     "KnauerValve",
     "KnauerAutosampler",
+    "KnauerValve",
+    "KnauerAutosampler",
     "VirtualAzuraCompact",
     "VirtualKnauerDAD",
     "VirtualKnauerValve",

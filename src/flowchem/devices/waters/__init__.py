@@ -1,3 +1,4 @@
+"""Waters Mass Spec Device."""
 from .waters_ms import WatersMS
 from .virtual import VirtualWatersMS
 

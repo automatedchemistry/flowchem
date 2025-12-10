@@ -11,12 +11,12 @@ if TYPE_CHECKING:
 
 class MSControl(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """MS Control component. Sends methods, starts run, do stuff."""
+        """MS Control component. Sends methods and starts run."""
         super().__init__(name, hw_device)
         self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])
         self.add_api_route("/send-method", self.send_method, methods=["PUT"])
 
-        # Ontology: high performance liquid chromatography instrument
+        # Ontology: A mass spectrometer is an instrument which is used to measure the mass to charge ratio of ions
         self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/OBI_0000049",
         )
