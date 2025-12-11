@@ -75,7 +75,7 @@ class SwitchBoxDAC(MultiChannelDAC):
 
 class SwitchBoxADC(MultiChannelADC):
 
-    async def read(self, channel: str) -> float:  # type:ignore[override]
+    async def read(self, channel: str = "1") -> float:  # type:ignore[override]
         """
         Read ADC (Analog-to-Digital Converter) channel (1 to 8).
 
@@ -134,7 +134,7 @@ class SwitchBoxRelay(MultiChannelRelay):
 
         self.add_api_route("/channel_set_point", self.read_channel_set_point, methods=["GET"])
 
-    async def power_on(self, channel: str) -> bool:  # type:ignore[override]
+    async def power_on(self, channel: str = "1") -> bool:  # type:ignore[override]
         """
         Power ON a single relay channel at full power (~24 V).
 
@@ -152,7 +152,7 @@ class SwitchBoxRelay(MultiChannelRelay):
         """
         return await self.set_channel(channel, value="2")
 
-    async def power_off(self, channel: str) -> bool:  # type:ignore[override]
+    async def power_off(self, channel: str = "1") -> bool:  # type:ignore[override]
         """
         Power OFF a single relay channel.
 
@@ -189,7 +189,7 @@ class SwitchBoxRelay(MultiChannelRelay):
             port=self.identify
         )
 
-    async def read_channel_set_point(self, channel: str) -> int | None:
+    async def read_channel_set_point(self, channel: str = "1") -> int | None:
         """
         Read the current state of a specific relay channel.
 
