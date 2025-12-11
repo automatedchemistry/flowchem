@@ -141,9 +141,9 @@ docs = [
 ]
 
 [project.urls]
-homepage = "https://github.com/cambiegroup/flowchem"
+homepage = "https://github.com/automatedchemistry/flowchem"
 documentation = "https://flowchem.readthedocs.io"
-repository = "https://github.com/cambiegroup/flowchem"
+repository = "https://github.com/automatedchemistry/flowchem"
 
 [project.scripts]
 flowchem = "flowchem.__main__:main"
