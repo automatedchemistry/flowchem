@@ -172,7 +172,7 @@ class BioChemSolenoidValve(FlowchemDevice):
           for a *normally open* valve, an ON relay means *closed*; for a *normally closed*
           valve, an ON relay means *open*.
         """
-        status = await self._io.is_on()
+        status = await self._io.is_on(channel=self.channel)
         if self.normally_open:
             return not status
         else:
