@@ -36,6 +36,7 @@ import aioserial
 
 import asyncio
 from typing import Type
+
 import functools
 import time
 import pint
@@ -54,7 +55,6 @@ from flowchem.devices.knauer.knauer_autosampler_component import (
 try:
     # noinspection PyUnresolvedReferences
     from NDA_knauer_AS.knauer_AS import * # This won't trigger F403 or F405 now
-
     HAS_AS_COMMANDS = True
 except ImportError:
     HAS_AS_COMMANDS = False
@@ -106,7 +106,6 @@ class CommandOrValueError(ASError):
     """Command is unknown, value is unknown or out of range, transmission failed"""
     pass
 
-
 class ASFailureError(ASError):
     """AS failed to execute command"""
     pass
@@ -139,6 +138,7 @@ def send_until_acknowledged(max_reaction_time=15):
                     elapsed_time = time.time() - start_time
                     remaining_time = 10 - elapsed_time
             raise ASError("Maximum reaction time exceeded")
+
         return wrapper
     return decorator
 
@@ -157,7 +157,6 @@ class ASEthernetDevice:
         try:
             # Open a connection
             reader, writer = await asyncio.open_connection(self.ip_address, self.port)
-
             # Send the message
             writer.write(message.encode())
             await writer.drain()
@@ -199,6 +198,7 @@ class ASSerialDevice:
         "parity": aioserial.PARITY_NONE,  # Parity: None (fixed)
         "stopbits": aioserial.STOPBITS_ONE  # Stopbits: 1 (fixed)
     }
+
 
     def __init__(self, port: str | None = None, **kwargs):
         if not port:
@@ -269,6 +269,7 @@ class KnauerAutosampler(FlowchemDevice):
                  ip_address: str = "",
                  autosampler_id: int | None = None,
                  port: str | None = None,
+
                  _syringe_volume: str = "",
                  tray_type: str = "",
                  **kwargs,
@@ -283,12 +284,12 @@ class KnauerAutosampler(FlowchemDevice):
 
         self.ip_address = ip_address
         self.port = port
-
         self.io: ASEthernetDevice | ASSerialDevice
         if self.ip_address:
             # Ethernet communication
             self.io = ASEthernetDevice(ip_address=self.ip_address, **kwargs)
             _syringe_volume_ = None
+
         elif self.port:
             # Serial communication
             self.io = ASSerialDevice(port=self.port, **kwargs)
@@ -333,6 +334,7 @@ class KnauerAutosampler(FlowchemDevice):
         self._syringe_volume = _syringe_volume_ if _syringe_volume_ else _syringe_volume
         self.device_info = DeviceInfo(
             authors=[jakob, miguel, samuel_saraiva],
+
             manufacturer="Knauer",
             model="Autosampler AS 6.1L"
         )
@@ -365,6 +367,7 @@ class KnauerAutosampler(FlowchemDevice):
 
     @send_until_acknowledged(max_reaction_time=10)
     async def _set(self, message: str):
+
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
@@ -379,6 +382,7 @@ class KnauerAutosampler(FlowchemDevice):
 
     @send_until_acknowledged(max_reaction_time=10)
     async def _query(self, message: str):
+
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
@@ -397,6 +401,7 @@ class KnauerAutosampler(FlowchemDevice):
         elif reply == CommunicationFlags.TRY_AGAIN.value:  # type: ignore
             raise ASBusyError
         elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:  # type: ignore
+
             raise CommandOrValueError
         # this is only the case with replies on queries
         else:
@@ -420,6 +425,7 @@ class KnauerAutosampler(FlowchemDevice):
             if int(as_id.decode()) != self.autosampler_id:
                 logger.error(f"AS_AI reply {as_ai} and AS_PFC reply {as_pfc}!")
                 raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is {as_id}")
+
             # if reply is only zeros, which can be, give back one 0 for interpretation
             if len(as_val.decode().lstrip("0")) > 0:
                 return int(as_val.decode().lstrip("0"))
@@ -456,6 +462,7 @@ class KnauerAutosampler(FlowchemDevice):
         await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)  # type: ignore
         await self.syringe_valve_position(SyringeValvePositions.WASTE.name)  # type: ignore
         await self.injector_valve_position(InjectorValvePositions.LOAD.name)  # type: ignore
+
 
         logger.info('Knauer AutoSampler device was successfully initialized!')
         self.components.extend([
@@ -501,6 +508,7 @@ class KnauerAutosampler(FlowchemDevice):
         return await self._set_get_value(InjectionVolumeCommand, volume)  # type: ignore
 
     async def syringe_speed(self, speed: str | None = None):
+
         """
         LOW, NORMAL, HIGH
         This does NOT work on all models
@@ -532,6 +540,7 @@ class KnauerAutosampler(FlowchemDevice):
                                          get_actual=True)
 
     async def set_raw_position(self, position: str | None = None, target_component: str | None = None):
+
         match target_component:
             case "injection_valve":
                 return await self.injector_valve_position(port=position)
@@ -541,6 +550,7 @@ class KnauerAutosampler(FlowchemDevice):
                 raise RuntimeError("Unknown valve type")
 
     async def get_raw_position(self, target_component: str | None = None) -> str:
+
         match target_component:
             case "injection_valve":
                 return await self.injector_valve_position(port=None)
@@ -550,6 +560,7 @@ class KnauerAutosampler(FlowchemDevice):
                 raise RuntimeError("Unknown valve type")
 
     async def aspirate(self, volume: float, flow_rate: float | int | None = None):
+
         """
         aspirate with built in syringe if no external syringe is set to AutoSampler.
         Else use external syringe
@@ -601,6 +612,7 @@ class KnauerAutosampler(FlowchemDevice):
         reply = str(await self._query(command_string))
         reply = (3-len(reply))*'0'+reply
         return ASStatus(reply).name  # type: ignore
+
 
 
 if __name__ == "__main__":

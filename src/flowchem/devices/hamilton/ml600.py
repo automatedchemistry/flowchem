@@ -1,6 +1,6 @@
 """Control Hamilton ML600 syringe pump via the protocol1/RNO+."""
 from __future__ import annotations
-
+#
 import asyncio
 import string
 import warnings
@@ -10,18 +10,89 @@ from typing import TYPE_CHECKING
 
 import aioserial
 from loguru import logger
+from enum import Enum
 
 from flowchem import ureg
+from pint import Quantity
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
-from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.people import dario, jakob, wei_hsin, miguel
 
-if TYPE_CHECKING:
-    import pint
 
+class ML600Commands(Enum):
+    """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
+
+    PAUSE = "K"
+    RESUME = "$"
+    CLEAR_BUFFER = "V"
+
+    INIT_ALL = "X"
+    INIT_VALVE_ONLY = "LX"
+    INIT_SYRINGE_ONLY = "X1"
+
+    # only works for pumps with two syringe drivers
+    SET_VALVE_CONTINUOUS_DISPENSE = "LST19"
+    SET_VALVE_DUAL_DILUTOR = "LST20"
+
+    # if there are two drivers, both sides can be selected
+    SELECT_LEFT = "B"
+    SELECT_RIGHT = "C"
+
+    # SYRINGE POSITION
+    PICKUP = "P"
+    DELIVER = "D"
+    ABSOLUTE_MOVE = "M"
+
+    # VALVE POSITION
+    # strongly discouraged since mapping changes
+    VALVE_TO_INLET = "I"
+    VALVE_TO_OUTLET = "O"
+    VALVE_TO_WASH = "W"
+    VALVE_BY_NAME_CW = "LP0"
+    VALVE_BY_NAME_CCW = "LP1"
+    # strongly encouraged since mapping is clear if initial/0 position is clear and rotor/stator are known
+    VALVE_BY_ANGLE_CW = "LA0"
+    VALVE_BY_ANGLE_CCW = "LA1"
+    # STATUS REQUEST
+    # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
+    REQUEST_DONE = "F"
+    SYRINGE_HAS_ERROR = "Z"
+    VALVE_HAS_ERROR = "G"
+    IS_SINGLE_SYRINGE = "H"
+    # STATUS REQUEST  - these have complex responses, see relevant methods for details.
+    STATUS_REQUEST = "E1"
+    ERROR_REQUEST = "E2"
+    TIMER_REQUEST = "E3"
+    BUSY_STATUS = "T1"
+    ERROR_STATUS = "T2"
+    # PARAMETER REQUEST
+    SYRINGE_DEFAULT_SPEED = "YQS"
+      # 2-3692 seconds per stroke
+    CURRENT_SYRINGE_POSITION = "YQP"  # 0-52800 steps
+    SYRINGE_DEFAULT_BACKOFF = "YQB"  # 0-1000 steps
+    CURRENT_VALVE_POSITION = "LQP"
+      # 1-8 (see docs, Table 3.2.2
+    GET_RETURN_STEPS = "YQN"  # 0-1000 steps
+    # PARAMETER CHANGE
+    SET_RETURN_STEPS = "YSN"  # 0-1000
+    # VALVE REQUEST
+    VALVE_ANGLE = "LQA"  # 0-359 degrees
+    VALVE_CONFIGURATION = "YQS"
+      # 11-20 (see docs, Table 3.2.2
+    #Set valve speed
+    SET_VALVE_SPEED = "LSF"  # 15-720 degrees per sec
+    #Set valve speed
+    GET_VALVE_SPEED = "LQF"
+    # TIMER REQUEST
+    TIMER_DELAY = "<T"  # 0–99999999 ms
+    # FIRMWARE REQUEST
+    FIRMWARE_VERSION = "U"
+      # xxii.jj.k (ii major, jj minor, k revision)
+    OPTIONAL_PARAMETER = "S"
+    EMPTY = ""
 
 # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
 # Note ':' is used for broadcast within the daisy chain.
@@ -32,9 +103,9 @@ PUMP_ADDRESS = dict(enumerate(string.ascii_lowercase[:16], start=1))
 class Protocol1Command:
     """Class representing a pump command and its expected reply."""
 
-    command: str
-    target_pump_num: int = 1
+    command: ML600Commands = ML600Commands.EMPTY
     target_component: str = ""
+    target_pump_num: int = 1
     command_value: str = ""
     optional_parameter: str = ""
     parameter_value: str = ""
@@ -45,13 +116,45 @@ class Protocol1Command:
         compiled_command = (
             f"{PUMP_ADDRESS[self.target_pump_num]}"
             f"{self.target_component}"
-            f"{self.command}{self.command_value}"
+            f"{self.command.value}{self.command_value}"
         )
 
         if self.parameter_value:
             compiled_command += f"{self.optional_parameter}{self.parameter_value}"
 
         return compiled_command + self.execution_command
+
+    def multiple_compile(self, command_string: str | None) -> str:
+        """
+        Create actual command byte by prepending pump address to command and appending executing command.
+        """
+        assert self.target_pump_num in range(1, 17)
+        if not command_string:
+            command_string = self._multiple_compile()
+
+        command_string = (f"{PUMP_ADDRESS[self.target_pump_num]}"
+                         f"{command_string}")
+
+        if self.execution_command is not None:
+            command_string += "R"
+
+        return command_string + "\r"
+
+    def _multiple_compile(self) -> str:
+        """
+        Create command string for individual pump. from that, up to two commands can be compiled, by appending pump address and adding run value
+        """
+        if not self.command_value:
+            self.command_value = ""
+
+        compiled_command = (
+            f"{self.target_component}"f"{self.command.value}{self.command_value}"
+        )
+        if self.parameter_value:
+            compiled_command += f"{self.optional_parameter}{self.parameter_value}"
+        # Add execution flag at the end
+
+        return compiled_command
 
 
 class HamiltonPumpIO:
@@ -73,6 +176,7 @@ class HamiltonPumpIO:
         self.num_pump_connected: int | None = (
             None  # Set by `HamiltonPumpIO.initialize()`
         )
+        self._serial_lock = asyncio.Lock()
 
     @classmethod
     def from_config(cls, config):
@@ -91,9 +195,9 @@ class HamiltonPumpIO:
     async def initialize(self, hw_initialization: bool = True):
         """Ensure connection with pump and initialize it (if hw_initialization is True)."""
         self.num_pump_connected = await self._assign_pump_address()
-        if hw_initialization:
-            await self.all_hw_init()  # initialization take more than 8.5 sec for one instrument
-            await asyncio.sleep(8)  # this might be necessary due to checking request_done sometime fail with "" return
+        # if hw_initialization:
+        #     await self.all_hw_init()  # initialization take more than 8.5 sec for one instrument
+        #     await asyncio.sleep(8)  # this might be necessary due to checking request_done sometime fail with "" return
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -147,13 +251,9 @@ class HamiltonPumpIO:
         """Split a received line in its components: status, reply."""
         status, reply = response[:1], response[1:]
 
-        assert status in (self.ACKNOWLEDGE, self.NEGATIVE_ACKNOWLEDGE)
         if status == self.NEGATIVE_ACKNOWLEDGE:
             logger.warning("Negative acknowledge received")
-            warnings.warn(
-                "Negative acknowledge reply: check command syntax!",
-                stacklevel=2,
-            )
+        assert status in (self.ACKNOWLEDGE, self.NEGATIVE_ACKNOWLEDGE)
 
         return reply.rstrip()  # removes trailing <cr>
 
@@ -167,90 +267,45 @@ class HamiltonPumpIO:
 
     async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
         """Send a command to the pump, read the replies and returns it, optionally parsed."""
-        self._serial.reset_input_buffer()
-        await self._write_async(f"{command.compile()}\r".encode("ascii"))
-        response = await self._read_reply_async()
+        async with self._serial_lock:
+            self._serial.reset_input_buffer()
+            await self._write_async(f"{command.compile()}\r".encode("ascii"))
+            response = await self._read_reply_async()
 
-        if not response:
-            raise InvalidConfigurationError(
-                f"No response received from pump! "
-                f"Maybe wrong pump address? (Set to {command.target_pump_num})"
-            )
+            if not response:
+                logger.error(
+                    f"No response received from pump! "
+                    f"Maybe wrong pump address? (Set to {command.target_pump_num})"
+                )
 
-        return self._parse_response(response)
+            return self._parse_response(response)
 
+    async def multiple_write_and_read_reply_async(self, command: list[Protocol1Command] | Protocol1Command) -> str:
 
-class ML600Commands(Enum):
-    """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
+        """ Main HamiltonPumpIO method.
+        Sends a command to the pump, read the replies and returns it, optionally parsed """
+        async with self._serial_lock:
+            command_compiled = ""
+            self._serial.reset_input_buffer()
+            if type(command) != list:
+                command = [command]
+            for com in command:
+                command_compiled += com._multiple_compile()
+            com_comp = com.multiple_compile(command_compiled)
+            await self._write_async(com_comp.encode("ascii"))
+            response = await self._read_reply_async()
 
-    PAUSE = "K"
-    RESUME = "$"
-    CLEAR_BUFFER = "V"
+            if not response:
+                logger.error(
+                    f"No response received from pump! "
+                    f"Maybe wrong pump address? (Set to {command.target_pump_num})"
+                )
 
-    INIT_ALL = "X"
-    INIT_VALVE_ONLY = "LX"
-    INIT_SYRINGE_ONLY = "X1"
+            # Parse reply
+            parsed_response = self._parse_response(response)
 
-    # only works for pumps with two syringe drivers
-    SET_VALVE_CONTINUOUS_DISPENSE = "LST19"
-    SET_VALVE_DUAL_DILUTOR = "LST20"
+            return parsed_response
 
-    # if there are two drivers, both sides can be selected
-    SELECT_LEFT = "B"
-    SELECT_RIGHT = "C"
-
-    # SYRINGE POSITION
-    PICKUP = "P"
-    DELIVER = "D"
-    ABSOLUTE_MOVE = "M"
-
-    # VALVE POSITION
-    # strongly discouraged since mapping changes
-    VALVE_TO_INLET = "I"
-    VALVE_TO_OUTLET = "O"
-    VALVE_TO_WASH = "W"
-    VALVE_BY_NAME_CW = "LP0"
-    VALVE_BY_NAME_CCW = "LP1"
-    # strongly encouraged since mapping is clear if initial/0 position is clear and rotor/stator are known
-    VALVE_BY_ANGLE_CW = "LA0"
-    VALVE_BY_ANGLE_CCW = "LA1"
-
-    # STATUS REQUEST
-    # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
-    REQUEST_DONE = "F"
-    SYRINGE_HAS_ERROR = "Z"
-    VALVE_HAS_ERROR = "G"
-    IS_SINGLE_SYRINGE = "H"
-    # STATUS REQUEST  - these have complex responses, see relevant methods for details.
-    STATUS_REQUEST = "E1"
-    ERROR_REQUEST = "E2"
-    TIMER_REQUEST = "E3"
-    BUSY_STATUS = "T1"
-    ERROR_STATUS = "T2"
-    # PARAMETER REQUEST
-    SYRINGE_DEFAULT_SPEED = "YQS"
-      # 2-3692 seconds per stroke
-    CURRENT_SYRINGE_POSITION = "YQP"  # 0-52800 steps
-    SYRINGE_DEFAULT_BACKOFF = "YQB"  # 0-1000 steps
-    CURRENT_VALVE_POSITION = "LQP"
-      # 1-8 (see docs, Table 3.2.2
-    GET_RETURN_STEPS = "YQN"  # 0-1000 steps
-    # PARAMETER CHANGE
-    SET_RETURN_STEPS = "YSN"  # 0-1000
-    # VALVE REQUEST
-    VALVE_ANGLE = "LQA"  # 0-359 degrees
-    VALVE_CONFIGURATION = "YQS"
-      # 11-20 (see docs, Table 3.2.2
-    #Set valve speed
-    SET_VALVE_SPEED = "LSF"  # 15-720 degrees per sec
-    #Set valve speed
-    GET_VALVE_SPEED = "LQF"
-    # TIMER REQUEST
-    TIMER_DELAY = "<T"  # 0–99999999 ms
-    # FIRMWARE REQUEST
-    FIRMWARE_VERSION = "U"
-      # xxii.jj.k (ii major, jj minor, k revision)
-    OPTIONAL_PARAMETER = "S"
 
 
 class ValveType(StrEnum):
@@ -319,7 +374,7 @@ class ML600(FlowchemDevice):
         """
         super().__init__(name)
         self.device_info = DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
+            authors=[dario, jakob, wei_hsin, miguel],
             manufacturer="Hamilton",
             model="ML600",
         )
@@ -346,13 +401,11 @@ class ML600(FlowchemDevice):
                 f"The specified syringe volume ({syringe_volume}) is invalid!\n"
                 f"The volume (in ml) has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
-
         self._steps_per_ml: pint.Quantity = ureg.Quantity(f"{48000 / self.syringe_volume} step")
         # todo: check
         # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
-        self.return_steps = 24  # Steps added to each absolute move command (default)
-
+        # logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
         # This enables to configure on per-pump basis uncommon parameters
         self.inspect_valve_argument(config)
         self.dual_syringe = False
@@ -412,26 +465,25 @@ class ML600(FlowchemDevice):
 
     async def get_return_steps(self) -> int:
         """ Gives the defined return steps for syringe movement """
-        reply=await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
+        reply = await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.GET_RETURN_STEPS))
         return int(reply)
 
-    async def set_return_steps(self, return_steps: int):
+    async def set_return_steps(self, steps: int):
         """
         Return steps are used to compensate for the mechanical drive system backlash,
         independent of syringe size and default is 24 steps.
         The return step should be in # 0-1000 steps.
         """
-        # waiting is necessary since this happens on (class) initialisation
-        target_steps = str(int(return_steps))
-        await self.wait_until_system_idle()
-        await self.send_command_and_read_reply(Protocol1Command(
-            command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
+        await self.send_command_and_read_reply(
+            Protocol1Command(
+                command=ML600Commands.SET_RETURN_STEPS, command_value=str(steps)
+            )
+        )
 
-    async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
+    async def initialize(self, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
-        # this command MUST be executed in the beginning
         await self.pump_io.initialize()
-        await self.wait_until_system_idle()
+        await self.wait_until_idle()
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.version()
         logger.info(
@@ -462,14 +514,15 @@ class ML600(FlowchemDevice):
             self.components.append(ML600Pump("pump", self))
             valve = ValveType(self.config["left_valve"])
             self.components.append(
-                ML600LeftValve("valve", self) if valve == ValveType.LEFT else ML600RightValve("valve", self))
+                ML600LeftValve("valve", self) if valve == ValveType.LEFT else ML600RightValve("valve", self)
+            )
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
         command.target_pump_num = self.address
         return await self.pump_io.write_and_read_reply_async(command)
 
-    def _validate_speed(self, speed: pint.Quantity | None) -> str:
+    def _validate_speed(self, speed: ureg | None) -> str:
         """Validate the speed.
 
         Given a speed (seconds/stroke) returns a valid value for it, and a warning if out of bounds.
@@ -480,8 +533,8 @@ class ML600(FlowchemDevice):
 
         # Alert if out of bounds but don't raise exceptions, according to general philosophy.
         # Target flow rate too high
-        if speed < ureg.Quantity("2 sec/stroke"):
-            speed = ureg.Quantity("2 sec/stroke")
+        if speed < ureg("2 sec/stroke"):
+            speed = ureg("2 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -490,8 +543,8 @@ class ML600(FlowchemDevice):
             )
 
         # Target flow rate too low
-        if speed > ureg.Quantity("3692 sec/stroke"):
-            speed = ureg.Quantity("3692 sec/stroke")
+        if speed > ureg("3692 sec/stroke"):
+            speed = ureg("3692 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -501,29 +554,22 @@ class ML600(FlowchemDevice):
 
         return str(round(speed.m_as("sec / stroke")))
 
-    async def initialize_pump(self, speed: pint.Quantity | None = None):
-        """Initialize both syringe and valve. speed: 2-3692 in seconds/stroke"""
-        init_pump = Protocol1Command(
-            command=ML600Commands.INIT_ALL.value,
-            optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
-            parameter_value=self._validate_speed(speed),
-        )
-        return await self.send_command_and_read_reply(init_pump)
-
     async def initialize_valve(self):
         """Initialize valve only."""
-        return await self.send_command_and_read_reply(Protocol1Command(command="LX"))
+        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.INIT_VALVE_ONLY))
 
-    async def initialize_syringe(self, speed: pint.Quantity | None = None):
+    async def initialize_syringe(self, speed: ureg, pump: str = ""):
         """Initialize syringe only. speed: 2-3692 in seconds/stroke"""
+
         init_syringe = Protocol1Command(
-            command="X1",
+            command=ML600Commands.INIT_SYRINGE_ONLY,
             optional_parameter="S",
             parameter_value=self._validate_speed(speed),
+            target_component=pump
         )
         return await self.send_command_and_read_reply(init_syringe)
 
-    def _flowrate_to_seconds_per_stroke(self, flowrate: pint.Quantity):
+    def _flowrate_to_seconds_per_stroke(self, flowrate: ureg):
         """Convert flow rates to steps per seconds.
 
         To determine the volume dispensed per step the total syringe volume is divided by
@@ -540,77 +586,82 @@ class ML600(FlowchemDevice):
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
-    def _volume_to_step_position(self, volume: pint.Quantity) -> int:
+    def _volume_to_step_position(self, volume: ureg) -> int:
         """Convert a volume to a step position."""
         # todo: different syringes
         # noinspection PyArgumentEqualDefault
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps"))
 
-    async def get_current_volume(self, pump: str) -> pint.Quantity:
+    async def get_current_volume(self, pump: str = "") -> ureg:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
-                             target_component=pump),
-        )
+            Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION,target_component=pump),)
 
         current_steps = int(syringe_pos) * ureg.step
         return current_steps / self._steps_per_ml
 
-    async def set_to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, pump: str):
+    async def set_to_volume(self, target_volume: ureg, rate: ureg, pump: str = ""):
         """Absolute move to target volume provided by set step position and speed."""
+        # in pump component, it already checked the desired volume setting is possible to execute or not
         speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
-        set_speed = self._validate_speed(speed)
+        set_speed = self._validate_speed(speed)  # check desired speed is possible to execute
         position = self._volume_to_step_position(target_volume)
         logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {set_speed}")
 
         abs_move_cmd = Protocol1Command(
-            command=ML600Commands.ABSOLUTE_MOVE.value,
-            optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
+            command=ML600Commands.ABSOLUTE_MOVE,
+            optional_parameter="S",
             command_value=str(position),
             parameter_value=set_speed,
             target_component=pump
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
-    async def pause(self, pump: str):
+    async def pause(self, pump: str = ""):
         """Pause any running command."""
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", target_component=pump, execution_command="K"),)
+            Protocol1Command(command=ML600Commands.EMPTY, target_component=pump, execution_command="K"),)
 
-    async def resume(self, pump: str):
+    async def resume(self, pump: str = ""):
         """Resume any paused command."""
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", target_component=pump, execution_command="$"),)
+            Protocol1Command(command=ML600Commands.EMPTY, target_component=pump, execution_command="$"),)
 
-    async def stop(self, pump: str) -> bool:
+    async def stop(self, pump: str = "") -> bool:
         """Stop and abort any running command."""
         await self.pause(pump)
         await self.send_command_and_read_reply(
-            Protocol1Command(command="", target_component=pump, execution_command="V"),)
+            Protocol1Command(command=ML600Commands.EMPTY, target_component=pump, execution_command="V"),)
         return True  # Todo: need?
 
-    async def get_pump_status(self, pump: str = "") -> bool:
+    async def get_pump_status(self, pump: str = "") -> bool | dict[str, bool]:
         """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
         pump = "B" if not pump else pump
-        status = await self.get_component_status(checking_mapping[pump])
+        status = await self.system_status(checking_mapping[pump])
         logger.info(f"pump {pump} is busy: {status}")
-        return status
+        return status # type: ignore
 
-    async def get_valve_status(self, valve: str = "") -> bool:
+    async def get_valve_status(self, valve: str = "") -> bool | dict[str, bool]:
         """Ture means valve is busy. False means valve is idle."""
         checking_mapping = {"B": 0, "C": 2}
         valve = "B" if not valve else valve
-        status = await self.get_component_status(checking_mapping[valve])
+        status = await self.system_status(checking_mapping[valve])
         logger.info(f"valve {valve} is busy: {status}")
         return status
 
-    async def get_all_component_status(self) -> dict[str, bool]:
-
+    async def system_status(self, component: int = -1) -> bool | dict[str, bool]:
+        """
+        Represent the status of specific component. True means busy; False means idle.
+        Return status of all parts of instrument in dictionary.
+        """
         reply = await self.send_command_and_read_reply(
-            Protocol1Command(command="T1", execution_command=""))
+                Protocol1Command(command=ML600Commands.BUSY_STATUS, execution_command=""))
         all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        # 1 is true and 0 is false according to the manual; but the real signal is opposite.
+        if -1 < component < 5:
+            return all_status[component] == "0"
 
         value_map = {0: "left_valve busy", 1: "left_pump busy",
                      2: "right_valve busy", 3: "right_pump busy",
@@ -621,21 +672,9 @@ class ML600(FlowchemDevice):
             status[value_map[key]] = all_status[key] == "0"
         return status
 
-    async def get_component_status(self, component: int = -1) -> bool:
-        """
-        Represent the status of specific component. True means busy; False meaens idle.
-        Return status of all parts of instrument in dictionary.
-        """
-        reply = await self.send_command_and_read_reply(
-                Protocol1Command(command="T1", execution_command=""))
-        all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
-        # 1 is true and 0 is false according to the manual; but the real signal is opposite.
-        return all_status[component] == "0"
-
     async def general_status_info(self, component: int = -1) -> bool | dict[str, bool]:
-        # todo: this command will reset the error of syntax and instrument, use others error monitoring method
         reply = await self.send_command_and_read_reply(
-            Protocol1Command(command="E1", execution_command=""))
+            Protocol1Command(command=ML600Commands.STATUS_REQUEST, execution_command=""))
         binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
 
         if -1 < component < 5:
@@ -652,31 +691,31 @@ class ML600(FlowchemDevice):
             status[value_map[key]] = binary_representation[key] == '1'
             logger.info(f"{value_map[key]} : {status[value_map[key]]}")
 
-
             if status[value_map[key]]:
                 raise DeviceError((
                     f"{value_map[key]} shows {status[value_map[key]]}. Check! "
                 ))
         return status
 
-    async def wait_until_system_idle(self):
+    async def wait_until_idle(self, pump: str = "") -> bool:
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 {self.name} wait until idle...")
-        while not await self.is_system_idle():
+        while not await self.is_idle(pump=pump):
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 {self.name} idle now!")
+        return True
 
-    async def is_system_idle(self) -> bool:
+    async def is_idle(self, pump: str = "") -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
             await self.send_command_and_read_reply(
-                Protocol1Command(command="F", execution_command="")) == "Y"
+                Protocol1Command(command=ML600Commands.REQUEST_DONE, execution_command="", target_component=pump)) == "Y"
         )
 
     async def is_single_syringe(self) -> bool:
         """Determine if single or dual syringe"""
         is_single = await self.send_command_and_read_reply(
-            Protocol1Command(command="H", execution_command=""),
+            Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE, execution_command=""),
         )
         if is_single == "N":
             return False
@@ -687,27 +726,42 @@ class ML600(FlowchemDevice):
 
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
-        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.FIRMWARE_VERSION.value))
+        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.FIRMWARE_VERSION))
 
-    async def is_idle(self) -> bool:
-        """Check if the pump is idle (actually check if the last command has ended)."""
-        return (
-            await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.REQUEST_DONE.value)) == "Y"
+    async def get_valve_angle(self, valve_code: str = "") -> int:
+        """get the angle of the valve: 0-359 degrees"""
+        reply = await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.VALVE_ANGLE,
+                                                                        target_component=valve_code))
+        return int(reply)
+
+    async def set_valve_angle(self,
+                              target_angle: int,
+                              valve_code: str = "",
+                              wait_for_movement_end: bool = True) -> int:
+        """set the angle of the valve"""
+        await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CW, target_component=valve_code,
+                             command_value=str(target_angle))
         )
+        logger.debug(f"{self.name} valve position set to {target_angle} degree")
+        if wait_for_movement_end:
+            while await self.get_valve_status(valve_code):
+                await asyncio.sleep(0.1)
+        return True
 
-    async def get_valve_position_by_name(self, valve: ML600Commands) -> str:
+    async def get_valve_position_by_name(self, valve: str = "") -> str:
         """
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
         """
         return await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION.value,
-                             target_component = valve.value if self.dual_syringe else ""))
+            Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION,
+                             target_component=valve if self.dual_syringe else ""))
 
     async def set_valve_position_by_name(
         self,
-        valve: ML600Commands,
-        target_position: str,
+        valve: str = "",
+        target_position: str = "",
         wait_for_movement_end: bool = True
     ):
         """Set valve position.
@@ -715,31 +769,31 @@ class ML600(FlowchemDevice):
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
         await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW.value, command_value=target_position,
-                             target_component=valve.value if self.dual_syringe else ""),
+            Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW, command_value=target_position,
+                             target_component=valve if self.dual_syringe else ""),
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
             while await self.get_valve_status(target_position):
                 await asyncio.sleep(0.1)
         return True
-            # todo: it's will be good check only pump but not whole system
+        # todo: it's will be good check only pump but not whole system
 
-    async def get_raw_position(self, target_component: str) -> str:
+    async def get_raw_position(self, target_component: str = "") -> str:
         """
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
         """
         return await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
+            Protocol1Command(command=ML600Commands.VALVE_ANGLE,
                              target_component=target_component if self.dual_syringe else ""))
 
     async def set_raw_position(
-        self,
-        target_position: str,
-        wait_for_movement_end: bool = True,
-        counter_clockwise = False,
-        target_component = None
+            self,
+            target_position: str,
+            wait_for_movement_end: bool = True,
+            counter_clockwise=False,
+            target_component: str = ""
     ):
         """Set valve position.
         Strongly encouraged to use switching by angle
@@ -747,13 +801,13 @@ class ML600(FlowchemDevice):
         """
         if not counter_clockwise:
             await self.send_command_and_read_reply(
-                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CW.value, command_value=target_position,
+                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CW, command_value=target_position,
                                  target_component=target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CW")
         else:
             await self.send_command_and_read_reply(
-                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW.value, command_value=target_position,
+                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, command_value=target_position,
                                  target_component=target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
@@ -761,16 +815,88 @@ class ML600(FlowchemDevice):
             while await self.get_valve_status(target_component):
                 await asyncio.sleep(0.1)
         return True
-            # todo: it's will be good check only pump but not whole system
+        # todo: it's will be good check only pump but not whole system
+
+    async def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
+        return await self.pump_io.multiple_write_and_read_reply_async(list_of_commands)
+
+    async def set_to_volume_dual_syringes(self, target_volume: ureg, rate_left: ureg, rate_right: ureg, valve_angles: dict[str, str | int]):
+        """
+        Executes a synchronized filling of both syringes.
+
+        This function was created specifically for the platform,
+        ensuring both syringes operate in perfect synchrony. Valve angles must
+        be explicitly set to control flow direction on each side.
+        Parameters:
+        target_volume (ureg.Quantity): Volume to fill.
+        rate (ureg.Quantity): Filling rate.
+        valve_angles (dict): Dictionary with 'left' and 'right' keys specifying valve angle positions.
+        """
+        ML600LeftValvePositionMapping = {
+            0: {"angle": 0, "position": "[[null,0],[2,3]]"},
+            1: {"angle": 45, "position": "[[1,0],[null,null]]"},
+            2: {"angle": 90, "position": "[[null,3],[null,0]]"},
+            3: {"angle": 135, "position": "[[null,null],[2,0]]"},
+            4: {"angle": 180, "position": "[[null,1],[null,0]]"},
+            5: {"angle": 225, "position": "[[null,null],[3,0]]"},
+            6: {"angle": 270, "position": "[[1,2],[null,0]]"},
+            7: {"angle": 315, "position": "[[null,0],[null,null]]"}
+        }
+        def get_angle_from_position(position_value: str) -> str | None:
+            for key, data in ML600LeftValvePositionMapping.items():
+                if data["position"] == position_value:
+                    return str(data["angle"])
+            return None
+        assert self.dual_syringe is True, "Must be dual syringe to use this method."
+        speed_right = self._flowrate_to_seconds_per_stroke(rate_right)  # in seconds/stroke
+        set_speed_right = self._validate_speed(speed_right)  # check desired speed is possible to execute
+        speed_left = self._flowrate_to_seconds_per_stroke(rate_left)  # in seconds/stroke
+        set_speed_left = self._validate_speed(speed_left)  # check desired speed is possible to execute
+        position = self._volume_to_step_position(target_volume)
+        logger.debug(f"Pumps {self.name} set to volume {target_volume} at speeds left: {set_speed_left} and right: {set_speed_right}")
+        # switch valves
+        await self.wait_until_idle(pump="")
+        await self.send_multiple_commands([
+            Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, target_component="B",
+                             command_value=get_angle_from_position(valve_angles["left"])),
+            Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, target_component="C",
+                             command_value=get_angle_from_position(valve_angles["right"])),
+        ])
+        await self.wait_until_idle(pump="")
+        # actuate syringes
+        await self.send_multiple_commands([
+            Protocol1Command(
+                command=ML600Commands.ABSOLUTE_MOVE,
+                optional_parameter="S",
+                command_value=str(position),
+                parameter_value=set_speed_left,
+                target_component="B"
+            ),
+            Protocol1Command(
+                command=ML600Commands.ABSOLUTE_MOVE,
+                optional_parameter="S",
+                command_value=str(position),
+                parameter_value=set_speed_right,
+                target_component="C"
+            )
+        ])
+
+
+
 
 if __name__ == "__main__":
-    import asyncio
+    # asyncio.run(main())
+    from flowchem import ureg
 
     conf = {
-        "port": "COM12",
-        "address": 1,
-        "name": "test1",
-        "syringe_volume": "5 mL",
+    "port": "COM21",
+    "address": 1,
+    "name": "test1",
+    "syringe_volume": "0.1 mL",
     }
     pump1 = ML600.from_config(**conf)
-    asyncio.run(pump1.initialize_pump())
+    asyncio.run(pump1.initialize())
+    #asyncio.run(pump1.set_to_volume(target_volume= ureg("0 ml"), rate= ureg("0.5 ml/min"), pump="C"))
+    asyncio.run(pump1.set_to_volume_dual_syringes(target_volume= ureg("0.1 ml"), rate= ureg("2 ml/min"), valve_angles={"left": "[[null,0],[2,3]]", "right": "[[null,0],[2,3]]"}))
+    #print(asyncio.run(pump1.get_valve_status("C")))
+
