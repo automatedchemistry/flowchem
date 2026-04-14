@@ -442,14 +442,14 @@ class ML600(FlowchemDevice):
             self.components.extend(
                 [
                     (
-                        ML600LeftValve("left_valve", self)
+                        ML600LeftValve("left_valve", self,"B")
                         if left_valve == ValveType.LEFT
-                        else ML600RightValve("left_valve", self)
+                        else ML600RightValve("left_valve", self,"B")
                     ),
                     (
-                        ML600RightValve("right_valve", self)
+                        ML600RightValve("right_valve", self,"C")
                         if right_valve == ValveType.RIGHT
-                        else ML600LeftValve("right_valve", self)
+                        else ML600LeftValve("right_valve", self,"C")
                     ),
                 ]
             )
