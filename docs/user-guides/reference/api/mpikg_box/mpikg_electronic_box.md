@@ -3,7 +3,7 @@
 ### `GET /mybox/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** mybox
 **Operation ID:** `get_device_info_mybox__get`
 

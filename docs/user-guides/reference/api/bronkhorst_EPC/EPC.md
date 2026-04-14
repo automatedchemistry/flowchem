@@ -3,7 +3,7 @@
 ### `GET /my-EPC/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-EPC
 **Operation ID:** `get_device_info_fake_device__get`
 

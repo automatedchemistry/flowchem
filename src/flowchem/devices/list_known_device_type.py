@@ -1,4 +1,5 @@
 """Auto-discover the device classes present in the device sub-folders and in the installed plugins."""
+
 import inspect
 from importlib.metadata import entry_points
 from typing import Any
@@ -47,13 +48,24 @@ def autodiscover_third_party() -> dict[str, Any]:
 
 
 def autodiscover_device_classes() -> dict[str, Any]:
-    """Get all the device-controlling classes, either from `flowchem.devices` or third party packages."""
-    first = autodiscover_first_party()
-    # logger.info(f"Found {len(first)} 1st-party device type! {list(first.keys())}")
-    third = autodiscover_third_party()
-    # logger.info(f"Found {len(third)} 3rd-party device type! {list(third.keys())}")
+    """Get all the device-controlling classes, either from `flowchem.devices` or third party packages.
 
-    return third | first  # First party devices will overwrite the third party ones.
+    First-party devices take priority over third-party ones on name collision.
+    A warning is logged when a collision is detected so the overriding is explicit.
+    """
+    first = autodiscover_first_party()
+    third = autodiscover_third_party()
+
+    # Warn on name collisions so silent overrides don't go unnoticed.
+    collisions = set(first.keys()) & set(third.keys())
+    for name in collisions:
+        logger.warning(
+            f"Device class name '{name}' exists in both first-party and a third-party plugin. "
+            f"The first-party implementation ({first[name]}) will be used."
+        )
+
+    # First-party devices overwrite third-party ones.
+    return third | first
 
 
 if __name__ == "__main__":

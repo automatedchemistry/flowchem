@@ -17,7 +17,7 @@ port = "COM12"  # This will be /dev/tty* under linux/MacOS
 ```
 
 ```{note} Serial connection parameters
-Note, further parameters for the serial connections (i.e. those accepted by `serial.Serial`) such as `baudrate`, 
+Note, further parameters for the serial connections (i.e. those accepted by `serial.Serial`) such as `baudrate`,
 `parity`, `stopbits` and `bytesize` can be specified.
 ```
 

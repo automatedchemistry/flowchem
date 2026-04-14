@@ -1,11 +1,11 @@
 # Adding a New Device as an External Plugin
 
-Flowchem supports external plugins, allowing users to create local packages that extend its functionalities. This 
-approach offers several advantages, such as maintaining full control over device-specific code. However, it introduces 
+Flowchem supports external plugins, allowing users to create local packages that extend its functionalities. This
+approach offers several advantages, such as maintaining full control over device-specific code. However, it introduces
 additional complexity and is recommended only for experienced Python developers.
 
-Flowchem uses Python [entry points](https://packaging.python.org/en/latest/specifications/entry-points/) 
-to automatically discover installed plugins. To be recognized by Flowchem, any new 
+Flowchem uses Python [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
+to automatically discover installed plugins. To be recognized by Flowchem, any new
 plugin must register an entry point under the flowchem.devices group.
 
 ## Getting Started
@@ -22,10 +22,10 @@ test-device = "flowchem_test:fakedevice"
 
 ## Example: Integrating a Real Device Library
 
-Let's walk through an example of integrating an existing library into Flowchem. We will use the 
-[pycont](https://github.com/croningp/pycont) library, developed to control Tricontinent C3000 pumps. 
+Let's walk through an example of integrating an existing library into Flowchem. We will use the
+[pycont](https://github.com/croningp/pycont) library, developed to control Tricontinent C3000 pumps.
 
-The `pycont` package contains two main classes, defined in 
+The `pycont` package contains two main classes, defined in
 [controller.py](https://github.com/croningp/pycont/blob/master/pycont/controller.py#L338):
 
 * `VirtualC3000Controller`: Handles communication with individual pumps.
@@ -34,7 +34,7 @@ The `pycont` package contains two main classes, defined in
 
 To integrate this library into Flowchem, follow these steps:
 
-### Step 1: Fork the library 
+### Step 1: Fork the library
 
 Fork the `pycont` repository so you can modify it to fit the Flowchem plugin architecture.
 
@@ -71,7 +71,7 @@ Your fork of the `pycont` package must be installed in the same environment wher
 
 ### Step 3: Create a Flowchem-Compatible Plugin Module
 
-Next, create a module that contains two classes to integrate with Flowchem. The classes are structured to adapt the 
+Next, create a module that contains two classes to integrate with Flowchem. The classes are structured to adapt the
 original library`s methods to work within Flowchem's asynchronous framework.
 
 Create the plugin module file `_flowchem_plugin.py` inside the `pycont` directory, as specified in the entry point.
@@ -125,11 +125,11 @@ class APIMultiPumpController(FlowchemDevice):
         the configuration file and registers each pump and the multi-pump manager as components.
         """
         self.controller = VirtualMultiPumpController.from_configfile(self.configuration)
-        
+
         # Register each individual pump as a FlowchemComponent
         for name in self.controller.pumps.keys():
             self.components.append(PumpComponent(name=name, hw_device=self))
-        
+
         # Register the multi-pump controller component (used for global commands)
         self.components.append(MultiPumpComponent(name="MultiController", hw_device=self))
 
@@ -190,7 +190,7 @@ class PumpComponent(FlowchemComponent):
         """
         return self.pump.get_valve_position()
 
-    async def deliver(self, volume_in_ml: float, to_valve: str | None = None, speed_out: int | None = None, 
+    async def deliver(self, volume_in_ml: float, to_valve: str | None = None, speed_out: int | None = None,
                       wait: bool = False, secure: bool = True):
         """
         Instruct the pump to deliver a specific volume to a given valve port.
@@ -276,14 +276,14 @@ class MultiPumpComponent(FlowchemComponent):
 from flowchem.components.pumps.pump import Pump
 ```
 [!NOTE]
-Whenever possible, consider inheriting from an existing component in `flowchem.components` rather than directly from the 
-base `FlowchemComponent`. For instance, you might inherit from a specialized class like Pump in 
-`flowchem.components.pumps.pump`. This approach lets you take full advantage of FlowChem's hierarchical structure—reusing 
+Whenever possible, consider inheriting from an existing component in `flowchem.components` rather than directly from the
+base `FlowchemComponent`. For instance, you might inherit from a specialized class like Pump in
+`flowchem.components.pumps.pump`. This approach lets you take full advantage of FlowChem's hierarchical structure—reusing
 built-in API endpoints and behavior, improving interoperability, and reducing development effort.
-We **strongly encourage** this when your device closely aligns with an existing component. However, **use caution**: your 
-device must conform to the interface (ontology) expected by the component you inherit from. If adapting your 
-implementation to fit the inherited interface requires unnatural workarounds or compromises clarity, this approach may 
-lead to unexpected API issues or maintenance headaches. In such cases, **it’s better to inherit from** 
+We **strongly encourage** this when your device closely aligns with an existing component. However, **use caution**: your
+device must conform to the interface (ontology) expected by the component you inherit from. If adapting your
+implementation to fit the inherited interface requires unnatural workarounds or compromises clarity, this approach may
+lead to unexpected API issues or maintenance headaches. In such cases, **it’s better to inherit from**
 `FlowchemComponent` **directly** and define a clean, device-specific implementation.
 
 For example, in case of inherent of a already implemented component:
@@ -295,20 +295,20 @@ from flowchem.components.pumps.pump import Pump
 ...
 
 class PumpComponent(Pump):
-    
+
     hw_device: APIMultiPumpController
 
     def __init__(self, name: str, hw_device: APIMultiPumpController):
         ...
         super().__init__(name, hw_device)
         self.pump: VirtualC3000Controller = self.hw_device.controller.pumps[name]
-    
+
     # This method corresponds to an expected API endpoint
-    async def infuse(self, rate: str = "", volume: str = "") -> bool: 
+    async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Start infusion."""
         # Translate this high-level call from API-end point into a command for VirtualMultiPumpController
         ...
-    
+
     # This method corresponds to an expected API endpoint
     async def is_pumping(self) -> bool:
         # translate to a actual function already implemented
@@ -322,7 +322,7 @@ For more information on why you need to import `FlowchemComponent` and `Flowchem
 [how to add new devices (straight approach)](add_to_flowchem.md).
 
 [!NOTE]
-For detailed documentation on device behavior and communication, visit the `pycont` 
+For detailed documentation on device behavior and communication, visit the `pycont`
 [documentation](https://github.com/croningp/pycont/blob/master/README.md).
 
 ### Step 4: Add Configuration

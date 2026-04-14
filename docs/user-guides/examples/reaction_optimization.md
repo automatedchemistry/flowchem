@@ -1,12 +1,12 @@
 # Flowchem application example
 
-This example demonstrated how to set up a process using flowchem. The process involved the reaction of two reagents, 
+This example demonstrated how to set up a process using flowchem. The process involved the reaction of two reagents,
 *hexyldecanoic acid* and *thionyl chloride*, inside a temperature-controlled reactor.
 
-Four electronic devices were required for the setup. Two pumps were used to deliver the reagents: one from 
-[AzuraCompact](../reference/devices/pumps/azura_compact.md), and the other from 
+Four electronic devices were required for the setup. Two pumps were used to deliver the reagents: one from
+[AzuraCompact](../reference/devices/pumps/azura_compact.md), and the other from
 [Elite11](../reference/devices/pumps/elite11.md). A reactor from the R2 platform, equipped with temperature control,
-was used; specifically, the [R4Heater](../reference/devices/technical/r4_heater.md) component. An infrared 
+was used; specifically, the [R4Heater](../reference/devices/technical/r4_heater.md) component. An infrared
 spectroscope from IR, [IcIR](../reference/devices/analytics/icir.md), was employed to analyze the product.
 
 :::{figure-md} Synthesis
@@ -15,18 +15,18 @@ spectroscope from IR, [IcIR](../reference/devices/analytics/icir.md), was employ
 **Figure 1** Automatic synthesis
 :::
 
-This study aims to find the optimal operating conditions for three variables in order to maximize reaction yields. The 
-variables are the temperature of the reactor, the residence time, and the molar ratio of the reagents. These optimal 
-conditions were determined using a Bayesian optimization algorithm for continuous variables. The reaction yield was 
+This study aims to find the optimal operating conditions for three variables in order to maximize reaction yields. The
+variables are the temperature of the reactor, the residence time, and the molar ratio of the reagents. These optimal
+conditions were determined using a Bayesian optimization algorithm for continuous variables. The reaction yield was
 analyzed by integrating the peaks of the infrared spectrum.
 
 ```{note}
-Although it was a specific application of flow chemistry, the file structure and orchestration built here can be used 
-as a standard. This pattern can be used to build any process in the laboratory that includes the use of real-time 
+Although it was a specific application of flow chemistry, the file structure and orchestration built here can be used
+as a standard. This pattern can be used to build any process in the laboratory that includes the use of real-time
 optimization algorithms.
 ```
 
-To gain a better understanding of the example, let's examine three different files that enabled the automation of the 
+To gain a better understanding of the example, let's examine three different files that enabled the automation of the
 platform.
 
 ```bash
@@ -64,7 +64,7 @@ template = "30sec_2days.iCIRTemplate"
 
 ##  Access the devices and important functions `run_experiment.py`
 
-The electronic components used in the process were accessed from a Python script `run_experiment.py`. To access all 
+The electronic components used in the process were accessed from a Python script `run_experiment.py`. To access all
 devices listed in the configuration file, the command "get_all_flowchem_devices" was utilized. More information on how
 this function operates can be found in the [tools section](../tools.md).
 
@@ -85,12 +85,12 @@ reactor = flowchem_devices["r4-heater"]["reactor1"]
 flowir = flowchem_devices["flowir"]["ir-control"]
 ```
 
-Each component has its own GET and PUT methods. The commands are written based on available methods. 
-When flowchem is running, you can easily see each device's available methods through the address 
-[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the 
+Each component has its own GET and PUT methods. The commands are written based on available methods.
+When flowchem is running, you can easily see each device's available methods through the address
+[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the
 [API documentation](../reference/api/index.md).
 
-The file `run_experiment.py` has also a series of functions that is crucial to the experiment execution. Beyond of 
+The file `run_experiment.py` has also a series of functions that is crucial to the experiment execution. Beyond of
 the `get_all_flowchem_devices` function, we needed to import some additional packages.
 
 ```python
@@ -181,7 +181,7 @@ def wait_stable_temperature():
             time.sleep(5)
 ```
 
-* Waits for a new IR spectrum 
+* Waits for a new IR spectrum
 
 It checked the sample-count parameter and waited until a new sample was available.
 
@@ -198,8 +198,8 @@ def _get_new_ir_spectrum(last_sample_id):
 
 * Monitors the IR
 
-This function continuously monitored the IR spectrum until changes between consecutive spectra were small enough 
-(less than 0.2% difference). It integrated the peaks of the IR spectrum and compared them, looking for stability in 
+This function continuously monitored the IR spectrum until changes between consecutive spectra were small enough
+(less than 0.2% difference). It integrated the peaks of the IR spectrum and compared them, looking for stability in
 the reaction. At the end, it returned the integrated peaks when the spectrum stabilized.
 
 ```python
@@ -240,7 +240,7 @@ def get_ir_once_stable():
 * Integrates the spectrum
 
 
-Integrated the areas of specific peaks from the IR spectrum within predefined wavenumber limits. The limits were read 
+Integrated the areas of specific peaks from the IR spectrum within predefined wavenumber limits. The limits were read
 from a file called limits.in. Normalized the peak areas so that the sum of all areas equaled 1.
 
 ```python
@@ -316,14 +316,14 @@ def run_experiment(
 In the `main.py` script we start by importing the libraries needed to perform the automation:
 
 * **time**: This package is used to read the current time and work with time management
-* **gryffin**: Package used for optimization, more details in 
+* **gryffin**: Package used for optimization, more details in
 [Gryffin - Documentation](https://gryffin.readthedocs.io/en/latest/index.html)
-* **loguru**: This package provides logging to the Python terminal and warns about errors, initialization, stage and 
+* **loguru**: This package provides logging to the Python terminal and warns about errors, initialization, stage and
 end of the experiment.
 * **run_experiment**: Import devices and the main function used in the experiment
 
 ```python
-import time  
+import time
 from gryffin import Gryffin
 from loguru import logger
 from run_experiment import run_experiment, reactor, flowir, hexyldecanoic, socl2
@@ -361,9 +361,9 @@ if status == " Not running":
     flowir.put("experiment/start", xp)
 ```
 
-We also initialized the Loguru package to save the logs in a specific file. Finally, we initialized Gryffin. In 
-Gryffin, we aimed to explore the space of three variables: the ratio of thionyl chloride, residence time in the 
-reactor, and its temperature. Our objective was to achieve the maximum product ratio of IR. For more details on how 
+We also initialized the Loguru package to save the logs in a specific file. Finally, we initialized Gryffin. In
+Gryffin, we aimed to explore the space of three variables: the ratio of thionyl chloride, residence time in the
+reactor, and its temperature. Our objective was to achieve the maximum product ratio of IR. For more details on how
 Gryffin works, please access the [Gryffin - Start](https://gryffin.readthedocs.io/en/latest/getting_started.html).
 
 ```python
@@ -386,9 +386,9 @@ gryffin = Gryffin(config_dict=config)
 observations = []
 ```
 
-After initializing the hardware, we started the experiment. Following 
+After initializing the hardware, we started the experiment. Following
 [Gryffin's proposed structure](https://gryffin.readthedocs.io/en/latest/getting_started.html)
-, the experiment ran in a loop. Within this loop, a series of conditions were analyzed and optimized using the 
+, the experiment ran in a loop. Within this loop, a series of conditions were analyzed and optimized using the
 optimization algorithm. We set a maximum time for the algorithm to search for the optimal condition.
 
 ```python
@@ -417,9 +417,9 @@ while time.monotonic() < (start_time + MAX_TIME):
 
 ## Reference additional
 
-With these two files, it's possible to carry out a series of experiments in order to optimize the conditions. To see 
-more detail on the synthesis, please go to 
-[Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A). The complete files 
+With these two files, it's possible to carry out a series of experiments in order to optimize the conditions. To see
+more detail on the synthesis, please go to
+[Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A). The complete files
 is available in [example folder](../../../examples/reaction_optimization).
 
 <script

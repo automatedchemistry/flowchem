@@ -1,4 +1,5 @@
 """Parse a device config file."""
+
 import inspect
 import sys
 import typing
@@ -42,8 +43,15 @@ def parse_config(file_path: Path | BytesIO) -> dict:
         config = parse_toml(file_path)
         config["filename"] = "BytesIO"
     elif isinstance(file_path, Path):
-        assert file_path.exists(), f"{file_path} exists"
-        assert file_path.is_file(), f"{file_path} is a file"
+        # Use explicit checks instead of assert, which is stripped by the -O optimisation flag.
+        if not file_path.exists():
+            raise InvalidConfigurationError(
+                f"Configuration file not found: '{file_path}'"
+            )
+        if not file_path.is_file():
+            raise InvalidConfigurationError(
+                f"Configuration path is not a file: '{file_path}'"
+            )
 
         with file_path.open("rb") as stream:
             config = parse_toml(stream)
@@ -56,7 +64,11 @@ def parse_config(file_path: Path | BytesIO) -> dict:
 
 def instantiate_device_from_config(config: dict) -> list[FlowchemDevice]:
     """Instantiate all devices defined in the provided config dict."""
-    assert "device" in config, "The configuration file must include a device section"
+    # Use an explicit check instead of assert, which is stripped by the -O optimisation flag.
+    if "device" not in config:
+        raise InvalidConfigurationError(
+            "The configuration file must include a [device.*] section."
+        )
 
     # device_mapper is a dict mapping device type (str, as key) with the device class (obj, value).
     # e.g. device_mapper["Spinsolve"] = Spinsolve class

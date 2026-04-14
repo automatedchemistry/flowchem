@@ -3,7 +3,7 @@
 ### `GET /my-h4heater/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-h4heater
 **Operation ID:** `get_device_info_fake_device__get`
 

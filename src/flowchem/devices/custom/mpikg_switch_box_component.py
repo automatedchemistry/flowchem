@@ -8,7 +8,7 @@ from pint.errors import UndefinedUnitError, DimensionalityError
 from flowchem.components.technical.MultiChannels import (
     MultiChannelADC,
     MultiChannelDAC,
-    MultiChannelRelay
+    MultiChannelRelay,
 )
 from flowchem import ureg
 from loguru import logger
@@ -25,7 +25,7 @@ class SwitchBoxDAC(MultiChannelDAC):
 
         self.hw_device: SwitchBoxMPIKG
 
-    async def read(self, channel: str) -> float:  # type:ignore[override]
+    async def read(self, channel: str) -> float:  # type: ignore[override]
         """
         Read the DAC output of a channel.
 
@@ -37,7 +37,7 @@ class SwitchBoxDAC(MultiChannelDAC):
         """
         return await self.hw_device.get_dac(channel=int(channel), volts=True)
 
-    async def set(self, channel: str = "1", value: str = "0 V") -> bool:  # type:ignore[override]
+    async def set(self, channel: str = "1", value: str = "0 V") -> bool:  # type: ignore[override]
         """
         Set the DAC output voltage for a given channel.
 
@@ -59,23 +59,23 @@ class SwitchBoxDAC(MultiChannelDAC):
             - Any parsing or hardware errors are logged via `logger`.
         """
         if not channel.isdigit():
-            logger.error("The argument channel of the DAC should be a digit (1, 2, ...)")
+            logger.error(
+                "The argument channel of the DAC should be a digit (1, 2, ...)"
+            )
             return False
         try:
             volts = ureg(value)
         except (UndefinedUnitError, DimensionalityError, Exception) as e:
-            logger.error(
-                f"Invalid DAC value '{value}' for channel {channel}: {e}"
-            )
+            logger.error(f"Invalid DAC value '{value}' for channel {channel}: {e}")
             return False
-        return await self.hw_device.set_dac(  # type:ignore[call-arg]
+        return await self.hw_device.set_dac(  # type: ignore[call-arg]
             channel=int(channel), value=volts
         )
 
 
 class SwitchBoxADC(MultiChannelADC):
 
-    async def read(self, channel: str) -> float:  # type:ignore[override]
+    async def read(self, channel: str) -> float:  # type: ignore[override]
         """
         Read ADC (Analog-to-Digital Converter) channel (1 to 8).
 
@@ -84,7 +84,7 @@ class SwitchBoxADC(MultiChannelADC):
         """
         asw = await self.read_all()
         value = asw.get(f"ADC{channel}")
-        if value:
+        if value is not None:
             return value
         raise AttributeError(f"There is no channel '{channel} in ADC ports!'")
 
@@ -130,11 +130,15 @@ class SwitchBoxRelay(MultiChannelRelay):
         self.hw_device: SwitchBoxMPIKG
         self.identify = identify  # Port identifier ("a", "b", "c", or "d")
 
-        self.add_api_route("/lower_power_approach", self.set_lower_power_approach, methods=["PUT"])
+        self.add_api_route(
+            "/lower_power_approach", self.set_lower_power_approach, methods=["PUT"]
+        )
 
-        self.add_api_route("/channel_set_point", self.read_channel_set_point, methods=["GET"])
+        self.add_api_route(
+            "/channel_set_point", self.read_channel_set_point, methods=["GET"]
+        )
 
-    async def power_on(self, channel: str = "1") -> bool:  # type:ignore[override]
+    async def power_on(self, channel: str = "1") -> bool:  # type: ignore[override]
         """
         Power ON a single relay channel at full power (~24 V).
 
@@ -152,7 +156,7 @@ class SwitchBoxRelay(MultiChannelRelay):
         """
         return await self.set_channel(channel, value="2")
 
-    async def power_off(self, channel: str = "1") -> bool:  # type:ignore[override]
+    async def power_off(self, channel: str = "1") -> bool:  # type: ignore[override]
         """
         Power OFF a single relay channel.
 
@@ -165,6 +169,10 @@ class SwitchBoxRelay(MultiChannelRelay):
             bool: True if the device acknowledged the command, False otherwise.
         """
         return await self.set_channel(channel, value="0")
+
+    async def is_on(self, channel: str = "1") -> bool:  # type: ignore[override]
+        """Check whether a relay channel is currently active."""
+        return await super().is_on(channel)
 
     async def switch_multiple_channel(self, values: str) -> bool:
         """
@@ -185,8 +193,7 @@ class SwitchBoxRelay(MultiChannelRelay):
             bool: True if the device acknowledged the command, False otherwise.
         """
         return await self.hw_device.set_relay_port(
-            values=[int(c) for c in values],
-            port=self.identify
+            values=[int(c) for c in values], port=self.identify
         )
 
     async def read_channel_set_point(self, channel: str = "1") -> int | None:
@@ -208,7 +215,9 @@ class SwitchBoxRelay(MultiChannelRelay):
         """
         ch = int(channel)
         if not 0 < ch <= 8:
-            logger.error(f"There is not channel {ch} in device {self.name} at port-{self.identify}!")
+            logger.error(
+                f"There is not channel {ch} in device {self.name} at port-{self.identify}!"
+            )
             return None
         if ch > 8:
             if 8 < ch <= 16 and self.identify == "b":
@@ -217,7 +226,9 @@ class SwitchBoxRelay(MultiChannelRelay):
                 ch = ch - 16
             elif 24 < ch <= 32 and self.identify == "d":
                 ch = ch - 24
-            logger.error(f"There is not channel {ch} in device {self.hw_device.name} at port-{self.identify}!")
+            logger.error(
+                f"There is not channel {ch} in device {self.hw_device.name} at port-{self.identify}!"
+            )
             return None
         asw = await self.hw_device.get_relay_channels()
         return asw[self.identify][ch - 1]
@@ -264,10 +275,7 @@ class SwitchBoxRelay(MultiChannelRelay):
     """ Auxiliary methods """
 
     async def set_channel(
-        self,
-        channel: str = "1",
-        value: str = "0",
-        keep_port_status: bool = True
+        self, channel: str = "1", value: str = "0", keep_port_status: bool = True
     ) -> bool:
         """
         Set the state of a single relay channel.
@@ -289,6 +297,5 @@ class SwitchBoxRelay(MultiChannelRelay):
             channel=int(channel),
             value=int(value),
             keep_port_status=keep_port_status,
-            port_identify=self.identify
+            port_identify=self.identify,
         )
-

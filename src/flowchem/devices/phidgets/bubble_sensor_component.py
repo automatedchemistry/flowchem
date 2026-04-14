@@ -36,6 +36,10 @@ class PhidgetBubbleSensorComponent(Sensor):
         """Transform the voltage from sensor to be expressed in percentage(%)."""
         return self.hw_device.read_intensity()
 
+    async def read(self) -> float:
+        """Read the generic bubble-sensor signal endpoint."""
+        return await self.acquire_signal()
+
     async def set_dataInterval(self, datainterval: int) -> bool:
         """Set data interval at the range 20-60000 ms (default unit: ms)."""
         self.hw_device.set_dataInterval(datainterval)

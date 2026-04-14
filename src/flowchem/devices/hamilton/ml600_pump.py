@@ -1,8 +1,8 @@
 """ML600 component relative to pumping."""
+
 from __future__ import annotations
-import time
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from loguru import logger
 import pint
@@ -34,9 +34,18 @@ class ML600Pump(SyringePump):
         """
         super().__init__(name, hw_device)
         self.add_api_route("/set_to_volume", self.set_to_volume, methods=["PUT"])
-        self.add_api_route("/set_to_volume_dual_syringes", self.set_to_volume_dual_syringes, methods=["PUT"])
-        self.add_api_route("/get_current_volume", self.get_current_volume, methods=["GET"])
-        self.add_api_route("/initialize_syringe", self.initialize_syringe, methods=["PUT"])
+        if self.hw_device.dual_syringe:
+            self.add_api_route(
+                "/set_to_volume_dual_syringes",
+                self.set_to_volume_dual_syringes,
+                methods=["PUT"],
+            )
+        self.add_api_route(
+            "/get_current_volume", self.get_current_volume, methods=["GET"]
+        )
+        self.add_api_route(
+            "/initialize_syringe", self.initialize_syringe, methods=["PUT"]
+        )
         self.add_api_route("/wait_until_idle", self.wait_until_idle, methods=["GET"])
 
         self.pump_code = pump_code
@@ -54,9 +63,9 @@ class ML600Pump(SyringePump):
         """
         return True
 
-    async def is_pumping(self) -> bool | dict[str, bool]:
+    async def is_pumping(self) -> bool:
         """Check if pump is moving.
-        false means pump is not moving and buffer is empty. """
+        false means pump is not moving and buffer is empty."""
         # true might mean pump is moving, buffer still contain command or both
         id_idle = await self.hw_device.is_idle(self.pump_code)
         return not id_idle
@@ -76,7 +85,7 @@ class ML600Pump(SyringePump):
         if not await self.hw_device.get_pump_status(self.pump_code):
             return True
         else:
-            logger.warning(f"the first check show false. try again.")
+            logger.warning("the first check show false. try again.")
             await asyncio.sleep(1)
             return not await self.hw_device.get_pump_status(self.pump_code)
 
@@ -109,11 +118,14 @@ class ML600Pump(SyringePump):
         if not rate:
             rate = self.hw_device.config.get("default_infuse_rate")  # type: ignore
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
+        effective_volume: pint.Quantity
         if not volume:
             target_vol: pint.Quantity = ureg.Quantity("0 ml")
+            effective_volume = await self.hw_device.get_current_volume(self.pump_code)
             logger.warning("the volume to infuse is not provided. set to 0 ml")
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
+            effective_volume = ureg.Quantity(volume)
             target_vol = current_volume - ureg.Quantity(volume)
             if target_vol < 0:
                 logger.error(
@@ -122,8 +134,12 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.set_to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
-        logger.info(f"infusing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
+        await self.hw_device.set_to_volume(
+            target_vol, ureg.Quantity(rate), self.pump_code
+        )
+        logger.info(
+            f"infusing is run. it will take {effective_volume / ureg.Quantity(rate)} to finish."
+        )
         return await self.hw_device.get_pump_status(self.pump_code)
 
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
@@ -152,11 +168,13 @@ class ML600Pump(SyringePump):
         if await self.is_pumping():
             await self.stop()
         if not rate:
-            rate = self.hw_device.config["default_withdraw_rate"]
+            rate = cast(str, self.hw_device.config["default_withdraw_rate"])
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
         if volume is None:
             target_vol = self.hw_device.syringe_volume
-            logger.warning(f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}")
+            logger.warning(
+                f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}"
+            )
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
             target_vol = current_volume + ureg.Quantity(volume)
@@ -167,7 +185,9 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.set_to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
+        await self.hw_device.set_to_volume(
+            target_vol, ureg.Quantity(rate), self.pump_code
+        )
         logger.info(
             "withdrawing is run. it will take "
             f"{ureg.Quantity(volume if volume else self.hw_device.syringe_volume) / ureg.Quantity(rate)} to finish."
@@ -175,9 +195,9 @@ class ML600Pump(SyringePump):
         return await self.hw_device.get_pump_status(self.pump_code)
 
     async def set_to_volume(self, volume: str, rate: str = "1 ml/min") -> bool:
-        volume = ureg.Quantity(volume)
-        rate = ureg.Quantity(rate)
-        await self.hw_device.set_to_volume(volume, rate, self.pump_code)
+        target_volume: pint.Quantity = ureg.Quantity(volume)
+        target_rate: pint.Quantity = ureg.Quantity(rate)
+        await self.hw_device.set_to_volume(target_volume, target_rate, self.pump_code)
         return await self.hw_device.get_pump_status(self.pump_code)
 
     async def get_current_volume(self) -> float:
@@ -191,14 +211,18 @@ class ML600Pump(SyringePump):
         flowrate: ml/min
         """
         speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(rate))
-        return await self.hw_device.initialize_syringe(speed=ureg.Quantity(speed), pump=self.pump_code)
+        return await self.hw_device.initialize_syringe(
+            speed=ureg.Quantity(speed), pump=self.pump_code
+        )
 
     async def wait_until_idle(self) -> bool:
-        """ Waits pump to be idle. """
-        logger.debug(f"wait until pump idle")
+        """Waits pump to be idle."""
+        logger.debug("wait until pump idle")
         return await self.hw_device.wait_until_idle(pump=self.pump_code)
 
-    async def set_to_volume_dual_syringes(self, target_volume: str, rate_left: str, rate_right: str,  connection: str = ""):
+    async def set_to_volume_dual_syringes(
+        self, target_volume: str, rate_left: str, rate_right: str, connection: str = ""
+    ):
         """
         Executes a synchronized filling of both syringes.
 
@@ -215,4 +239,9 @@ class ML600Pump(SyringePump):
             connection = "[[null,0],[2,3]]"
         valve_angles = {"left": connection, "right": connection}
         logger.debug(f"Setting volume of both syringes to {target_volume} ml")
-        return await self.hw_device.set_to_volume_dual_syringes(target_volume=ureg(target_volume),rate_left=ureg(rate_left),rate_right=ureg(rate_right),valve_angles=valve_angles)
+        return await self.hw_device.set_to_volume_dual_syringes(
+            target_volume=ureg(target_volume),
+            rate_left=ureg(rate_left),
+            rate_right=ureg(rate_right),
+            valve_angles=valve_angles,
+        )

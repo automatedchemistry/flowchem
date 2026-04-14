@@ -43,7 +43,7 @@ The name of the device must be `test`. This is important to link to the test scr
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
     config_file = Path(__file__).parent.resolve() / "fakedevice.toml" # -> The name mus
-                                                                      #    corresponding with  
+                                                                      #    corresponding with
                                                                       #    the configuration
                                                                       #    file
     ...
@@ -51,7 +51,7 @@ def api_dev(xprocess):
 
 @pytest.mark.FakeDevice
 def test_fakedevice(api_dev):
-    component = api_dev['test']['FakeComponent']  # -> The name of the device must be `test` 
+    component = api_dev['test']['FakeComponent']  # -> The name of the device must be `test`
                                                   #    to macht with the key name here!
     ...
 ```
@@ -60,7 +60,7 @@ To run these example, the user can write in local prompt:
 ```shell
 pytest ./tests -m FakeDevice -s
 ```
-or 
+or
 ```shell
 pytest tests/devices/Fake_group/test_fakedevice.py -s
 ```

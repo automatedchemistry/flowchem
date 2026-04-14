@@ -1,4 +1,5 @@
 """Knauer pump control."""
+
 import asyncio
 import warnings
 from enum import Enum
@@ -475,7 +476,7 @@ if __name__ == "__main__":
         await pump.initialize()
         c = pump.components
         print(c)
-        pc: AzuraCompactPump = c[0]  # type:ignore
+        pc: AzuraCompactPump = c[0]  # type: ignore
         print(pc)
         print(await pc.infuse(rate="0.1 ml/min"))
         await pump.set_flow_rate(ureg.Quantity("0.1 ml/min"))

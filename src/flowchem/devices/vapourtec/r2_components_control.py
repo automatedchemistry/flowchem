@@ -1,4 +1,5 @@
 """Control module for the Vapourtec R2 valves."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -143,8 +144,12 @@ class R2InjectionValve(SixPortTwoPositionValve):
         super().__init__(name, hw_device)
         self.valve_code = valve_code
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         return raw_position
@@ -152,15 +157,24 @@ class R2InjectionValve(SixPortTwoPositionValve):
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
-        return self._positions[int(self._change_connections(position, reverse=True))]
+        return [
+            list(connection)
+            for connection in self._positions[
+                int(self._change_connections(position, reverse=True))
+            ]
+        ]
 
-    async def set_position(self,
-                           connect: str = "",
-                           disconnect: str = "",
-                           ambiguous_switching: str | bool = False):
+    async def set_position(
+        self,
+        connect: str = "",
+        disconnect: str = "",
+        ambiguous_switching: str | bool = False,
+    ):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(connect)
-        position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
+        position_to_connect = tuple(
+            tuple(inner_list) for inner_list in positions_to_connect_l
+        )
         target_pos = str(self._connect_positions(position_to_connect))
         target_pos = self._change_connections(target_pos)
         await self.hw_device.trigger_key_press(
@@ -197,8 +211,12 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         super().__init__(name, hw_device)
         self.valve_code = valve_code
         # raise NotImplementedError("Check that the mapping is correct")
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         if not reverse:
@@ -210,15 +228,24 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
-        return (self._positions[int(self._change_connections(position, reverse=True))])
+        return [
+            list(connection)
+            for connection in self._positions[
+                int(self._change_connections(position, reverse=True))
+            ]
+        ]
 
-    async def set_position(self,
-                           connect: str = "",
-                           disconnect: str = "",
-                           ambiguous_switching: str | bool = False):
+    async def set_position(
+        self,
+        connect: str = "",
+        disconnect: str = "",
+        ambiguous_switching: str | bool = False,
+    ):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(connect)
-        position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
+        position_to_connect = tuple(
+            tuple(inner_list) for inner_list in positions_to_connect_l
+        )
         target_pos = str(self._connect_positions(position_to_connect))
         target_pos = self._change_connections(target_pos)
         await self.hw_device.trigger_key_press(
@@ -286,7 +313,7 @@ class R2PumpPressureSensor(PressureSensor):
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
-    async def read_pressure(self, units: str = "mbar") -> int | float | None:  # mbar
+    async def read_pressure(self, units: str = "mbar") -> float:  # mbar
         """Get current pump pressure in mbar."""
         pressure = await self.hw_device.get_current_pressure(self.pump_code)
         return pressure.m_as(units)
@@ -299,7 +326,7 @@ class R2GeneralPressureSensor(PressureSensor):
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
 
-    async def read_pressure(self, units: str = "mbar") -> int:
+    async def read_pressure(self, units: str = "mbar") -> float:
         """Get system pressure."""
         pressure = await self.hw_device.get_current_pressure()
         return pressure.m_as(units)

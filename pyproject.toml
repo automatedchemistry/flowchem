@@ -55,12 +55,12 @@ dependencies = [
 
 [project.optional-dependencies]
 all = [
-    "black",
+    "black>=26.3.1",
     "data-science-types",
     "lxml-stubs",
-    "mypy",
+    "mypy>=1.19.1",
     "pre-commit",
-    "ruff>=0.0.252",
+    "ruff>=0.15.9",
     "types-lxml",
     "types-PyYAML",
     "types-requests",
@@ -82,12 +82,12 @@ all = [
     "sphinxcontrib-openapi"
 ]
 ci = [
-    "black",
+    "black>=26.3.1",
     "data-science-types",
     "lxml-stubs",
-    "mypy",
+    "mypy>=1.19.1",
     "pre-commit",
-    "ruff>=0.0.252",
+    "ruff>=0.15.9",
     "types-lxml",
     "types-PyYAML",
     "types-requests",
@@ -108,12 +108,12 @@ ci = [
     "sphinxcontrib-openapi"
 ]
 dev = [
-    "black",
+    "black>=26.3.1",
     "data-science-types",
     "lxml-stubs",
-    "mypy",
+    "mypy>=1.19.1",
     "pre-commit",
-    "ruff>=0.0.252",
+    "ruff>=0.15.9",
     "types-lxml",
     "types-PyYAML",
     "types-requests",
@@ -147,8 +147,9 @@ documentation = "https://flowchem.readthedocs.io"
 repository = "https://github.com/automatedchemistry/flowchem"
 
 [project.scripts]
-flowchem = "flowchem.__main__:main"
+flowchem            = "flowchem.__main__:main"
 flowchem-autodiscover = "flowchem.utils.device_finder:main"
+flowchem-sim        = "flowchem.sim.__main__:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

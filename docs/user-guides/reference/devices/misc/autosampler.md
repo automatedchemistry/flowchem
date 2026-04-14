@@ -1,11 +1,11 @@
 # Knauer Autosampler
 
 Control the Knauer Autosampler AS 6.1L via either Serial or Ethernet communication.
-It enables users to interact with the device by sending and receiving commands, configuring parameters like tray temperature, 
+It enables users to interact with the device by sending and receiving commands, configuring parameters like tray temperature,
 syringe volume, and controlling the movement of the needle and valves.
 
-[!IMPORTANT] 
-This software package was created internally, utilizing a proprietary communication framework made available by the 
+[!IMPORTANT]
+This software package was created internally, utilizing a proprietary communication framework made available by the
 manufacturer.
 
 ## Configuration

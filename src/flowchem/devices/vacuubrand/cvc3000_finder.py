@@ -1,4 +1,5 @@
 """This module is used to discover the serial address of any CVC3000 connected to the PC."""
+
 import asyncio
 from textwrap import dedent
 
@@ -25,12 +26,10 @@ def cvc3000_finder(serial_port) -> set[str]:
         return set()
 
     logger.info(f"CVC3000 {cvc.component_info.version} found on <{serial_port}>")
-    dev_config = dedent(
-        f"""
+    dev_config = dedent(f"""
             [device.cvc-{cvc._device_sn}]
             type = "CVC3000"
-            port = "{serial_port}"\n\n"""
-    )
+            port = "{serial_port}"\n\n""")
     logger.info(f"Close the serial port: <{serial_port}>")
     cvc._serial.close()
     return set(dev_config)

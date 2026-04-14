@@ -1,11 +1,11 @@
 """This module is used to control Vici Valco Universal Electronic Actuators."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 import aioserial
 from loguru import logger
-import pint
 
 from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
@@ -90,7 +90,7 @@ class ViciValcoValveIO:
         """Write command to valve and read reply."""
         # Make sure input buffer is empty
         self._serial.reset_input_buffer()
-        logger.debug(f"Command {bytes(command)} sent!")
+        logger.debug(f"Command {bytes(command)!r} sent!")
         # Send command
         await self._serial.write_async(bytes(command))
 
@@ -197,7 +197,9 @@ class ViciValve(FlowchemDevice):
 
     async def version(self) -> str:
         """Return the current firmware version reported by the valve."""
-        version = ViciCommand(valve_id=self.address, command="VR", reply_lines=0)  #todo: put back to 5
+        version = ViciCommand(
+            valve_id=self.address, command="VR", reply_lines=0
+        )  # todo: put back to 5
         return await self.valve_io.write_and_read_reply(version)
 
     async def get_raw_position(self) -> str:
@@ -217,12 +219,9 @@ class ViciValve(FlowchemDevice):
 
     async def timed_toggle(self, injection_time: str):
         """Switch valve to a position for a given time."""
-        delay: pint.Quantity = ureg.Quantity(injection_time).to("ms")
+        delay: str = str(ureg.Quantity(injection_time).to("ms"))
         set_delay = ViciCommand(
-            valve_id=self.address,
-            command="DT",
-            value=delay.magnitude,
-            reply_lines=0
+            valve_id=self.address, command="DT", value=delay, reply_lines=0
         )
         await self.valve_io.write_and_read_reply(set_delay)
 
@@ -237,7 +236,8 @@ if __name__ == "__main__":
         valve1 = ViciValve.from_config(port="COM20", address=0, name="test1")
         await valve1.initialize()
         await valve1.timed_toggle("2500 ms")
+
     asyncio.run(main())
 
     # Set position works with both strings and InjectionValvePosition
-    #asyncio.run(valve1.set_raw_position("2"))
+    # asyncio.run(valve1.set_raw_position("2"))

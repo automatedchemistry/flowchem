@@ -21,4 +21,3 @@ ms_exp_file = ""  # Name of the MS experiment method file.
 tune_file = ""  # Name of the tune method file.
 inlet_method  = "inlet_method"  # Name of the inlet method file.
 ```
-

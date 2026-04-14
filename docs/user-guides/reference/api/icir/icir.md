@@ -3,7 +3,7 @@
 ### `GET /my-icir/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-icir
 **Operation ID:** `get_device_info_fake_device__get`
 

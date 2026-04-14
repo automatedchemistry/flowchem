@@ -1,0 +1,113 @@
+# Simulation integration test config.
+# Used with: flowchem-sim tests/sim/test_config_sim.toml
+# Every device type in this file is intercepted by flowchem-sim and replaced
+# with its simulated counterpart.  No hardware is required.
+
+[device.sim-ml600]
+type = "ML600"
+syringe_volume = "10 ml"
+
+[device.sim-azura]
+type = "AzuraCompact"
+ip_address = "127.0.0.1"
+
+[device.sim-knauer-valve]
+type = "KnauerValve"
+ip_address = "127.0.0.1"
+valve_type = "6"
+
+[device.sim-knauer-autosampler]
+type = "KnauerAutosampler"
+ip_address = "127.0.0.1"
+autosampler_id = 61
+tray_type = "TRAY_48_VIAL"
+
+[device.sim-knauer-dad]
+type = "KnauerDAD"
+ip_address = "127.0.0.1"
+
+[device.sim-huber]
+type = "HuberChiller"
+port = "COM_SIM"
+
+[device.sim-elite11]
+type = "Elite11"
+port = "COM_SIM"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
+
+[device.sim-cvc3000]
+type = "CVC3000"
+port = "COM_SIM"
+
+[device.sim-manson]
+type = "MansonPowerSupply"
+port = "COM_SIM"
+
+[device.sim-mfc]
+type = "MFC"
+port = "COM_SIM"
+max_flow = 9.0
+
+[device.sim-epc]
+type = "EPC"
+port = "COM_SIM"
+max_pressure = 10.0
+
+[device.sim-runze]
+type = "RunzeValve"
+port = "COM_SIM"
+num_ports = 6
+
+[device.sim-vici]
+type = "ViciValve"
+port = "COM_SIM"
+address = 0
+
+[device.sim-phidget-pressure]
+type = "PhidgetPressureSensor"
+min_pressure = "0 bar"
+max_pressure = "10 bar"
+
+[device.sim-phidget-bubble]
+type = "PhidgetBubbleSensor"
+
+[device.sim-phidget-5v]
+type = "PhidgetPowerSource5V"
+
+[device.sim-icir]
+type = "IcIR"
+template = ""
+
+[device.sim-spinsolve]
+type = "Spinsolve"
+host = "127.0.0.1"
+
+[device.sim-waters-ms]
+type = "WatersMS"
+
+[device.sim-clarity]
+type = "Clarity"
+
+[device.sim-switchbox]
+type = "SwitchBoxMPIKG"
+port = "COM_SIM"
+
+[device.sim-peltier]
+type = "PeltierCooler"
+port = "COM_SIM"
+address = 0
+
+[device.sim-solenoid]
+type = "BioChemSolenoidValve"
+support_platform = "sim-switchbox/relay-A"
+normally_open = true
+
+[device.sim-solenoid-2way]
+type = "BioChemSolenoid2WayValve"
+support_platform = "sim-switchbox/relay-B"
+normally_open = false
+
+[device.sim-r4]
+type = "R4Heater"
+port = "COM_SIM"

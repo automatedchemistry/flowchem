@@ -4,6 +4,7 @@ WatersMSControl provides a device-specific extension of MSControl for Waters Xev
 This control class delegates MS acquisition to the underlying hardware driver (`WatersMS`)
 by passing sample metadata and optional conversion instructions.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -24,18 +25,21 @@ class WatersMSControl(MSControl):
     Attributes:
         hw_device (WatersMS): Reference to the associated WatersMS hardware device.
     """
+
     hw_device: WatersMS  # for typing's sake
 
     def __init__(self, name: str, hw_device: WatersMS) -> None:
         """Device-specific initialization."""
         super().__init__(name, hw_device)
 
-    async def run_sample(self,
-                         sample_name: str,
-                         run_duration: int = 0,
-                         queue_name: str = "next.txt",
-                         do_conversion: bool = False,
-                         output_dir: str = "PATH/TO/open_format_ms"):
+    async def run_sample(
+        self,
+        sample_name: str,
+        run_duration: int = 0,
+        queue_name: str = "next.txt",
+        do_conversion: bool = False,
+        output_dir: str = "PATH/TO/open_format_ms",
+    ):
         """
         Trigger a mass spectrometry sample run.
 
@@ -49,8 +53,10 @@ class WatersMSControl(MSControl):
         Returns:
             None
         """
-        return await self.hw_device.record_mass_spec(sample_name=sample_name,
-                                               run_duration=run_duration,
-                                               queue_name=queue_name,
-                                               do_conversion=do_conversion,
-                                               output_dir=output_dir)
+        return await self.hw_device.record_mass_spec(
+            sample_name=sample_name,
+            run_duration=run_duration,
+            queue_name=queue_name,
+            do_conversion=do_conversion,
+            output_dir=output_dir,
+        )

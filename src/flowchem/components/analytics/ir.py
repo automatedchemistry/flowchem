@@ -1,4 +1,5 @@
 """An IR control component."""
+
 from pydantic import BaseModel
 
 from flowchem.components.flowchem_component import FlowchemComponent

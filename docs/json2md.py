@@ -4,13 +4,13 @@ import os
 
 
 def openapi_json_to_markdown(json_path: str, output_md_path: str):
-    with open(json_path, 'r') as f:
+    with open(json_path, "r") as f:
         data = json.load(f)
 
     lines = []
     # Paths
     lines.append("## Endpoints\n")
-    for path, methods in data.get('paths', {}).items():
+    for path, methods in data.get("paths", {}).items():
         for method, details in methods.items():
             lines.append(f"### `{method.upper()} {path}`\n")
             lines.append(f"**Summary:** {details.get('summary', '')}")
@@ -31,7 +31,9 @@ def openapi_json_to_markdown(json_path: str, output_md_path: str):
                     param_type = schema.get("type", "string")
                     default = schema.get("default", "")
                     required = param.get("required", False)
-                    lines.append(f"- `{name}` ({param_type}, {'required' if required else 'optional'}, default = `{default}`)")
+                    lines.append(
+                        f"- `{name}` ({param_type}, {'required' if required else 'optional'}, default = `{default}`)"
+                    )
                 lines.append("")
 
             # Responses
@@ -54,11 +56,14 @@ def openapi_json_to_markdown(json_path: str, output_md_path: str):
             for prop_name, prop_details in schema.get("properties", {}).items():
                 prop_type = prop_details.get("type", "object")
                 default = prop_details.get("default", None)
-                lines.append(f"- `{prop_name}`: {prop_type}" + (f" (default: `{default}`)" if default is not None else ""))
+                lines.append(
+                    f"- `{prop_name}`: {prop_type}"
+                    + (f" (default: `{default}`)" if default is not None else "")
+                )
             lines.append("\n---\n")
 
     # Write to file
-    with open(output_md_path, 'w') as f:
+    with open(output_md_path, "w") as f:
         f.write("\n".join(lines))
 
     print(f"Markdown saved to {output_md_path}")
@@ -71,5 +76,7 @@ if __name__ == "__main__":
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".json"):
-                openapi_json_to_markdown(json_path=root + '/' + file,
-                                         output_md_path=root + '/' + file.split('.')[0] + '.md')
+                openapi_json_to_markdown(
+                    json_path=root + "/" + file,
+                    output_md_path=root + "/" + file.split(".")[0] + ".md",
+                )

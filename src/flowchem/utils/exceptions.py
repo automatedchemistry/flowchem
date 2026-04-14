@@ -1,8 +1,13 @@
 """Exceptions used in the flowchem module."""
 
 
-class DeviceError(BaseException):
-    """Generic DeviceError."""
+class DeviceError(Exception):
+    """Generic DeviceError.
+
+    Inherits from Exception (not BaseException) so that broad
+    ``except Exception`` handlers can catch it, and so it does not
+    accidentally suppress KeyboardInterrupt / SystemExit.
+    """
 
 
 class InvalidConfigurationError(DeviceError):

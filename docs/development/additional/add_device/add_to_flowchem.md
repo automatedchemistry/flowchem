@@ -5,7 +5,7 @@ In the `flowchem.device` subpackage, the device modules are organized in folders
 Since this is the first device from _Weasley & Weasley_ in flowchem, we need to create a new folder called
 `/flowchem/devices/weasley`.
 
-Folders and modules should have short, all-lowercase names. Underscores can be used in the module name if it improves 
+Folders and modules should have short, all-lowercase names. Underscores can be used in the module name if it improves
 readability, in line with [PEP8](https://peps.python.org/pep-0008/).
 
 ## Module name
@@ -53,7 +53,7 @@ from .weasley import *
 Additional parameters needed for the device setup can be specified in the device classes `__init__` method, if a default is provided
 the parameter will also be optional in the device section in the configuration file.
 In our case, the ExtendableEar has an optional length parameter, with a default value of "10 cm".
-To prevent ambiguities, all amounts with units should be provided as strings and parsed by the 
+To prevent ambiguities, all amounts with units should be provided as strings and parsed by the
 [pint UnitRegistry](https://pint.readthedocs.io/en/0.10.1/tutorial.html) `flowchem.ureg`.
 
 ```python
@@ -87,8 +87,8 @@ class ExtendableEar(FlowchemDevice):
     async def initialize(self):
         logger.info('ExtendableEar was successfully initialized!')
 ```
-Entering information points is recommended to detect possible errors during device initialization. You are advised to 
-use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/). 
+Entering information points is recommended to detect possible errors during device initialization. You are advised to
+use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/).
 
 At this point we can create the configuration file to initialize our new device type. THis will check if everything is ok so far (it would not work otherwise).
 Let's create a minimal config file name `ear.toml` with this content:
@@ -121,7 +121,7 @@ While the object subclassing FlowchemDevice has the responsibility of communicat
 are available for that device should be exposed through a list of components, that are subclasses of `FlowchemComponent`.
 `FlowchemComponent` represents specific and abstract functionalities.
 For example, a pump with an integrated pressure sensor serves two purposes: pumping and sensing; therefore it will expose
-two components, one subclassing `BasePump` (directly or indirectly, e.g. `HPLCPump`, which subclasses `BasePump`) the 
+two components, one subclassing `BasePump` (directly or indirectly, e.g. `HPLCPump`, which subclasses `BasePump`) the
 other one subclassing `PressureSensor`.
 The components define the API for a class of capabilities and ensure a uniform API between different devices with similar
 functions.
@@ -174,7 +174,7 @@ class ExtendableEarMicrophone(Microphone):
 ```
 
 Now we need to update the `ExtendableEar` code, so we add a `component` method that returns a tuple with our
-`ExtendableEarMicrophone`. Note that self.components is of type `list` and an attribute inherited of the FlowchemDevice class. This 
+`ExtendableEarMicrophone`. Note that self.components is of type `list` and an attribute inherited of the FlowchemDevice class. This
 attribute contains all components of one specific device that can be accessed in the API.
 
 ```python
@@ -191,7 +191,7 @@ class ExtendableEar(FlowchemDevice):
         self.device_info.model = "Extendable Ear"
 
     async def initialize(self):
-        # Here are the commands to initialize the device, checking its connectivity and setting it to 
+        # Here are the commands to initialize the device, checking its connectivity and setting it to
         # the default/initial configuration before use.
         self.send_command('Verify connectivity')
         self.components.extend([ExtendableEarMicrophone("microphone",self)])

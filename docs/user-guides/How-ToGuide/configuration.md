@@ -1,11 +1,11 @@
 # Creating Configuration File
 
-The configuration file is where you store all the devices informatiom. To start flowchem API, configuration file is the only requirment. It is built in an easily editable `.toml` format. 
-For more details about this file format, please visit [TOML](https://toml.io/en/). 
+The configuration file is where you store all the devices informatiom. To start flowchem API, configuration file is the only requirment. It is built in an easily editable `.toml` format.
+For more details about this file format, please visit [TOML](https://toml.io/en/).
 
 
 First of all, create a toml file save it as TOML formate. For instance, create a file call 'flowchem_config.toml'
-(or after getting it from the [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples)) 
+(or after getting it from the [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples))
 
 After creating the file, add all devices setting to the configuration file. For instance:
 ```toml
@@ -13,13 +13,13 @@ After creating the file, add all devices setting to the configuration file. For 
 type = "FakeDevice"
 ```
 In this file, the term `device` indicates that the device is implemented in the package. The term `test-device` is the
-device name chosen by the user, and `FakeDevice` is the device type corresponding to the class implemented in the 
-package source code. Depending on the type of device specified in the file, additional attributes may be required. 
+device name chosen by the user, and `FakeDevice` is the device type corresponding to the class implemented in the
+package source code. Depending on the type of device specified in the file, additional attributes may be required.
 
-All necessary attributes for each device type can be found in the 
+All necessary attributes for each device type can be found in the
 [Device configuration guides](../reference/devices/supported_devices.md).
 
-More detailed explnation of flowchem Configuration file can be found in [flowchem Configuration File: 
+More detailed explnation of flowchem Configuration file can be found in [flowchem Configuration File:
 Simple, Flexible, and User-Friendly](../explanation/conf_file.md).
 
 
@@ -32,7 +32,7 @@ flowchem flowchem_config.toml
 ```
 ```{important}
 Please note that when running this command in the terminal, the file must be in the same folder as the terminal. If the
- terminal is in a different folder, please add the configuration address file after "flowchem" or change the current 
+ terminal is in a different folder, please add the configuration address file after "flowchem" or change the current
  folder in the terminal.
 ```
 
@@ -53,14 +53,14 @@ For every request sent to the flowchem server, you will see some diagnostic outp
 While you can normally ignore this output, it can provide useful information in case of errors.
 ```
 
-If the user want to run a example file to operate a simulated device for educational purposes without 
+If the user want to run a example file to operate a simulated device for educational purposes without
 requiring any connected device, simply execute:
 
 ```shell
 flowchem example
 ```
 
-This command will run flowchem directly with a configuration file in the 
+This command will run flowchem directly with a configuration file in the
 [package directory](../../../examples/FakeDevice_configuration.toml).
 
 ## Device autoconfiguration
@@ -74,5 +74,5 @@ To find any device already connected to the PC where flowchem is installed, run 
 flowchem-autodiscover
 ```
 And reply to the prompts.
-If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created. See more details 
+If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created. See more details
 in [tools](../tools.md).

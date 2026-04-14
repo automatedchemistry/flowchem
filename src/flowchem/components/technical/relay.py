@@ -51,7 +51,7 @@ class Relay(PowerSwitch):
         # Register instance globally for device-component tracking
         self.INSTANCES[self.hw_device.name + "/" + self.name] = self
 
-    async def power_on(self, **kwargs) -> bool:  # type:ignore[override]
+    async def power_on(self, **kwargs) -> bool:  # type: ignore[override]
         """
         Switch the relay channel ON.
 
@@ -66,7 +66,7 @@ class Relay(PowerSwitch):
         """
         raise NotImplementedError
 
-    async def power_off(self, **kwargs) -> bool:  # type:ignore[override]
+    async def power_off(self, **kwargs) -> bool:  # type: ignore[override]
         """
         Switch the relay channel OFF.
 
@@ -95,5 +95,3 @@ class Relay(PowerSwitch):
             NotImplementedError: If the method is not overridden by a subclass.
         """
         raise NotImplementedError
-
-

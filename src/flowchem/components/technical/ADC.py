@@ -39,5 +39,3 @@ class AnalogDigitalConverter(FlowchemComponent):
             float: The measured or estimated signal value.
         """
         raise NotImplementedError
-
-

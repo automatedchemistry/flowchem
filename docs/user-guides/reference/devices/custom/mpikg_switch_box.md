@@ -14,7 +14,7 @@ It provides:
 Configuration sample showing all possible parameters:
 
 ```toml
-[device.my-box]                 
+[device.my-box]
 type = "SwitchBoxMPIKG"          # This is the device identifier
 port = "COM4"                    # Serial port name (e.g., 'COM3') for Serial communication
 ```
@@ -34,10 +34,10 @@ stopbits 1       # Stopbits: 1 (fixed)
 
 🔌 Control Devices Connected to a Relay Box
 
-Some Flowchem devices (such as a Switch Box) expose multiple relay, ADC, or DAC components that can be used to 
+Some Flowchem devices (such as a Switch Box) expose multiple relay, ADC, or DAC components that can be used to
 control or read from other instruments.
 
-While you can interact directly with the box and its components through the Flowchem API, it’s often more 
+While you can interact directly with the box and its components through the Flowchem API, it’s often more
 convenient to define which device and component another instrument (like a valve) should use.
 
 This is done by referencing the box instance and its component name using the format:
@@ -60,7 +60,7 @@ For example, a SwitchBoxMPIKG device may expose several relay components and ana
 
 * my-box/dac
 
-These component identifiers can then be reused by other Flowchem devices (such as valves or pumps) that depend on 
+These component identifiers can then be reused by other Flowchem devices (such as valves or pumps) that depend on
 relay control or analog feedback.
 
 🧩 Example: Attaching a Device to a Relay Box
@@ -97,7 +97,7 @@ In this example:
 
 * For single-channel relays, channel can be omitted.
 
-* If the user does not wish to expose the attached device explicitly (e.g., a manually wired solenoid), the corresponding 
+* If the user does not wish to expose the attached device explicitly (e.g., a manually wired solenoid), the corresponding
 device entry can be omitted from the configuration file.
 
 ## API methods
@@ -108,5 +108,3 @@ See the [device API reference](../../api/mpikg_box/api.md) for a description of 
 
 More detail can be found as a docstring in the
 [main class](../../../../../src/flowchem/devices/custom/mpikg_switch_box.py).
-
-

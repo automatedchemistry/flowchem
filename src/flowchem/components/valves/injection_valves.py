@@ -1,4 +1,5 @@
 """Injection valves are multiport, two-position valves, e.g. 6-2 commonly used w/ injection loops for HPLC injection."""
+
 from flowchem.components.valves.valve import Valve
 from flowchem.devices.flowchem_device import FlowchemDevice
 

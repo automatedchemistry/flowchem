@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Optional
 from loguru import logger
 import pint
 
-
 if TYPE_CHECKING:
     from .knauer_autosampler import KnauerAutosampler
 
@@ -33,7 +32,7 @@ class AutosamplerGantry3D(gantry3D):
     tray_config = {
         "x": {"mode": "discrete", "positions": [1, 2, 3, 4, 5, 6, 7, 8]},
         "y": {"mode": "discrete", "positions": ["a", "b", "c", "d", "e", "f"]},
-        "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
+        "z": {"mode": "discrete", "positions": ["UP", "DOWN"]},
     }
 
     hw_device: KnauerAutosampler  # for typing's sake
@@ -42,9 +41,13 @@ class AutosamplerGantry3D(gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
-        self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
+        self.add_api_route(
+            "/needle_position", self.set_needle_position, methods=["PUT"]
+        )
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
-        self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route(
+            "/connect_to_position", self.connect_to_position, methods=["PUT"]
+        )
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -74,9 +77,11 @@ class AutosamplerGantry3D(gantry3D):
         row: [1, 2, 3, 4, 5, 6, 7, 8]
         """
         await self.set_z_position("UP")
-        await self.set_xy_position(tray=tray,row=row,column=column)
+        await self.set_xy_position(tray=tray, row=row, column=column)
         await self.set_z_position("DOWN")
-        logger.info(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
+        logger.info(
+            f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}"
+        )
         return True
 
     async def set_xy_position(self, row: int, column: str, tray: str = "") -> bool:
@@ -93,17 +98,21 @@ class AutosamplerGantry3D(gantry3D):
 
         await super().set_x_position(position=row)
         await super().set_y_position(position=column)
-        column_num = ord(column.upper()) - 64 # change column to int
+        column_num = ord(column.upper()) - 64  # change column to int
 
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
 
-        #traytype = self.hw_device.tray_type.upper()
+        # traytype = self.hw_device.tray_type.upper()
         await self.hw_device._move_needle_vertical("UP")
         await self.hw_device._move_tray(tray, row)
-        success = await self.hw_device._move_needle_horizontal("PLATE", plate=tray, well=column_num)
+        success = await self.hw_device._move_needle_horizontal(
+            "PLATE", plate=tray, well=column_num
+        )
         if success:
-            logger.info(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
+            logger.info(
+                f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}"
+            )
             return True
         else:
             return False
@@ -119,7 +128,7 @@ class AutosamplerGantry3D(gantry3D):
         await super().set_z_position(position=position)
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
-        success = await self.hw_device._move_needle_vertical(move_to=position)
+        success = await self.hw_device._move_needle_vertical(move_to=str(position))
         if success:
             logger.info(f"Needle moved successfully to {position} direction.")
             return True
@@ -129,7 +138,7 @@ class AutosamplerGantry3D(gantry3D):
     async def reset_errors(self) -> bool:
         """Resets AS error"""
         errors = await self.hw_device.get_errors()
-        if errors:
+        if errors and errors != "No Error.":
             logger.info(f"Error: {errors} was present")
             await self.hw_device.reset_errors()
             logger.info("Errors reset")
@@ -138,11 +147,12 @@ class AutosamplerGantry3D(gantry3D):
             return False
 
     async def is_needle_running(self) -> bool:
-        """"Checks if Auto-sampler is running"""
+        """ "Checks if Auto-sampler is running"""
         if await self.hw_device.get_status() == "NEEDLE_RUNNING":
             return True
         else:
             return False
+
 
 class AutosamplerPump(SyringePump):
     """
@@ -150,9 +160,12 @@ class AutosamplerPump(SyringePump):
     Attributes:
         hw_device (KnauerAutosampler): The hardware device for the Knauer CNC component.
     """
+
     hw_device: KnauerAutosampler
 
-    async def infuse(self, rate: Optional[str] = None, volume: Optional[str] = None) -> bool:
+    async def infuse(
+        self, rate: Optional[str] = None, volume: Optional[str] = None
+    ) -> bool:
         """
         Dispense with built in syringe.
         Args:
@@ -182,7 +195,9 @@ class AutosamplerPump(SyringePump):
         """
         if volume is None:
             volume = await self.hw_device.syringe_volume()
-            logger.warning(f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}")
+            logger.warning(
+                f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}"
+            )
         parsed_volume: pint.Quantity = ureg.Quantity(volume)
         success = await self.hw_device.aspirate(volume=parsed_volume.m_as("mL"))
         if success:
@@ -190,35 +205,44 @@ class AutosamplerPump(SyringePump):
             return True
         else:
             return False
-          
+
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
         """Can the pump reverse its normal flow direction?"""
         return True
 
     async def is_pumping(self) -> bool:
-        """"Checks if Syringe or syringe valve is running"""
+        """ "Checks if Syringe or syringe valve is running"""
         status = await self.hw_device.get_status()
         if status == "SYRINGE_OR_SYRINGE_VALVE_RUNNING":
             return True
         else:
             return False
 
+    async def stop(self) -> bool:
+        """Stop the simulated pump operation."""
+        return True
+
 
 class AutosamplerInjectionValve(SixPortTwoPositionValve):
     """
-        Control a Knauer Autosampler 6-Port Distribution Valve.
+    Control a Knauer Autosampler 6-Port Distribution Valve.
 
-        Attributes:
-            hw_device (KnauerValve): The hardware device for the Knauer valve.
-        """
+    Attributes:
+        hw_device (KnauerValve): The hardware device for the Knauer valve.
+    """
+
     hw_device: KnauerAutosampler  # for typing's sake
     identifier = "injection_valve"
 
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
@@ -233,7 +257,13 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
         """
         position_mapping = {0: "LOAD", 1: "INJECT"}
         if reverse:
-            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+            return str(
+                [
+                    key
+                    for key, value in position_mapping.items()
+                    if value == raw_position
+                ][0]
+            )
         else:
             if type(raw_position) is int:
                 return position_mapping[raw_position]
@@ -266,26 +296,32 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
         try:
             success = await self.hw_device.injector_valve_position(port=position)
             if success:
-                logger.info(f"Injection valve moved successfully to position: {position}")
+                logger.info(
+                    f"Injection valve moved successfully to position: {position}"
+                )
         except KeyError as e:
             raise Exception(f"Please give allowed positions {[pos.name for pos in InjectorValvePositions]}") from e  # type: ignore
 
 
 class AutosamplerSyringeValve(FourPortDistributionValve):
     """
-        Control a Knauer Autosampler 4-Port Distribution syringe Valve.
+    Control a Knauer Autosampler 4-Port Distribution syringe Valve.
 
-        Attributes:
-            hw_device (KnauerAutosampler): The hardware device for the 4-Port Distribution syringe Valve.
-        """
+    Attributes:
+        hw_device (KnauerAutosampler): The hardware device for the 4-Port Distribution syringe Valve.
+    """
 
     hw_device: KnauerAutosampler  # for typing's sake
     identifier = "syringe_valve"
 
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
@@ -300,7 +336,13 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
         """
         position_mapping = {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"}
         if reverse:
-            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+            return str(
+                [
+                    key
+                    for key, value in position_mapping.items()
+                    if value == raw_position
+                ][0]
+            )
         else:
             if type(raw_position) is int:
                 return position_mapping[raw_position]

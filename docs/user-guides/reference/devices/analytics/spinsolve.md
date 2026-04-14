@@ -10,12 +10,12 @@ with the remote control option enabled (see manufacturer manual for details).
 The bench-top NMRs from Magritek are controlled by the proprietary software Spinsolve.
 Spinsolve can be controlled remotely via XML over HTTP.
 
-As for all `flowchem` devices, a Spinsolve virtual instrument can be instantiated via a configuration file that generates 
+As for all `flowchem` devices, a Spinsolve virtual instrument can be instantiated via a configuration file that generates
 an openAPI endpoint.
 A peculiarity of controlling the NMR in this way is that the FIDs acquired are stored on
 the computer where spinsolve is installed, which may or may not be the same PC where flowchem
 is running.
-Some utility functions are provided in case you are controlling Spinsolve on a different PC than the one running flowchem, 
+Some utility functions are provided in case you are controlling Spinsolve on a different PC than the one running flowchem,
 see below for more details.
 
 

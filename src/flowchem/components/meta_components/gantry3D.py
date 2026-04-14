@@ -1,4 +1,5 @@
 """Base gantry3D meta component."""
+
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.technical.length import LengthControl
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -82,5 +83,3 @@ class gantry3D(FlowchemComponent):
             position = float(position) if "." in position else int(position)
         await self.z_axis.set_position(position)
         return True
-
-

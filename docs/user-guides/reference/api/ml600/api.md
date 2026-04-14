@@ -7,4 +7,3 @@ See the [how-to guide](../../devices/pumps/ml600.md) to configure an ML600 objec
 
 
 ## Dual syringe
-

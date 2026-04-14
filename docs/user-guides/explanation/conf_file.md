@@ -1,7 +1,7 @@
 # flowchem Configuration File: Simple, Flexible, and User-Friendly
 
-Flowchem uses a TOML (Tom's Obvious, Minimal Language) configuration file to manage device settings. This format was 
-chosen for its simplicity and readability, making it easy for users to edit without requiring extensive technical 
+Flowchem uses a TOML (Tom's Obvious, Minimal Language) configuration file to manage device settings. This format was
+chosen for its simplicity and readability, making it easy for users to edit without requiring extensive technical
 knowledge.
 
 ## Key Features of the Configuration File
@@ -58,7 +58,7 @@ When editing, ensure that:
 - The `type` parameter matches an implemented device class in flowchem.
 - The communication parameter (port, IP, URL) is correct for your setup.
 - Any additional parameters are appropriate for the device type.
-- For details of supported devices and their specific configuration options, refer to the 
+- For details of supported devices and their specific configuration options, refer to the
 [device configuration guides](../reference/devices/supported_devices.md).
 ```
 
@@ -68,12 +68,10 @@ When editing, ensure that:
 2. Save the file with a `.toml` extension.
 3. Flowchem will use this configuration to connect to and manage the devices.
 
-This user-friendly approach allows for quick adjustments to your flowchem setup, enabling efficient management of 
+This user-friendly approach allows for quick adjustments to your flowchem setup, enabling efficient management of
 various devices without the need for complex programming or system changes.
 
 ## Practical Impact
 
-This level of abstraction ensures that users can manage and configure devices with minimal effort, focusing on 
+This level of abstraction ensures that users can manage and configure devices with minimal effort, focusing on
 high-level functionality rather than low-level implementation details.
-
-

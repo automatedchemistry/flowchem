@@ -1,4 +1,5 @@
 """Runze valve component."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -21,8 +22,12 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     def __init__(self, name: str, hw_device: RunzeValve) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
@@ -62,8 +67,12 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
     def __init__(self, name: str, hw_device: RunzeValve) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
@@ -103,8 +112,12 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
     def __init__(self, name: str, hw_device: RunzeValve) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
@@ -144,8 +157,12 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
     def __init__(self, name: str, hw_device: RunzeValve) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
@@ -185,8 +202,12 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
 
     def __init__(self, name: str, hw_device: RunzeValve) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route(
+            "/monitor_position", self.get_monitor_position, methods=["GET"]
+        )
+        self.add_api_route(
+            "/monitor_position", self.set_monitor_position, methods=["PUT"]
+        )
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """

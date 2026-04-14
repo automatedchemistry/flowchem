@@ -1,4 +1,5 @@
 """Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor."""
+
 import time
 
 import pint
@@ -84,7 +85,9 @@ class PhidgetPressureSensor(FlowchemDevice):
 
     async def initialize(self):
 
-        self.components.extend([PhidgetPressureSensorComponent("pressure-sensor", self)])
+        self.components.extend(
+            [PhidgetPressureSensorComponent("pressure-sensor", self)]
+        )
 
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""

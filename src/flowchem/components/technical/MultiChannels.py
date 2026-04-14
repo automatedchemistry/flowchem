@@ -11,7 +11,7 @@ class MultiChannelADC(AnalogDigitalConverter):
 
         self.add_api_route("/read_all", self.read_all, methods=["GET"])
 
-    async def read(self, channel: str) -> float:  # type:ignore[override]
+    async def read(self, channel: str) -> float:  # type: ignore[override]
         """
         Read the current value of the signal.
 
@@ -36,7 +36,7 @@ class MultiChannelADC(AnalogDigitalConverter):
 
 class MultiChannelDAC(DigitalAnalogConverter):
 
-    async def read(self, channel: str) -> float:  # type:ignore[override]
+    async def read(self, channel: str) -> float:  # type: ignore[override]
         """
         Read the DAC output of a channel.
 
@@ -45,7 +45,7 @@ class MultiChannelDAC(DigitalAnalogConverter):
         """
         raise NotImplementedError
 
-    async def set(self, channel: str = "1", value: str = "0 V") -> bool:  # type:ignore[override]
+    async def set(self, channel: str = "1", value: str = "0 V") -> bool:  # type: ignore[override]
         """
         Set the analog output value of a channel.
 
@@ -65,11 +65,15 @@ class MultiChannelRelay(Relay):
 
         super().__init__(*args, **kwargs)
 
-        self.add_api_route("/multiple_channel", self.switch_multiple_channel, methods=["PUT"])
+        self.add_api_route(
+            "/multiple_channel", self.switch_multiple_channel, methods=["PUT"]
+        )
 
-        self.add_api_route("/channels_set_point", self.read_channels_set_point, methods=["GET"])
+        self.add_api_route(
+            "/channels_set_point", self.read_channels_set_point, methods=["GET"]
+        )
 
-    async def power_on(self, channel: str) -> bool:  # type:ignore[override]
+    async def power_on(self, channel: str) -> bool:  # type: ignore[override]
         """
         Switch a relay channel ON.
 
@@ -81,7 +85,7 @@ class MultiChannelRelay(Relay):
         """
         raise NotImplementedError
 
-    async def power_off(self, channel: str) -> bool:  # type:ignore[override]
+    async def power_off(self, channel: str) -> bool:  # type: ignore[override]
         """
         Switch a relay channel OFF.
 
@@ -93,7 +97,7 @@ class MultiChannelRelay(Relay):
         """
         raise NotImplementedError
 
-    async def is_on(self, channel: str) -> bool:  # type:ignore[override]
+    async def is_on(self, channel: str) -> bool:  # type: ignore[override]
         """
         Check whether the relay is currently ON.
 
@@ -107,8 +111,9 @@ class MultiChannelRelay(Relay):
         if value is not None:
             return value > 0
         else:
-            raise Exception(f"The component {self.name} from {self.hw_device.name} has not channel: {channel}!!")
-
+            raise Exception(
+                f"The component {self.name} from {self.hw_device.name} has not channel: {channel}!!"
+            )
 
     async def switch_multiple_channel(self, values: str):
         """
@@ -162,6 +167,3 @@ class MultiChannelRelay(Relay):
                 - 0, 1 → valid relay state.
         """
         raise NotImplementedError
-
-
-

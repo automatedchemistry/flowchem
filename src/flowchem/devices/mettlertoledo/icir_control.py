@@ -16,9 +16,10 @@ class IcIRControl(IRControl):
     Attributes:
         hw_device (IcIR): The hardware device for the IR spectrometer.
     """
+
     hw_device: IcIR  # for typing's sake
 
-    def __init__(self, name: str, hw_device: IcIR) -> None:  # type:ignore
+    def __init__(self, name: str, hw_device: IcIR) -> None:  # type: ignore
         """
         Initialize the IcIRControl component.
 
@@ -68,7 +69,9 @@ class IcIRControl(IRControl):
         if count is not None:
             return count
         else:
-            logger.warning("The spectrum count return a 'None' value! This reply was replaced to the int -1.")
+            logger.warning(
+                "The spectrum count return a 'None' value! This reply was replaced to the int -1."
+            )
             return -1
 
     async def stop(self):

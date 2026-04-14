@@ -1,12 +1,12 @@
 # Autonomous reaction optimization
 
-This example demonstrates how to set up a process using flowchem. The process involves the reaction of two reagents, 
+This example demonstrates how to set up a process using flowchem. The process involves the reaction of two reagents,
 *hexyldecanoic acid*, and *thionyl chloride*, within a temperature-controlled reactor.
 
-This process needs four electronic devices, two pumps were used to deliver the reagents. 
-One pump is from [AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other is from 
-Elite11 [](../../reference/devices/pumps/elite11.md). A reactor with controlled temperature was used. This reator is a component of 
-the platform R2 - [R4Heater](../../reference/devices/technical/r4_heater.md). An infrared spectroscope from IR was used to analyze the 
+This process needs four electronic devices, two pumps were used to deliver the reagents.
+One pump is from [AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other is from
+Elite11 [](../../reference/devices/pumps/elite11.md). A reactor with controlled temperature was used. This reator is a component of
+the platform R2 - [R4Heater](../../reference/devices/technical/r4_heater.md). An infrared spectroscope from IR was used to analyze the
 product - [IcIR](../../reference/devices/analytics/icir.md).
 
 :::{figure-md} Synthesis
@@ -15,7 +15,7 @@ product - [IcIR](../../reference/devices/analytics/icir.md).
 **Figure 1** Automatic synthesis
 :::
 
-To gain a better understanding of the example, let's examine three different files that enabled the automation of the 
+To gain a better understanding of the example, let's examine three different files that enabled the automation of the
 platform.
 
 ```bash
@@ -65,16 +65,16 @@ reactor = flowchem_devices["r4-heater"]["reactor1"]
 flowir = flowchem_devices["flowir"]["ir-control"]
 ```
 
-Each component has its own GET and PUT methods. The commands are written based on available methods. 
-When flowchem is running, you can easily see each device's available methods through the address 
-[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the 
+Each component has its own GET and PUT methods. The commands are written based on available methods.
+When flowchem is running, you can easily see each device's available methods through the address
+[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the
 [API documentation](../../reference/api/index.md).
 
 The following is a description of the main `main.py` script which controls the experiment.
 
 ```python
 # This package is used to read the current time and work with time management.
-import time  
+import time
 
 #Package used for optimization, more details: https://gryffin.readthedocs.io/en/latest/index.html
 from gryffin import Gryffin
@@ -157,7 +157,7 @@ while time.monotonic() < (start_time + MAX_TIME):
     logger.info(observations)
 ```
 
-The package `run_experiment.py` is imported into the script. It's a set of functions and variables that are critical 
+The package `run_experiment.py` is imported into the script. It's a set of functions and variables that are critical
 for the execution of the experiment, especially for infrared analysis.
 
 ```python
@@ -329,5 +329,5 @@ if __name__ == "__main__":
 
 ```
 
-With these two files, it's possible to carry out a series of experiments in order to optimize the conditions. To see more detail on the synthesis, please go to 
+With these two files, it's possible to carry out a series of experiments in order to optimize the conditions. To see more detail on the synthesis, please go to
 [Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A).

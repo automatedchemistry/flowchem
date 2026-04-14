@@ -1,4 +1,5 @@
 """Spinsolve module."""
+
 import asyncio
 import pprint as pp
 import warnings
@@ -174,7 +175,7 @@ class Spinsolve(FlowchemDevice):
                     )
 
             # Add to reply queue of the given tag-type
-            await self._replies_by_type[parsed_tree[0].tag].put(parsed_tree) # type: ignore
+            await self._replies_by_type[parsed_tree[0].tag].put(parsed_tree)  # type: ignore
 
     async def get_solvent(self) -> str:
         """Get current solvent."""

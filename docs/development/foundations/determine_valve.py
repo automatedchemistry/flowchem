@@ -42,7 +42,11 @@ class Stator:
         return list_
 
     def __str__(self):
-        return str([(x, y) for x, y in enumerate(self.stator[0]) if y is not None]) + " " + str(self.stator[1])
+        return (
+            str([(x, y) for x, y in enumerate(self.stator[0]) if y is not None])
+            + " "
+            + str(self.stator[1])
+        )
 
 
 class Rotor:
@@ -84,7 +88,9 @@ class Rotor:
                 for port in connection:
                     if port != 0:
                         current_index = stator.stator[0].index(port)
-                        current_rotor[0] = Stator.replace_element(current_rotor[0], current_index, stator_positions)
+                        current_rotor[0] = Stator.replace_element(
+                            current_rotor[0], current_index, stator_positions
+                        )
                     else:
                         current_rotor[1].append(stator_positions)
                 stator_positions += 1
@@ -126,37 +132,60 @@ def shorten_valve(stator, rotor):
         if next_ > current:
             distance = next_ - current if next_ - current < distance else distance
         else:
-            distance = (DEGREE - current + next_) if DEGREE - current + next_ < distance else distance
-    return [stator.stator[0][::distance], stator.stator[1]], [rotor.rotor[0][::distance], rotor.rotor[1]]
+            distance = (
+                (DEGREE - current + next_)
+                if DEGREE - current + next_ < distance
+                else distance
+            )
+    return [stator.stator[0][::distance], stator.stator[1]], [
+        rotor.rotor[0][::distance],
+        rotor.rotor[1],
+    ]
 
 
 def main():
     """Main function to run the valve configuration."""
     try:
-        msg = ("Before using this script, it is recommended that the user read the documentation about valve logic \n"
-               "to become familiar with the terms: stator, routes, rotor, and symmetric. With this in mind, \n"
-               "let's continue. Is your stator symmetric? Type yes or no: ")
+        msg = (
+            "Before using this script, it is recommended that the user read the documentation about valve logic \n"
+            "to become familiar with the terms: stator, routes, rotor, and symmetric. With this in mind, \n"
+            "let's continue. Is your stator symmetric? Type yes or no: "
+        )
         sym = input(msg).lower()
-        central = input("Is there a central port on your valve? Type yes or no: ").lower()
+        central = input(
+            "Is there a central port on your valve? Type yes or no: "
+        ).lower()
         central = central == "yes"
 
         if sym == "yes":
-            number = int(input("How many ports do you have radially distributed? Please give a number like 5: "))
+            number = int(
+                input(
+                    "How many ports do you have radially distributed? Please give a number like 5: "
+                )
+            )
             stator = Stator(positions=number, central_port=central)
         elif sym == "no":
-            degrees = loads(input("Please provide a list of ports by their degree, e.g., [120, 200, 280]: "))
+            degrees = loads(
+                input(
+                    "Please provide a list of ports by their degree, e.g., [120, 200, 280]: "
+                )
+            )
             stator = Stator(port_degrees=degrees, central_port=central)
         else:
             raise ValueError("Invalid input for symmetry.")
 
         print("Stator Configuration:", stator)
 
-        rotor_input = input("Do you want to create the rotor from a technical drawing? Type yes or no: ").lower()
+        rotor_input = input(
+            "Do you want to create the rotor from a technical drawing? Type yes or no: "
+        ).lower()
         if rotor_input == "yes":
             routes = loads(input("Please provide routes lists, e.g., [[120,200,-1]]: "))
             rotor = Rotor(routes=routes, stator=stator, central_port=central)
         elif rotor_input == "no":
-            conns = input('Provide a mapping of degrees to ports connecting at this value. Format: {"0":[[0,1]]}: ')
+            conns = input(
+                'Provide a mapping of degrees to ports connecting at this value. Format: {"0":[[0,1]]}: '
+            )
             rotor = Rotor(connections=conns, stator=stator)
         else:
             raise ValueError("Invalid input for rotor creation.")

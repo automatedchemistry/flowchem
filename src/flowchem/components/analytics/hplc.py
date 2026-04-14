@@ -1,4 +1,5 @@
 """An HPLC control component."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -25,6 +26,7 @@ class HPLCControl(FlowchemComponent):
     run_sample(sample_name: str, method_name: str):
         Run an HPLC sample using the specified sample and method.
     """
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """
         Constructs all the necessary attributes for the HPLCControl object.

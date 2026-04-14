@@ -1,4 +1,5 @@
 """Control module for Manson lab power supply unites."""
+
 # Note: Original code from Manson website with edits. No license originally specified.
 import re
 import warnings
@@ -164,7 +165,8 @@ class MansonPowerSupply(FlowchemDevice):
         # Some models report current as 0.1 A others at 0.01 A
         model = await self.get_info()
         divider = 100 if model in self.MODEL_ALT_RANGE else 10
-        return str(max_v), str(max_c_raw / divider)
+        max_c = max_c_raw / divider
+        return f"{max_v.m_as('V')} V", f"{max_c.m_as('A')} A"
 
     async def get_setting(self) -> tuple[str, str]:
         """Return current setting as tuple (voltage, current)."""

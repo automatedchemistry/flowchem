@@ -1,4 +1,5 @@
 """Elite11 pump component."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -17,6 +18,7 @@ class Elite11PumpOnly(SyringePump):
     Attributes:
         hw_device (Elite11): The hardware device controlling the pump.
     """
+
     hw_device: Elite11  # for typing's sake
 
     @staticmethod
@@ -72,6 +74,7 @@ class Elite11PumpWithdraw(Elite11PumpOnly):
     Attributes:
         hw_device (Elite11): The hardware device controlling the pump.
     """
+
     @staticmethod
     def is_withdrawing_capable():
         """

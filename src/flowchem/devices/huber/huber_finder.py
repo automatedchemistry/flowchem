@@ -1,4 +1,5 @@
 """This module is used to discover the serial address of any Huber chiller connected to the PC."""
+
 import asyncio
 from textwrap import dedent
 

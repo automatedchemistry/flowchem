@@ -1,4 +1,5 @@
 """Sensor device."""
+
 from __future__ import annotations
 
 from flowchem.components.technical.ADC import AnalogDigitalConverter
@@ -36,27 +37,15 @@ class Sensor(AnalogDigitalConverter):
         super().__init__(name, hw_device)
         self.add_api_route("/power-on", self.power_on, methods=["PUT"])
         self.add_api_route("/power-off", self.power_off, methods=["PUT"])
-        # Ontology: HPLC isocratic pump
+        # Ontology: Sensor (NCIT_C50166 — measurement device / sensor)
         self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/NCIT_C50166",
         )
 
     async def power_on(self):
-        """
-        Power on the sensor.
-
-        Returns:
-        --------
-        None
-        """
-        ...
+        """Power on the sensor."""
+        return True
 
     async def power_off(self):
-        """
-        Power off the sensor.
-
-        Returns:
-        --------
-        None
-        """
-        ...
+        """Power off the sensor."""
+        return True

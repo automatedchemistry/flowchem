@@ -1,4 +1,5 @@
 """Functions related to instrument response parsing."""
+
 import warnings
 from enum import Enum
 

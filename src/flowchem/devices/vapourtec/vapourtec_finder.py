@@ -1,4 +1,5 @@
 """This module is used to discover the serial address of any Vapourtec device connected to the PC."""
+
 import asyncio
 from textwrap import dedent
 
@@ -32,7 +33,7 @@ def r4_finder(serial_port) -> set[str]:
         logger.info(f"R4 version {r4.device_info.version} found on <{serial_port}>")
         # Local variable for enumeration
         r4_finder.counter += 1  # type: ignore
-        cfg = f"[device.r4-heater-{r4_finder.counter}]"  # type:ignore
+        cfg = f"[device.r4-heater-{r4_finder.counter}]"  # type: ignore
         cfg += dedent(
             f"""
         type = "R4Heater"

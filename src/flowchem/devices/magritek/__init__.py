@@ -1,4 +1,5 @@
 """Magritek Spinsolve."""
+
 from .spinsolve import Spinsolve
 
 __all__ = [

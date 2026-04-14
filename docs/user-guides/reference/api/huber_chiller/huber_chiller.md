@@ -3,7 +3,7 @@
 ### `GET /my-chiller/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-chiller
 **Operation ID:** `get_device_info_fake_device__get`
 

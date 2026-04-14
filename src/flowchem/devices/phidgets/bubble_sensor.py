@@ -4,6 +4,7 @@ PhidgetBubbleSensor_power control the power of the bubble sensor
 PhidgetBubbleSensor measure the signal of the bubble sensor
 
 """
+
 import time
 
 from loguru import logger

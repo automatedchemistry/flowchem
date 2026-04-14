@@ -1,4 +1,5 @@
 """Functions for the construction of XML requests for Spinsolve."""
+
 from pathlib import WindowsPath
 
 from lxml import etree

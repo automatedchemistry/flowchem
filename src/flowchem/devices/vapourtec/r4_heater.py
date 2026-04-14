@@ -1,4 +1,5 @@
 """Control module for the Vapourtec R4 heater."""
+
 from __future__ import annotations
 
 from collections import namedtuple
