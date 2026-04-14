@@ -48,6 +48,14 @@ class AutosamplerGantry3D(gantry3D):
         self.add_api_route(
             "/connect_to_position", self.connect_to_position, methods=["PUT"]
         )
+        self.add_api_route(
+            "/tray_temperature", self.tray_temperature, methods=["PUT"]
+        )
+        self.add_api_route(
+            "/tray_temperature_control",
+            self.tray_temperature_control,
+            methods=["PUT"],
+        )
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -153,6 +161,69 @@ class AutosamplerGantry3D(gantry3D):
         else:
             return False
 
+    async def tray_temperature(self, temperature: int | float | str | None = None) -> bool:
+        """
+        Set tray temperature and enable tray temperature control.
+
+        Args:
+            temperature: tray temperature setpoint.
+                Examples:
+                    10
+                    "10"
+                    "10 °C"
+                    "10 degree_Celsius"
+
+        Returns:
+            bool: True if command was sent successfully.
+        """
+        if temperature is None or temperature == "":
+            raise ValueError("temperature must be provided")
+
+        if isinstance(temperature, str):
+            try:
+                parsed_temp = ureg(temperature)
+                setpoint = int(parsed_temp.to("degC").magnitude)
+            except Exception:
+                setpoint = int(float(temperature))
+        else:
+            setpoint = int(temperature)
+
+        success = await self.hw_device.set_tray_temperature(setpoint=setpoint)
+        if not success:
+            return False
+
+        control_success = await self.hw_device.set_tray_temperature_control(onoff="on")
+        if control_success:
+            logger.info(
+                f"Tray temperature set successfully to {setpoint} °C and control turned on"
+            )
+            return True
+        else:
+            logger.warning(
+                f"Tray temperature was set to {setpoint} °C, but control could not be turned on"
+            )
+            return False
+
+    async def tray_temperature_control(self, onoff: str | None = None) -> bool:
+        """
+        Enable or disable tray temperature control.
+
+        Args:
+            onoff: "on" or "off"
+
+        Returns:
+            bool: True if command was sent successfully.
+        """
+        if onoff is None or onoff == "":
+            raise ValueError("onoff must be provided")
+
+        success = await self.hw_device.set_tray_temperature_control(onoff=onoff)
+
+        if success:
+            logger.info(f"Tray temperature control set to: {onoff}")
+            return True
+        else:
+            return False
 
 class AutosamplerPump(SyringePump):
     """
