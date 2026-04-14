@@ -442,24 +442,24 @@ class ML600(FlowchemDevice):
             self.components.extend(
                 [
                     (
-                        ML600LeftValve("left_valve", self,"B")
+                        ML600LeftValve("left_valve", self, "B")
                         if left_valve == ValveType.LEFT
-                        else ML600RightValve("left_valve", self,"B")
+                        else ML600RightValve("left_valve", self, "B")
                     ),
                     (
-                        ML600RightValve("right_valve", self,"C")
+                        ML600RightValve("right_valve", self, "C")
                         if right_valve == ValveType.RIGHT
-                        else ML600LeftValve("right_valve", self,"C")
+                        else ML600LeftValve("right_valve", self, "C")
                     ),
                 ]
             )
         else:
-            self.components.append(ML600Pump("pump", self))
+            self.components.append(ML600Pump("pump", self, "B"))
             valve = ValveType(self.config["left_valve"])
             self.components.append(
-                ML600LeftValve("valve", self)
+                ML600LeftValve("valve", self, "B")
                 if valve == ValveType.LEFT
-                else ML600RightValve("valve", self)
+                else ML600RightValve("valve", self, "B")
             )
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
