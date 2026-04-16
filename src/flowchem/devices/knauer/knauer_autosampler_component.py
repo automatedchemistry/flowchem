@@ -41,21 +41,12 @@ class AutosamplerGantry3D(gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
-        self.add_api_route(
-            "/needle_position", self.set_needle_position, methods=["PUT"]
-        )
+        self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
-        self.add_api_route(
-            "/connect_to_position", self.connect_to_position, methods=["PUT"]
-        )
-        self.add_api_route(
-            "/tray_temperature", self.tray_temperature, methods=["PUT"]
-        )
-        self.add_api_route(
-            "/tray_temperature_control",
-            self.tray_temperature_control,
-            methods=["PUT"],
-        )
+        self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route("/tray_temperature", self.tray_temperature, methods=["PUT"])
+        self.add_api_route("/tray_temperature_control", self.tray_temperature_control, methods=["PUT"])
+        self.add_api_route("/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -221,6 +212,45 @@ class AutosamplerGantry3D(gantry3D):
 
         if success:
             logger.info(f"Tray temperature control set to: {onoff}")
+            return True
+        else:
+            return False
+
+    async def needle_vertical_offset(self, offset: int | float | str | None = None) -> bool:
+        """
+        Set the needle vertical offset.
+
+        Allowed values: 2.0 to 6.0 mm in steps of 0.5 mm.
+
+        Examples:
+            2
+            2.5
+            "2 mm"
+            "2.5 mm"
+        """
+        if offset is None or offset == "":
+            raise ValueError("offset must be provided")
+
+        if isinstance(offset, str):
+            try:
+                parsed_offset = ureg(offset)
+                offset_mm = float(parsed_offset.to("mm").magnitude)
+            except Exception:
+                offset_mm = float(offset)
+        else:
+            offset_mm = float(offset)
+
+        if not (2.0 <= offset_mm <= 6.0):
+            raise ValueError("offset must be between 2.0 and 6.0 mm")
+
+        # check 0.5 mm increments
+        if (offset_mm * 2) % 1 != 0:
+            raise ValueError("offset must be in increments of 0.5 mm")
+
+        success = await self.hw_device.set_needle_vertical_offset(offset=offset_mm)
+
+        if success:
+            logger.info(f"Needle vertical offset set successfully to {offset_mm:.1f} mm")
             return True
         else:
             return False

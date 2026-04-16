@@ -683,6 +683,9 @@ class KnauerAutosampler(FlowchemDevice):
         reply = (3 - len(reply)) * "0" + reply
         return ASStatus(reply).name  # type: ignore
 
+    async def set_needle_vertical_offset(self, offset: float | int | None = None):
+        return await self._set_get_value(VerticalNeedleOffsetCommand, offset)  # type: ignore
+
 
 if __name__ == "__main__":
     import asyncio
