@@ -532,7 +532,7 @@ class KnauerAutosampler(FlowchemDevice):
         )
 
     async def measure_tray_temperature(self):
-        command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
+        command_string = await self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         return int(await self._query(command_string))
 
     async def set_tray_temperature(self, setpoint: int | None = None):
