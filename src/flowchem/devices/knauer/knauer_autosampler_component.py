@@ -43,6 +43,7 @@ class AutosamplerGantry3D(gantry3D):
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
+        self.add_api_route("/tray_temperature", self.get_tray_temperature, methods=["GET"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
         self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
         self.add_api_route("/tray_temperature", self.tray_temperature, methods=["PUT"])
@@ -217,6 +218,11 @@ class AutosamplerGantry3D(gantry3D):
                 f"Tray temperature was set to {setpoint} °C, but control could not be turned on"
             )
             return False
+
+    async def get_tray_temperature(self) -> str:
+        """Return the measured tray temperature as a numeric string in degC."""
+        temperature = await self.hw_device.measure_tray_temperature()
+        return str(temperature)
 
     async def tray_temperature_control(self, onoff: str | None = None) -> bool:
         """
