@@ -64,9 +64,14 @@ class AutosamplerGantry3D(gantry3D):
         logger.info(f"Needle moved succesfully to position: {position}")
         return True
 
-    async def connect_to_position(self, row: int, column: str, tray: str = "") -> bool:
+    async def connect_to_position(
+        self,
+        row: Optional[int] = None,
+        column: str = "",
+        tray: str = "",
+    ) -> bool:
         """
-        Move the 3D gantry to the specified (x, y) coordinate of a specific plate and connects to it.
+        Move the 3D gantry to a plate position or a predefined needle position and connect.
 
         plate (str):
                     LEFT_PLATE
@@ -74,8 +79,25 @@ class AutosamplerGantry3D(gantry3D):
 
         column: ["a", "b", "c", "d", "e", "f"].
         row: [1, 2, 3, 4, 5, 6, 7, 8]
+
+        Alternatively, ``tray`` may be one of the predefined needle positions:
+                    WASH
+                    WASTE
+                    EXCHANGE
+                    TRANSPORT
         """
         await self.set_z_position("UP")
+        if tray.upper() in {"WASH", "WASTE", "EXCHANGE", "TRANSPORT"}:
+            await self.set_needle_position(tray)
+            await self.set_z_position("DOWN")
+            logger.info(f"Needle connected successfully to predefined position: {tray}")
+            return True
+
+        if row is None or not column:
+            raise ValueError(
+                "row and column are required unless tray is a predefined needle position."
+            )
+
         await self.set_xy_position(tray=tray, row=row, column=column)
         await self.set_z_position("DOWN")
         logger.info(
