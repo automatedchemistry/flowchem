@@ -48,6 +48,7 @@ class AutosamplerGantry3D(gantry3D):
         self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
         self.add_api_route("/tray_temperature", self.tray_temperature, methods=["PUT"])
         self.add_api_route("/tray_temperature_control", self.tray_temperature_control, methods=["PUT"])
+        self.add_api_route("/compressor", self.compressor, methods=["PUT"])
         self.add_api_route("/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> bool:
@@ -244,6 +245,17 @@ class AutosamplerGantry3D(gantry3D):
             return True
         else:
             return False
+
+    async def compressor(self, onoff: str | None = None) -> bool:
+        """Enable or disable the autosampler compressor."""
+        if onoff is None or onoff == "":
+            raise ValueError("onoff must be provided")
+
+        success = await self.hw_device.compressor(onoff=onoff)
+        if success:
+            logger.info(f"Compressor set to: {onoff}")
+            return True
+        return False
 
     async def needle_vertical_offset(self, offset: int | float | str | None = None) -> bool:
         """
