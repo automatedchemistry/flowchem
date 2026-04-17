@@ -442,24 +442,24 @@ class ML600(FlowchemDevice):
             self.components.extend(
                 [
                     (
-                        ML600LeftValve("left_valve", self)
+                        ML600LeftValve("left_valve", self, "B")
                         if left_valve == ValveType.LEFT
-                        else ML600RightValve("left_valve", self)
+                        else ML600RightValve("left_valve", self, "B")
                     ),
                     (
-                        ML600RightValve("right_valve", self)
+                        ML600RightValve("right_valve", self, "C")
                         if right_valve == ValveType.RIGHT
-                        else ML600LeftValve("right_valve", self)
+                        else ML600LeftValve("right_valve", self, "C")
                     ),
                 ]
             )
         else:
-            self.components.append(ML600Pump("pump", self))
+            self.components.append(ML600Pump("pump", self, "B"))
             valve = ValveType(self.config["left_valve"])
             self.components.append(
-                ML600LeftValve("valve", self)
+                ML600LeftValve("valve", self, "B")
                 if valve == ValveType.LEFT
-                else ML600RightValve("valve", self)
+                else ML600RightValve("valve", self, "B")
             )
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
@@ -617,10 +617,10 @@ class ML600(FlowchemDevice):
         all_status = "".join(format(byte, "08b") for byte in reply.encode("ascii"))[
             ::-1
         ]
-        # In the payload returned by the pump, ``1`` marks a busy component and
-        # ``0`` marks an idle one.
+        # The real device reports busy with the inverse polarity of the manual:
+        # ``0`` marks a busy component and ``1`` marks an idle one.
         if -1 < component < 5:
-            return all_status[component] == "1"
+            return all_status[component] == "0"
         value_map = {
             0: "left_valve busy",
             1: "left_pump busy",
@@ -631,8 +631,8 @@ class ML600(FlowchemDevice):
         }
         status = {}
         for key in value_map:
-            logger.debug(f"{value_map[key]} : {all_status[key] == '1'}")
-            status[value_map[key]] = all_status[key] == "1"
+            logger.debug(f"{value_map[key]} : {all_status[key] == '0'}")
+            status[value_map[key]] = all_status[key] == "0"
         return status
 
     async def general_status_info(self, component: int = -1) -> bool | dict[str, bool]:

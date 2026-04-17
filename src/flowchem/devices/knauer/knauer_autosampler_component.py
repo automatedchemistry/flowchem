@@ -41,13 +41,15 @@ class AutosamplerGantry3D(gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
-        self.add_api_route(
-            "/needle_position", self.set_needle_position, methods=["PUT"]
-        )
+        self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
+        self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
+        self.add_api_route("/tray_temperature", self.get_tray_temperature, methods=["GET"])
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
-        self.add_api_route(
-            "/connect_to_position", self.connect_to_position, methods=["PUT"]
-        )
+        self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route("/tray_temperature", self.tray_temperature, methods=["PUT"])
+        self.add_api_route("/tray_temperature_control", self.tray_temperature_control, methods=["PUT"])
+        self.add_api_route("/compressor", self.compressor, methods=["PUT"])
+        self.add_api_route("/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -65,9 +67,14 @@ class AutosamplerGantry3D(gantry3D):
         logger.info(f"Needle moved succesfully to position: {position}")
         return True
 
-    async def connect_to_position(self, row: int, column: str, tray: str = "") -> bool:
+    async def connect_to_position(
+        self,
+        row: Optional[int] = None,
+        column: str = "",
+        tray: str = "",
+    ) -> bool:
         """
-        Move the 3D gantry to the specified (x, y) coordinate of a specific plate and connects to it.
+        Move the 3D gantry to a plate position or a predefined needle position and connect.
 
         plate (str):
                     LEFT_PLATE
@@ -75,8 +82,25 @@ class AutosamplerGantry3D(gantry3D):
 
         column: ["a", "b", "c", "d", "e", "f"].
         row: [1, 2, 3, 4, 5, 6, 7, 8]
+
+        Alternatively, ``tray`` may be one of the predefined needle positions:
+                    WASH
+                    WASTE
+                    EXCHANGE
+                    TRANSPORT
         """
         await self.set_z_position("UP")
+        if tray.upper() in {"WASH", "WASTE", "EXCHANGE", "TRANSPORT"}:
+            await self.set_needle_position(tray)
+            await self.set_z_position("DOWN")
+            logger.info(f"Needle connected successfully to predefined position: {tray}")
+            return True
+
+        if row is None or not column:
+            raise ValueError(
+                "row and column are required unless tray is a predefined needle position."
+            )
+
         await self.set_xy_position(tray=tray, row=row, column=column)
         await self.set_z_position("DOWN")
         logger.info(
@@ -153,6 +177,124 @@ class AutosamplerGantry3D(gantry3D):
         else:
             return False
 
+    async def tray_temperature(self, temperature: int | float | str | None = None) -> bool:
+        """
+        Set tray temperature and enable tray temperature control.
+
+        Args:
+            temperature: tray temperature setpoint.
+                Examples:
+                    10
+                    "10"
+                    "10 °C"
+                    "10 degree_Celsius"
+
+        Returns:
+            bool: True if command was sent successfully.
+        """
+        if temperature is None or temperature == "":
+            raise ValueError("temperature must be provided")
+
+        if isinstance(temperature, str):
+            try:
+                parsed_temp = ureg(temperature)
+                setpoint = int(parsed_temp.to("degC").magnitude)
+            except Exception:
+                setpoint = int(float(temperature))
+        else:
+            setpoint = int(temperature)
+
+        success = await self.hw_device.set_tray_temperature(setpoint=setpoint)
+        if not success:
+            return False
+
+        control_success = await self.hw_device.set_tray_temperature_control(onoff="on")
+        if control_success:
+            logger.info(
+                f"Tray temperature set successfully to {setpoint} °C and control turned on"
+            )
+            return True
+        else:
+            logger.warning(
+                f"Tray temperature was set to {setpoint} °C, but control could not be turned on"
+            )
+            return False
+
+    async def get_tray_temperature(self) -> str:
+        """Return the measured tray temperature as a numeric string in degC."""
+        temperature = await self.hw_device.measure_tray_temperature()
+        return str(temperature)
+
+    async def tray_temperature_control(self, onoff: str | None = None) -> bool:
+        """
+        Enable or disable tray temperature control.
+
+        Args:
+            onoff: "on" or "off"
+
+        Returns:
+            bool: True if command was sent successfully.
+        """
+        if onoff is None or onoff == "":
+            raise ValueError("onoff must be provided")
+
+        success = await self.hw_device.set_tray_temperature_control(onoff=onoff)
+
+        if success:
+            logger.info(f"Tray temperature control set to: {onoff}")
+            return True
+        else:
+            return False
+
+    async def compressor(self, onoff: str | None = None) -> bool:
+        """Enable or disable the autosampler compressor."""
+        if onoff is None or onoff == "":
+            raise ValueError("onoff must be provided")
+
+        success = await self.hw_device.compressor(onoff=onoff)
+        if success:
+            logger.info(f"Compressor set to: {onoff}")
+            return True
+        return False
+
+    async def needle_vertical_offset(self, offset: int | float | str | None = None) -> bool:
+        """
+        Set the needle vertical offset.
+
+        Allowed values: 2.0 to 6.0 mm in steps of 0.5 mm.
+
+        Examples:
+            2
+            2.5
+            "2 mm"
+            "2.5 mm"
+        """
+        if offset is None or offset == "":
+            raise ValueError("offset must be provided")
+
+        if isinstance(offset, str):
+            try:
+                parsed_offset = ureg(offset)
+                offset_mm = float(parsed_offset.to("mm").magnitude)
+            except Exception:
+                offset_mm = float(offset)
+        else:
+            offset_mm = float(offset)
+
+        if not (2.0 <= offset_mm <= 6.0):
+            raise ValueError("offset must be between 2.0 and 6.0 mm")
+
+        # check 0.5 mm increments
+        if (offset_mm * 2) % 1 != 0:
+            raise ValueError("offset must be in increments of 0.5 mm")
+
+        success = await self.hw_device.set_needle_vertical_offset(offset=offset_mm)
+
+        if success:
+            logger.info(f"Needle vertical offset set successfully to {offset_mm:.1f} mm")
+            return True
+        else:
+            return False
 
 class AutosamplerPump(SyringePump):
     """

@@ -32,14 +32,37 @@ class WatersMSControl(MSControl):
         """Device-specific initialization."""
         super().__init__(name, hw_device)
 
+    async def send_method(
+            self,
+            method_name: str,
+            tune_file: str | None = None,
+            inlet_method: str | None = None,
+    ) -> bool:
+        """
+        Set the MS method to be used for subsequent sample runs.
+
+        Args:
+            method_name: MS experiment method file.
+            tune_file: Optional tune file.
+            inlet_method: Optional inlet method.
+
+        Returns:
+            bool
+        """
+        return await self.hw_device.set_method(
+            ms_exp_file=method_name,
+            tune_file=tune_file,
+            inlet_method=inlet_method,
+        )
+
     async def run_sample(
-        self,
-        sample_name: str,
-        run_duration: int = 0,
-        queue_name: str = "next.txt",
-        do_conversion: bool = False,
-        output_dir: str = "PATH/TO/open_format_ms",
-    ):
+            self,
+            sample_name: str,
+            run_duration: int = 0,
+            queue_name: str = "next.txt",
+            do_conversion: bool = False,
+            output_dir: str = "PATH/TO/open_format_ms",
+    ) -> bool:
         """
         Trigger a mass spectrometry sample run.
 
