@@ -14,7 +14,7 @@ class MassFlowController(FlowchemComponent):
     """A generic mass flow controller."""
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """ 
+        """
         Constructs the MassFlowController component.
 
         Parameters:
@@ -41,4 +41,3 @@ class MassFlowController(FlowchemComponent):
     async def stop(self) -> bool:
         """Stop the mass flow controller by setting the flow rate to 0 ml/min."""
         raise NotImplementedError("Subclasses must override this method.")
-        
