@@ -1,22 +1,22 @@
-"""Base gantry3D meta component."""
+"""Base Gantry3D meta component."""
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.technical.length import LengthControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class gantry3D(FlowchemComponent):
+class Gantry3D(FlowchemComponent):
     """
-    A gantry3D device that controls movement in 3 dimensions (X, Y, Z).
+    A Gantry3D device that controls movement in 3 dimensions (X, Y, Z).
     Each axis can operate in discrete or continuous mode.
     """
 
     def __init__(self, name: str, hw_device: FlowchemDevice, axes_config: dict) -> None:
         """
-        Initialize the gantry3D component with individual LenghtControl components for X, Y, and Z axes.
+        Initialize the Gantry3D component with individual LenghtControl components for X, Y, and Z axes.
 
         Args:
-            name (str): Name of the gantry3D device.
+            name (str): Name of the Gantry3D device.
             hw_device (FlowchemDevice): Hardware device interface.
             axes_config (dict): Configuration for each axis. Example:
                 {
@@ -83,3 +83,6 @@ class gantry3D(FlowchemComponent):
             position = float(position) if "." in position else int(position)
         await self.z_axis.set_position(position)
         return True
+
+
+gantry3D = Gantry3D

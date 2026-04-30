@@ -138,3 +138,8 @@ dmypy.json
 # pre-commit
 .pre-commit-cache/
 .pre-commit-cache-*
+
+# pytest
+.pytest-cache*
+
+.flowchem-sim/
