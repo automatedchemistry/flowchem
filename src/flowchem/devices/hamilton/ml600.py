@@ -247,40 +247,58 @@ class HamiltonPumpIO:
         """Convert an ASCII reply string to its binary representation."""
         return "".join(format(byte, "08b") for byte in reply.encode("ascii"))[::-1]
 
-    async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
+    async def write_and_read_reply_async(
+        self, command: Protocol1Command, retries: int = 3, retry_delay: float = 0.2
+    ) -> str:
         """Send a command to the pump, read the reply and return it parsed."""
         async with self._serial_lock:
-            self._serial.reset_input_buffer()
-            await self._write_async(f"{command.compile()}\r".encode("ascii"))
-            response = await self._read_reply_async()
-            if not response:
-                logger.error(
-                    f"No response received from pump! "
-                    f"Maybe wrong pump address? (Set to {command.target_pump_num})"
+            for attempt in range(1, retries + 1):
+                self._serial.reset_input_buffer()
+                await self._write_async(f"{command.compile()}\r".encode("ascii"))
+                response = await self._read_reply_async()
+                if response:
+                    return self._parse_response(response)
+                logger.warning(
+                    f"No response from pump (attempt {attempt}/{retries}). "
+                    f"Pump address: {command.target_pump_num}"
                 )
-            return self._parse_response(response)
+                if attempt < retries:
+                    await asyncio.sleep(retry_delay)
+            raise DeviceError(
+                f"No response received from pump after {retries} attempts! "
+                f"Maybe wrong pump address? (Set to {command.target_pump_num})"
+            )
 
     async def multiple_write_and_read_reply_async(
-        self, command: list[Protocol1Command] | Protocol1Command
+        self,
+        command: list[Protocol1Command] | Protocol1Command,
+        retries: int = 3,
+        retry_delay: float = 0.2,
     ) -> str:
         """Send one or more commands to the pump, read the reply and return it parsed."""
         async with self._serial_lock:
-            command_compiled = ""
-            self._serial.reset_input_buffer()
-            # Use isinstance instead of type() != to handle subclasses correctly.
             if not isinstance(command, list):
                 command = [command]
+            command_compiled = ""
             for com in command:
                 command_compiled += com._multiple_compile()
             com_comp = com.multiple_compile(command_compiled)
-            await self._write_async(com_comp.encode("ascii"))
-            response = await self._read_reply_async()
-            if not response:
-                logger.error(
-                    f"No response received from pump! "
-                    f"Maybe wrong pump address? (Set to {command[0].target_pump_num})"
+            for attempt in range(1, retries + 1):
+                self._serial.reset_input_buffer()
+                await self._write_async(com_comp.encode("ascii"))
+                response = await self._read_reply_async()
+                if response:
+                    return self._parse_response(response)
+                logger.warning(
+                    f"No response from pump (attempt {attempt}/{retries}). "
+                    f"Pump address: {command[0].target_pump_num}"
                 )
-            return self._parse_response(response)
+                if attempt < retries:
+                    await asyncio.sleep(retry_delay)
+            raise DeviceError(
+                f"No response received from pump after {retries} attempts! "
+                f"Maybe wrong pump address? (Set to {command[0].target_pump_num})"
+            )
 
 
 class ValveType(Enum):
