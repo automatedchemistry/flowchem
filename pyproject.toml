@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flowchem"
-version = "1.1.0-post2"
+version = "1.1.0-post3"
 
 description = "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API."
 readme = "README.md"
