@@ -32,6 +32,11 @@ class WatersMS(FlowchemDevice):
         inlet_method (str): Name of the inlet method file.
     """
 
+    fields: str
+    rows: str
+    queue_path: Path
+    run_duration: int | None
+
     def __init__(
         self,
         name: str = "Waters_MS",
