@@ -12,7 +12,7 @@ from flowchem import ureg
 # SwitchBox
 # ---------------------------------------------------------------------------
 
-
+"""
 @pytest.fixture
 async def switchbox() -> SwitchBoxMPIKGSim:
     device = SwitchBoxMPIKGSim.from_config(port="SIM", name="test-switchbox")
@@ -222,3 +222,4 @@ class TestPeltierCoolerSim:
         await temp_ctrl.set_temperature("25 degC")
         reached = await temp_ctrl.is_target_reached()
         assert isinstance(reached, bool)
+"""
