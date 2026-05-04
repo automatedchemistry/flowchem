@@ -1,6 +1,5 @@
 """Tests for SwitchBoxMPIKGSim and PeltierCoolerSim."""
 
-"""
 import pytest
 from flowchem.sim.devices.custom.switchbox_sim import (
     SwitchBoxMPIKGSim,
@@ -223,4 +222,3 @@ class TestPeltierCoolerSim:
         await temp_ctrl.set_temperature("25 degC")
         reached = await temp_ctrl.is_target_reached()
         assert isinstance(reached, bool)
-"""

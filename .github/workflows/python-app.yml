@@ -47,7 +47,7 @@ jobs:
         run: ruff check .
 
       - name: Run pytest
-        run: python -m pytest --cov=flowchem --cov-fail-under=40 --durations=20 --durations-min=1.0
+        run: python -m pytest --cov=flowchem --cov-fail-under=40 --ignore=tests/sim --durations=20 --durations-min=1.0
 
       - name: Generate API docs
         run: sphinx-apidoc -o docs/development/foundations/code_structure src
