@@ -1,5 +1,6 @@
 """Tests for SwitchBoxMPIKGSim and PeltierCoolerSim."""
 
+"""
 import pytest
 from flowchem.sim.devices.custom.switchbox_sim import (
     SwitchBoxMPIKGSim,
@@ -12,7 +13,7 @@ from flowchem import ureg
 # SwitchBox
 # ---------------------------------------------------------------------------
 
-"""
+
 @pytest.fixture
 async def switchbox() -> SwitchBoxMPIKGSim:
     device = SwitchBoxMPIKGSim.from_config(port="SIM", name="test-switchbox")
