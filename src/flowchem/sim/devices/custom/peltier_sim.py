@@ -162,3 +162,13 @@ class PeltierCoolerSim(PeltierCooler):
         )
         instance.sim_io = sim_io
         return instance
+
+    async def set_temperature(self, temperature):
+        """Skip hardware stabilization waits in simulation."""
+        await self.stop_control()
+        await self._set_current_limit_cooling(0.5)
+        await self._set_current_limit_heating(0.5)
+        await self._set_temperature(temperature.m_as("°C"))
+        await self.start_control()
+        await self.set_default_values()
+        await self._set_state_dependant_parameters(temperature.m_as("°C"))
