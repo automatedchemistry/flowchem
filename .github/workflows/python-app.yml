@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       matrix:
         python-version: [
