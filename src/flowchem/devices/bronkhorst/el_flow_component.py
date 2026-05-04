@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flowchem import ureg
-from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.technical.flow import MassFlowController
 from flowchem.components.sensors.pressure_sensor import PressureSensor
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -114,7 +114,7 @@ class EPCComponent(PressureSensor):
         return p * ureg(units)  # <Quantity(4.56, 'bar')>
 
 
-class MFCComponent(FlowchemComponent):
+class MFCComponent(MassFlowController):
     """
     A class to represent a Mass Flow Controller (MFC) component.
 
@@ -135,23 +135,7 @@ class MFCComponent(FlowchemComponent):
 
     hw_device: MFC  # just for typing
 
-    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """
-        Constructs all the necessary attributes for the MFCComponent object.
-
-        Parameters:
-        -----------
-        name : str
-            The name of the MFC component.
-        hw_device : FlowchemDevice
-            The hardware device (MFC) this component interfaces with.
-        """
-        super().__init__(name, hw_device)
-        self.add_api_route("/get-flow-rate", self.get_flow_setpoint, methods=["GET"])
-        self.add_api_route("/set-flow-rate", self.set_flow_setpoint, methods=["PUT"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
-
-    async def set_flow_setpoint(self, flowrate: str) -> bool:
+    async def set_flow_setpoint(self, flowrate: str = "0 ml/min") -> bool:
         """
         Set the flow rate to the instrument; default unit is ml/min.
 

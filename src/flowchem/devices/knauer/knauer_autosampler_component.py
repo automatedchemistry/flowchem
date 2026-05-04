@@ -8,7 +8,7 @@ import pint
 if TYPE_CHECKING:
     from .knauer_autosampler import KnauerAutosampler
 
-from flowchem.components.meta_components.gantry3D import gantry3D
+from flowchem.components.meta_components.gantry3D import Gantry3D
 from flowchem.components.pumps.syringe_pump import SyringePump
 from flowchem.components.valves.distribution_valves import FourPortDistributionValve
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
@@ -21,7 +21,7 @@ except ImportError:
     HAS_AS_COMMANDS = False
 
 
-class AutosamplerGantry3D(gantry3D):
+class AutosamplerGantry3D(Gantry3D):
     """
     Control a Knauer Autosampler component .
 
@@ -64,7 +64,7 @@ class AutosamplerGantry3D(gantry3D):
         """
         await self.set_z_position("UP")
         await self.hw_device._move_needle_horizontal(needle_position=position)
-        logger.info(f"Needle moved succesfully to position: {position}")
+        logger.info(f"Needle moved successfully to position: {position}")
         return True
 
     async def connect_to_position(

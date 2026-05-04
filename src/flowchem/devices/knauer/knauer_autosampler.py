@@ -378,7 +378,7 @@ class KnauerAutosampler(FlowchemDevice):
         **kwargs: str,
     ) -> str:
         # input can be strings, is translated to enum internally -> enum no need to expose
-        # if value cant be translated to enum, just through error with the available options
+        # if value can't be translated to enum, just throw an error with the available options
         command_class = command()
         modus = modus.upper()
 

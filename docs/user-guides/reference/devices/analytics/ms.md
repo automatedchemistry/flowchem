@@ -15,7 +15,7 @@ Configuration sample showing all possible parameters:
 [device.my-ms]  # This is the 'device' identifier
 type = "WatersMS"
 
-# Optional paramters (default shown)
+# Optional parameters (default shown)
 path_to_AutoLynxQ = "PATH/TO/AutoLynx/" # Path to the AutoLynx queue folder.
 ms_exp_file = ""  # Name of the MS experiment method file.
 tune_file = ""  # Name of the tune method file.
