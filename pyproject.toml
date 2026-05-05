@@ -139,6 +139,7 @@ docs = [
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
     "sphinxcontrib-openapi",
+    "setuptools<82",
 ]
 
 [project.urls]
