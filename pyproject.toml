@@ -73,7 +73,7 @@ all = [
     "pytest-xprocess",
     "phidget22>=1.7.20211005",
     "furo",
-    "mistune==0.8.4",
+    "mistune==3.2.1",
     "myst-parser",
     "sphinx",
     "sphinx-design",
@@ -99,7 +99,7 @@ ci = [
     "pytest-mock",
     "pytest-xprocess",
     "furo",
-    "mistune==0.8.4",
+    "mistune==3.2.1",
     "myst-parser",
     "sphinx",
     "sphinx-design",
@@ -132,7 +132,7 @@ phidget = [
 ]
 docs = [
     "furo",
-    "mistune==0.8.4", # Due to sphinx-contrib/openapi#121
+    "mistune==3.2.1", # Due to sphinx-contrib/openapi#121
     "myst-parser",
     "sphinx",
     "sphinx-design",
