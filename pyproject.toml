@@ -173,7 +173,7 @@ python_version = "3.11"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 # Note: pytest cov is not compatible with the pycharm debugger in tests
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not AzuraPump and not ML600 and not Knauer_Distribution_Valve and not CVC3000 and not Manson' --no-cov"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not AzuraPump and not ML600 and not Knauer_Distribution_Valve and not CVC3000 and not Manson and not Heidolph' --no-cov"
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
@@ -183,6 +183,7 @@ markers = [
     "Knauer_Distribution_Valve: test knauer distribution valve",
     "CVC3000: Test CVC3000 vacun pump",
     "Manson: Test Manson power control",
+    "Heidolph: Test Heidolph MR Hei-Connect magnetic stirrer",
     "FakeDevice: Test fake device"
 ]
 

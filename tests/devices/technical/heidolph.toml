@@ -1,0 +1,4 @@
+[device.hei-connect]
+type = "HeiConnect"
+port = "COM1"
+connection_check = true

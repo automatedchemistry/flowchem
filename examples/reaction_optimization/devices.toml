@@ -1,4 +1,4 @@
-[device.socl2]
+sear[device.socl2]
 type = "Elite11"
 port = "COM4"
 syringe_diameter = "14.567 mm"
