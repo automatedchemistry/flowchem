@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
+import pint
 from flowchem import ureg
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.technical.stirring import StirringControl
@@ -24,7 +25,7 @@ class HeiConnectStirringControl(StirringControl):
 
     async def set_speed(self, speed: str) -> bool:
         """Set the stirring speed using a string in rpm."""
-        set_speed = await super().set_speed(speed)
+        set_speed = cast(pint.Quantity, await super().set_speed(speed))
         return await self.hw_device.set_speed(set_speed)
 
     async def get_speed(self) -> float:
@@ -79,7 +80,7 @@ class HeiConnectTemperatureControl(TemperatureControl):
             pass
         else:
             temp = f"{temp} degC"
-        set_t = await super().set_temperature(temp)
+        set_t = cast(pint.Quantity, await super().set_temperature(temp))
         return await self.hw_device.set_temperature(set_t)
 
     async def get_temperature(self) -> float:

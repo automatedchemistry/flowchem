@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+import pint
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
 
 if TYPE_CHECKING:
@@ -44,7 +45,7 @@ class R4HeaterChannelControl(TemperatureControl):
         Returns:
             Awaitable: Result of the set temperature operation from the hardware device.
         """
-        set_t = await super().set_temperature(temp)
+        set_t = cast(pint.Quantity, await super().set_temperature(temp))
         return await self.hw_device.set_temperature(self.channel, set_t)
 
     async def get_temperature(self) -> float:  # type: ignore

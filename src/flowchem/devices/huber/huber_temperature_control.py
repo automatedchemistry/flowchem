@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from .chiller import HuberChiller
 
 
+import pint
 from flowchem.components.technical.temperature import TemperatureControl
 
 
@@ -31,7 +32,7 @@ class HuberTemperatureControl(TemperatureControl):
         Returns:
             bool: True if the temperature was successfully set, False otherwise.
         """
-        set_t = await super().set_temperature(temp)
+        set_t = cast(pint.Quantity, await super().set_temperature(temp))
         await self.hw_device.set_temperature(set_t)
         return set_t
 

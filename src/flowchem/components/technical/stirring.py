@@ -38,7 +38,7 @@ class StirringControl(FlowchemComponent):
         self.min_speed = min_speed
         self.max_speed = max_speed
 
-    async def set_speed(self, speed: str) -> pint.Quantity:
+    async def set_speed(self, speed: str) -> pint.Quantity | bool:
         """Set the stirring speed using a string in rpm."""
         try:
             float(speed)

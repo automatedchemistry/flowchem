@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+import pint
 from loguru import logger
 
 from flowchem.components.pumps.hplc_pump import HPLCPump
@@ -72,7 +73,7 @@ class R4Reactor(TemperatureControl):
 
     async def set_temperature(self, temperature: str, heating: bool | None = None):
         """Set the target temperature to the given string in "magnitude and unit" format."""
-        set_t = await super().set_temperature(temperature)
+        set_t = cast(pint.Quantity, await super().set_temperature(temperature))
         return await self.hw_device.set_temperature(self.channel, set_t, heating)
 
     async def get_temperature(self) -> float:  # type: ignore

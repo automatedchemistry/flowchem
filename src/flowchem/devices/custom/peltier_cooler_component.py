@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
+
+import pint
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
 
 if TYPE_CHECKING:
@@ -22,7 +24,7 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
 
     async def set_temperature(self, temperature: str):
         """Set the target temperature to the given string in "magnitude and unit" format."""
-        set_t = await super().set_temperature(temperature)
+        set_t = cast(pint.Quantity, await super().set_temperature(temperature))
         return await self.hw_device.set_temperature(set_t)
 
     async def get_temperature(self) -> float:  # type: ignore

@@ -38,7 +38,7 @@ class TemperatureControl(FlowchemComponent):
 
         self._limits = temp_limits
 
-    async def set_temperature(self, temp: str) -> pint.Quantity:
+    async def set_temperature(self, temp: str) -> pint.Quantity | bool:
         """Set the target temperature to the given string in "magnitude and unit" format."""
         if temp.isnumeric():
             temp = temp + "°C"
