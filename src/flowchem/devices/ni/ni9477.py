@@ -34,7 +34,9 @@ class NI9477(FlowchemDevice):
         self.module = module
         self._task = task
         self.reset_outputs_on_initialize = reset_outputs_on_initialize
-        self._line_names = list(line_names) if line_names else self.default_line_names(module)
+        self._line_names = (
+            list(line_names) if line_names else self.default_line_names(module)
+        )
         self._channel_states = [False] * NI9477_CHANNEL_COUNT
         self._write_lock = asyncio.Lock()
 
@@ -88,10 +90,14 @@ class NI9477(FlowchemDevice):
         if self.reset_outputs_on_initialize:
             initialized = await self.set_channels([False] * NI9477_CHANNEL_COUNT)
             if not initialized:
-                raise InvalidConfigurationError("Could not reset NI9477 output channels during initialization.")
+                raise InvalidConfigurationError(
+                    "Could not reset NI9477 output channels during initialization."
+                )
 
         self.components.append(NI9477Relay("relay", self))
-        logger.info(f"Connected to NI-9477 module '{self.module}' with {NI9477_CHANNEL_COUNT} digital outputs.")
+        logger.info(
+            f"Connected to NI-9477 module '{self.module}' with {NI9477_CHANNEL_COUNT} digital outputs."
+        )
 
     async def set_channel(self, channel: str | int, active: bool) -> bool:
         """Set one output channel active or inactive."""
@@ -103,14 +109,18 @@ class NI9477(FlowchemDevice):
     async def set_channels(self, states: Sequence[bool]) -> bool:
         """Write all output states to the NI-9477."""
         if len(states) != NI9477_CHANNEL_COUNT:
-            raise ValueError(f"NI9477 expects {NI9477_CHANNEL_COUNT} channel states, got {len(states)}.")
+            raise ValueError(
+                f"NI9477 expects {NI9477_CHANNEL_COUNT} channel states, got {len(states)}."
+            )
 
         next_states = [bool(state) for state in states]
         async with self._write_lock:
             try:
                 await asyncio.to_thread(self._task.write, next_states, auto_start=True)
             except Exception:
-                logger.exception(f"Could not write output state to NI9477 module '{self.module}'.")
+                logger.exception(
+                    f"Could not write output state to NI9477 module '{self.module}'."
+                )
                 return False
             self._channel_states = next_states
         return True
@@ -143,7 +153,9 @@ class NI9477(FlowchemDevice):
         try:
             channel_number = int(channel)
         except (TypeError, ValueError) as error:
-            raise ValueError("NI9477 channel must be an integer from 1 to 32.") from error
+            raise ValueError(
+                "NI9477 channel must be an integer from 1 to 32."
+            ) from error
         if not 1 <= channel_number <= NI9477_CHANNEL_COUNT:
             raise ValueError("NI9477 channel must be between 1 and 32.")
         return channel_number - 1
@@ -200,7 +212,7 @@ def _import_nidaqmx() -> tuple[Any, Any, Any]:
     except ImportError as error:
         raise InvalidConfigurationError(
             "NI9477 support requires the optional NI dependency and NI-DAQmx driver. "
-            "Install the Python package with `python -m pip install \"flowchem[ni]\"` "
+            'Install the Python package with `python -m pip install "flowchem[ni]"` '
             "or `python -m pip install nidaqmx`, then verify the device in NI MAX.",
         ) from error
     return nidaqmx, system, constants.LineGrouping

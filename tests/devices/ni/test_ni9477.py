@@ -99,4 +99,6 @@ async def test_switch_multiple_channel_rejects_invalid_values(ni9477):
     relay = ni9477.components[0]
 
     assert await relay.switch_multiple_channel("1x0") is False
-    assert await relay.switch_multiple_channel("1" * (NI9477_CHANNEL_COUNT + 1)) is False
+    assert (
+        await relay.switch_multiple_channel("1" * (NI9477_CHANNEL_COUNT + 1)) is False
+    )

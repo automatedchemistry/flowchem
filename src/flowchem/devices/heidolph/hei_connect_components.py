@@ -1,4 +1,5 @@
 """FlowChem components for Heidolph MR Hei-Connect."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
@@ -59,10 +60,16 @@ class HeiConnectTemperatureControl(TemperatureControl):
                 max=ureg.Quantity("300 degC"),
             ),
         )
-        self.add_api_route("/temperature-setpoint", self.get_temperature_setpoint, methods=["GET"])
+        self.add_api_route(
+            "/temperature-setpoint", self.get_temperature_setpoint, methods=["GET"]
+        )
         self.add_api_route("/heating-mode", self.get_heating_mode, methods=["GET"])
         self.add_api_route("/heating-mode", self.set_heating_mode, methods=["PUT"])
-        self.add_api_route("/temperature-control-mode", self.get_temperature_control_mode, methods=["GET"])
+        self.add_api_route(
+            "/temperature-control-mode",
+            self.get_temperature_control_mode,
+            methods=["GET"],
+        )
 
     async def set_temperature(self, temp: str) -> bool:
         """Set the target temperature to the given string in "magnitude and (optional - unit degC)" format."""

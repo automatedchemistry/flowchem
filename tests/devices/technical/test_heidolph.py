@@ -1,4 +1,5 @@
 """Tests for Heidolph MR Hei-Connect support."""
+
 import pytest
 
 from flowchem import ureg
@@ -93,7 +94,9 @@ class FakeHeiConnectSerial:
 
 
 def fake_device(connection_check: bool = True) -> HeiConnect:
-    device = HeiConnect(FakeHeiConnectSerial(), name="hei-test", connection_check=connection_check)
+    device = HeiConnect(
+        FakeHeiConnectSerial(), name="hei-test", connection_check=connection_check
+    )
     device.COMMAND_DELAY = 0
     return device
 

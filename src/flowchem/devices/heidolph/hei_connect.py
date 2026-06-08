@@ -1,4 +1,5 @@
 """Heidolph MR Hei-Connect magnetic stirrer control."""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +21,6 @@ from flowchem.devices.heidolph.hei_connect_components import (
 )
 from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
-
 
 Status = Literal[
     "manual",
@@ -55,14 +55,18 @@ class HeiConnectBase(FlowchemDevice):
         await self._send_checked("PA_NEW", "PA_NEW")
         self.device_info.version = await self.software_version()
         if not self.device_info.version:
-            raise InvalidConfigurationError("No software version received from MR Hei-Connect!")
+            raise InvalidConfigurationError(
+                "No software version received from MR Hei-Connect!"
+            )
 
         await self.status()
         if self.connection_check:
             await self._send_checked("CC_ON", "CC_ON")
 
         self.components.append(HeiConnectStirringControl("stirring-control", self))
-        self.components.append(HeiConnectTemperatureControl("temperature-control", self))
+        self.components.append(
+            HeiConnectTemperatureControl("temperature-control", self)
+        )
         self.components.append(HeiConnectControl("control", self))
 
     def repeated_task(self):
@@ -86,8 +90,10 @@ class HeiConnectBase(FlowchemDevice):
     @staticmethod
     def _value_from_reply(reply: str, prefix: str) -> str:
         if not reply.startswith(prefix):
-            raise DeviceError(f"Unexpected reply: `{reply}` does not start with `{prefix}`")
-        return reply[len(prefix):].strip()
+            raise DeviceError(
+                f"Unexpected reply: `{reply}` does not start with `{prefix}`"
+            )
+        return reply[len(prefix) :].strip()
 
     async def _get_float(self, command: str) -> float:
         reply = await self._send_checked(command, command)
@@ -107,7 +113,9 @@ class HeiConnectBase(FlowchemDevice):
 
     async def get_temperature(self) -> float:
         mode = await self.get_temperature_control_mode()
-        return await self._get_float("IN_PV_1" if mode == "external-sensor" else "IN_PV_3")
+        return await self._get_float(
+            "IN_PV_1" if mode == "external-sensor" else "IN_PV_3"
+        )
 
     async def get_temperature_setpoint(self) -> float:
         return await self._get_float("IN_SP_1")
@@ -121,7 +129,10 @@ class HeiConnectBase(FlowchemDevice):
         return True
 
     async def is_temperature_target_reached(self) -> bool:
-        return abs(await self.get_temperature() - await self.get_temperature_setpoint()) < 1
+        return (
+            abs(await self.get_temperature() - await self.get_temperature_setpoint())
+            < 1
+        )
 
     async def get_heating_mode(self) -> HeatingMode:
         mode = await self._get_int("IN_MODE_4")
@@ -185,7 +196,9 @@ class HeiConnect(HeiConnectBase):
     }
     COMMAND_DELAY = 0.1
 
-    def __init__(self, aio: aioserial.AioSerial, name="", connection_check: bool = True) -> None:
+    def __init__(
+        self, aio: aioserial.AioSerial, name="", connection_check: bool = True
+    ) -> None:
         super().__init__(name=name, connection_check=connection_check)
         self._serial = aio
         self._lock = asyncio.Lock()
@@ -220,7 +233,9 @@ class HeiConnect(HeiConnectBase):
             try:
                 reply = await asyncio.wait_for(self._serial.readline_async(), 2)
             except asyncio.TimeoutError:
-                raise DeviceError(f"No reply received from MR Hei-Connect for `{command}`")
+                raise DeviceError(
+                    f"No reply received from MR Hei-Connect for `{command}`"
+                )
 
             decoded_reply = reply.decode("ascii").strip()
             logger.debug(f"Heidolph reply received: {decoded_reply}")

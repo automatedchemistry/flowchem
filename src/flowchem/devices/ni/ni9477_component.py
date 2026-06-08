@@ -72,8 +72,12 @@ class NI9477Relay(MultiChannelRelay):
     @staticmethod
     def _parse_values(values: str) -> list[bool]:
         if len(values) > 32:
-            raise ValueError("NI9477 has 32 output channels; at most 32 values can be provided.")
+            raise ValueError(
+                "NI9477 has 32 output channels; at most 32 values can be provided."
+            )
         if any(not character.isdigit() for character in values):
-            raise ValueError("NI9477 channel values must be digits, where 0 is OFF and non-zero is ON.")
+            raise ValueError(
+                "NI9477 channel values must be digits, where 0 is OFF and non-zero is ON."
+            )
         states = [character != "0" for character in values]
         return states + [False] * (32 - len(states))
