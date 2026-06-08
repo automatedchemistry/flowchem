@@ -5,6 +5,7 @@ from .bronkhorst import *
 from .dataapex import *
 from .hamilton import *
 from .harvardapparatus import *
+from .heidolph import *
 from .huber import *
 from .knauer import *
 from .magritek import *

@@ -8,3 +8,6 @@ def test_device_finder():
     for name, device in dev_found.items():
         assert hasattr(device, "initialize")
         assert hasattr(device, "repeated_task")
+
+    assert "HeiConnect" in dev_found
+    assert "SimulatedHeiConnect" in dev_found
