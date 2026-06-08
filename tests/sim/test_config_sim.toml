@@ -98,10 +98,20 @@ type = "PeltierCooler"
 port = "COM_SIM"
 address = 0
 
+[device.sim-ni]
+type = "NI9477"
+module = "SimNI9477Mod1"
+
 [device.sim-solenoid]
 type = "BioChemSolenoidValve"
 support_platform = "sim-switchbox/relay-A"
 normally_open = true
+
+[device.sim-ni-solenoid]
+type = "BioChemSolenoidValve"
+support_platform = "sim-ni/relay"
+channel = 1
+normally_open = false
 
 [device.sim-solenoid-2way]
 type = "BioChemSolenoid2WayValve"

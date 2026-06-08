@@ -41,15 +41,27 @@ class AutosamplerGantry3D(Gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
-        self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
-        self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
-        self.add_api_route("/tray_temperature", self.get_tray_temperature, methods=["GET"])
+        self.add_api_route(
+            "/needle_position", self.set_needle_position, methods=["PUT"]
+        )
+        self.add_api_route(
+            "/is_needle_running", self.is_needle_running, methods=["GET"]
+        )
+        self.add_api_route(
+            "/tray_temperature", self.get_tray_temperature, methods=["GET"]
+        )
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
-        self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route(
+            "/connect_to_position", self.connect_to_position, methods=["PUT"]
+        )
         self.add_api_route("/tray_temperature", self.tray_temperature, methods=["PUT"])
-        self.add_api_route("/tray_temperature_control", self.tray_temperature_control, methods=["PUT"])
+        self.add_api_route(
+            "/tray_temperature_control", self.tray_temperature_control, methods=["PUT"]
+        )
         self.add_api_route("/compressor", self.compressor, methods=["PUT"])
-        self.add_api_route("/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"])
+        self.add_api_route(
+            "/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"]
+        )
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -177,7 +189,9 @@ class AutosamplerGantry3D(Gantry3D):
         else:
             return False
 
-    async def tray_temperature(self, temperature: int | float | str | None = None) -> bool:
+    async def tray_temperature(
+        self, temperature: int | float | str | None = None
+    ) -> bool:
         """
         Set tray temperature and enable tray temperature control.
 
@@ -257,7 +271,9 @@ class AutosamplerGantry3D(Gantry3D):
             return True
         return False
 
-    async def needle_vertical_offset(self, offset: int | float | str | None = None) -> bool:
+    async def needle_vertical_offset(
+        self, offset: int | float | str | None = None
+    ) -> bool:
         """
         Set the needle vertical offset.
 
@@ -291,10 +307,13 @@ class AutosamplerGantry3D(Gantry3D):
         success = await self.hw_device.set_needle_vertical_offset(offset=offset_mm)
 
         if success:
-            logger.info(f"Needle vertical offset set successfully to {offset_mm:.1f} mm")
+            logger.info(
+                f"Needle vertical offset set successfully to {offset_mm:.1f} mm"
+            )
             return True
         else:
             return False
+
 
 class AutosamplerPump(SyringePump):
     """
