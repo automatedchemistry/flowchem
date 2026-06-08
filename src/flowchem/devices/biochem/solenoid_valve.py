@@ -9,6 +9,7 @@ from flowchem.components.technical.relay import Relay
 from loguru import logger
 import asyncio
 
+
 class BioChemSolenoidValve(FlowchemDevice):
     """
     Flowchem device for controlling a single Bio-Chem solenoid valve via a relay component.
@@ -63,11 +64,11 @@ class BioChemSolenoidValve(FlowchemDevice):
     """
 
     def __init__(
-            self,
-            name: str,
-            support_platform: str, # device_name/relay_name ex: mpibox/relay-A
-            channel: int | None = None,
-            normally_open: bool = True
+        self,
+        name: str,
+        support_platform: str,  # device_name/relay_name ex: mpibox/relay-A
+        channel: int | None = None,
+        normally_open: bool = True,
     ):
 
         super().__init__(name)
@@ -114,7 +115,9 @@ class BioChemSolenoidValve(FlowchemDevice):
         # Register the standard SolenoidValve component/API on this device
         self.components.append(SolenoidValve("valve", self))
         conf_valve = "normally open" if self.normally_open else "normally closed"
-        logger.info(f"Connected to BioChemSolenoidValve {conf_valve} on '{self.support_platform}' channel {self.channel}!")
+        logger.info(
+            f"Connected to BioChemSolenoidValve {conf_valve} on '{self.support_platform}' channel {self.channel}!"
+        )
 
     async def open(self):
         """
@@ -209,4 +212,6 @@ class BioChemSolenoid2WayValve(BioChemSolenoidValve):
         # Register the standard SolenoidValve component/API on this device
         self.components.append(SolenoidValve2Way("valve", self))
         conf_valve = "normally open" if self.normally_open else "normally closed"
-        logger.info(f"Connected to BioChemSolenoidValve {conf_valve} on '{self.support_platform}' channel {self.channel}!")
+        logger.info(
+            f"Connected to BioChemSolenoidValve {conf_valve} on '{self.support_platform}' channel {self.channel}!"
+        )

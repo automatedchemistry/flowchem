@@ -1,12 +1,13 @@
 """Control module for the Custom Peltier cooler components."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
 
-
 if TYPE_CHECKING:
     from .peltier_cooler import PeltierCooler
+
 
 class PeltierCoolerTemperatureControl(TemperatureControl):
     """Peltier Cooler ."""
@@ -32,7 +33,7 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
         """Return True if the set temperature target has been reached."""
         current_temp = await self.hw_device.get_temperature()
         params = await self.hw_device.get_parameters()
-        values = params.split(',')
+        values = params.split(",")
         target_temp = float(values[0])
         if abs(current_temp - target_temp) <= 2:
             return True

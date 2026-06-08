@@ -34,7 +34,7 @@ Currently, the following instruments are supported:
  - General purpose sensors from Phidgets
  - ... and more!
 We are open to contributions!
- - If you want to [add support for a new device](https://flowchem.readthedocs.io/en/latest/add_new_device_type.html),
+ - If you want to [add support for a new device](https://flowchem.readthedocs.io/en/latest/development/additional/add_device/index.html),
 read how to do that in the documentation.
 
 ## Install flowchem

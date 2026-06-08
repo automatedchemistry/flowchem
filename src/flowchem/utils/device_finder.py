@@ -1,4 +1,5 @@
 """Autodiscover any supported devices connected to the PC."""
+
 from pathlib import Path
 
 import aioserial

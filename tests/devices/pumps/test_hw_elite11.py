@@ -3,6 +3,7 @@
 1. Update pump serial port and address belo
 2. Run with `python -m pytest ./tests -m HApump` from the root folder
 """
+
 import asyncio
 import math
 

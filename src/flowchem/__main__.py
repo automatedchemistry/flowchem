@@ -3,6 +3,7 @@ Why does this file exist, and why `__main__`? For more info, read:
 - https://www.python.org/dev/peps/pep-0338/
 - https://docs.python.org/3/using/cmdline.html#cmdoption-m.
 """
+
 import asyncio
 import sys
 from pathlib import Path
@@ -73,7 +74,10 @@ def main(device_config_file, logfile, host, debug):
             timeout_keep_alive=3600,
         )
         server = uvicorn.Server(config)
-        logger.info("Click on http://127.0.0.1:8000 to access device server.")
+        # Use the actual configured port in the log message, not a hardcoded value.
+        logger.info(
+            f"Click on http://127.0.0.1:{flowchem.port} to access device server."
+        )
         await server.serve()
 
     asyncio.run(main_loop())

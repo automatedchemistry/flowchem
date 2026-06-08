@@ -1,6 +1,8 @@
 """Base object for all hardware-control device classes."""
+
 from abc import ABC
 from collections import namedtuple
+from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from flowchem.components.device_info import DeviceInfo
@@ -28,8 +30,8 @@ class FlowchemDevice(ABC):
         """Use for setting up async connection to the device, populate components and update device_info with them."""
         pass
 
-    def repeated_task(self) -> RepeatedTaskInfo | None:
-        """Use for repeated background task, e.g. session keepalive."""
+    def repeated_task(self) -> RepeatedTaskInfo | Iterable[RepeatedTaskInfo] | None:
+        """Use for one or more repeated background tasks, e.g. session keepalive."""
         return None
 
     def get_device_info(self) -> DeviceInfo:

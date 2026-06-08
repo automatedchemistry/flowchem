@@ -1,4 +1,5 @@
 """Vacuubrand CVC3000 control."""
+
 import asyncio
 
 import aioserial
@@ -199,11 +200,11 @@ class CVC3000(FlowchemDevice):
             The version of the device, or None if the version could not be retrieved.
         """
         raw_version = await self._send_command_and_read_reply("IN_VER")
-        # raw_version = CVC 3000 VX.YY
-        try:
-            return raw_version.split()[-1]
-        except IndexError:
+        raw_version = raw_version.strip()
+        if not raw_version:
             return None
+        # raw_version = CVC 3000 VX.YY
+        return raw_version
 
     async def set_pressure(self, pressure: pint.Quantity):
         """

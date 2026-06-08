@@ -1,0 +1,4 @@
+[device.my-pump]
+type = "ML600"
+syringe_volume = "10 ml"
+dual_syringe = true

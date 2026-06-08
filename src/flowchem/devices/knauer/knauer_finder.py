@@ -1,4 +1,5 @@
 """Autodiscover Knauer devices on network."""
+
 import asyncio
 import queue
 import socket

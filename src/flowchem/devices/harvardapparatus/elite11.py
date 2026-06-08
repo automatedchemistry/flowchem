@@ -1,4 +1,5 @@
 """This module is used to control Harvard Apparatus Elite 11 syringe pump via the 11 protocol."""
+
 from __future__ import annotations
 
 import asyncio

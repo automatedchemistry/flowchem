@@ -7,11 +7,20 @@ import pytest
 # pytest tests/devices/Fake_group/test_fakedevice.py -s
 # pytest ./tests -m FakeDevice -s
 
+
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
 
     config_file = Path(__file__).parent.resolve() / "fakedevice.toml"
-    main = Path(__file__).parent.resolve() / ".." / ".." / ".." / "src" / "flowchem" / "__main__.py"
+    main = (
+        Path(__file__).parent.resolve()
+        / ".."
+        / ".."
+        / ".."
+        / "src"
+        / "flowchem"
+        / "__main__.py"
+    )
 
     class Starter(ProcessStarter):
         # Process startup ends with this text in stdout (timeout is long cause some GA runners are slow)
@@ -28,14 +37,14 @@ def api_dev(xprocess):
 
 @pytest.mark.FakeDevice
 def test_fakedevice(api_dev):
-    component = api_dev['test']['FakeSpecificComponent']
-    assert component.put("fake_send_command", params={"parameter_1": "first", "parameter_2": "second"})
+    component = api_dev["test"]["FakeSpecificComponent"]
+    assert component.put(
+        "fake_send_command", params={"parameter_1": "first", "parameter_2": "second"}
+    )
 
 
 @pytest.mark.FakeDevice
 def test_fake_receive_data(api_dev):
-    component = api_dev['test']['FakeSpecificComponent']
+    component = api_dev["test"]["FakeSpecificComponent"]
     result = component.get("fake_receive_data").text
     assert float(result) == 0.5
-
-

@@ -3,7 +3,7 @@
 ### `GET /valve/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** valve
 **Operation ID:** `get_device_info_valve__get`
 

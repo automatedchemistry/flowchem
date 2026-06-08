@@ -13,6 +13,7 @@ class DigitalAnalogConverter(FlowchemComponent):
     value). It inherits from ``PowerSwitch`` to provide a standard interface
     within the Flowchem framework.
     """
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """
         Initialize a DigitalAnalogConverter component.

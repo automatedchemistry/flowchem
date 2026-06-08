@@ -3,7 +3,7 @@
 ### `GET /my-elite11/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-elite11
 **Operation ID:** `get_device_info_fake_device__get`
 

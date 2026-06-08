@@ -18,10 +18,15 @@ from flowchem.client.device_client import FlowchemDeviceClient
 
 class FlowchemDeviceListener(FlowchemCommonDeviceListener):
     """Listener for Zeroconf service browser."""
-    def _save_device_info(self, zc: Zeroconf, type_: str, name: str, active_ips: list | None = None) -> None:
+
+    def _save_device_info(
+        self, zc: Zeroconf, type_: str, name: str, active_ips: list | None = None
+    ) -> None:
         if service_info := zc.get_service_info(type_, name):
             device_name = zeroconf_name_to_device_name(name)
-            if url := device_url_from_service_info(service_info, device_name, active_ips):
+            if url := device_url_from_service_info(
+                service_info, device_name, active_ips
+            ):
                 self.flowchem_devices[device_name] = url
         else:
             logger.warning(f"No info for service {name}!")
@@ -37,7 +42,9 @@ def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, FlowchemDeviceC
     return flowchem_devices_from_url_dict(listener.flowchem_devices)
 
 
-def get_flowchem_devices_from_url(url: str, timeout: int = 5) -> dict[str, FlowchemDeviceClient]:
+def get_flowchem_devices_from_url(
+    url: str, timeout: int = 5
+) -> dict[str, FlowchemDeviceClient]:
     """
     Fetch Flowchem device clients from a FastAPI server exposing the OpenAPI spec.
 
@@ -76,9 +83,12 @@ def get_flowchem_devices_from_url(url: str, timeout: int = 5) -> dict[str, Flowc
         if parts:
             device = parts[0]
             if device not in flowchem_devices:
-                flowchem_devices[device] = FlowchemDeviceClient(url=TypeAdapter(AnyHttpUrl).validate_python(f"{url}/{device}"))
+                flowchem_devices[device] = FlowchemDeviceClient(
+                    url=TypeAdapter(AnyHttpUrl).validate_python(f"{url}/{device}")
+                )
 
     return flowchem_devices
+
 
 if __name__ == "__main__":
     flowchem_devices: dict[str, FlowchemDeviceClient] = get_all_flowchem_devices()

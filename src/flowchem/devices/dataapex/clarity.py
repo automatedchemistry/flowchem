@@ -1,4 +1,5 @@
 """Controls a local ClarityChrom instance via the CLI interface."""
+
 # See https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm
 import asyncio
 from pathlib import Path
@@ -41,6 +42,7 @@ class Clarity(FlowchemDevice):
     execute_command(command: str, without_instrument_num: bool = False) -> bool
         Execute CLI commands with optional instrument number bypass.
     """
+
     def __init__(
         self,
         name,

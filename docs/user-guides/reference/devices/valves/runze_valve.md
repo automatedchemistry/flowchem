@@ -2,10 +2,10 @@
 
 ## Introduction
 
-A range of different valve heads can be mounted on the same Runze actuator, allowing multiple valve types to be 
+A range of different valve heads can be mounted on the same Runze actuator, allowing multiple valve types to be
 controlled with the same protocol. Multi-position valves (with 6, 8, 10, 12, or 16 ports) are supported via `flowchem`.
 
-As with all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates 
+As with all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates
 an OpenAPI endpoint.
 
 ## Configuration

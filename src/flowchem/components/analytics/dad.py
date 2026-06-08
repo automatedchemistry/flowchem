@@ -1,6 +1,5 @@
 """A Diode Array Detector control component."""
 
-
 # class DADSwitch(FlowchemComponent):
 #     def __init__(self, name: str, hw_device: FlowchemDevice):
 #         """DAD Control component."""

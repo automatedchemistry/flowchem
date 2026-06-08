@@ -1,4 +1,5 @@
 """Autodiscover iCIR opcua server locally."""
+
 import asyncio
 import sys
 from textwrap import dedent

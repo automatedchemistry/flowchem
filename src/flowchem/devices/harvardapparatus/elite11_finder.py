@@ -1,4 +1,5 @@
 """This module is used to discover the serial address of any Elite11 connected to the PC."""
+
 import asyncio
 from textwrap import dedent
 
@@ -51,7 +52,7 @@ def elite11_finder(serial_port) -> set[str]:
 
     # Local variable for enumeration
     elite11_finder.counter += 1  # type: ignore
-    msg = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
+    msg = f"[device.elite11-{elite11_finder.counter}]"  # type: ignore
     msg += dedent(
         f"""
                    type = "Elite11"

@@ -1,4 +1,5 @@
 """Knauer DAD component."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -17,6 +18,7 @@ class KnauerDADLampControl(PowerSwitch):
     Attributes:
         hw_device (KnauerDAD): The hardware device for the Knauer DAD.
     """
+
     hw_device: KnauerDAD
 
     def __init__(self, name: str, hw_device: KnauerDAD) -> None:
@@ -97,6 +99,7 @@ class DADChannelControl(PhotoSensor):
         hw_device (KnauerDAD): The hardware device for the Knauer DAD.
         channel (int): The channel number to control.
     """
+
     hw_device: KnauerDAD
 
     def __init__(self, name: str, hw_device: KnauerDAD, channel: int) -> None:
@@ -172,7 +175,7 @@ class DADChannelControl(PhotoSensor):
         """
         return await self.hw_device.bandwidth(bandwidth)
 
-    async def set_shutter(self, status: str): # Todo: Not used
+    async def set_shutter(self, status: str):  # Todo: Not used
         """
         Set the shutter status.
 

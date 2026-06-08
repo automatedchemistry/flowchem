@@ -1,4 +1,5 @@
 """Various utility functions for the Magritek device."""
+
 import ctypes
 from collections.abc import Callable
 from pathlib import Path

@@ -28,7 +28,9 @@ class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
         else:
             logger.warning(f"No info for service {name}!")
 
-    def _save_device_info(self, zc: Zeroconf, type_: str, name: str, active_ips=None) -> None:
+    def _save_device_info(
+        self, zc: Zeroconf, type_: str, name: str, active_ips=None
+    ) -> None:
         task = asyncio.ensure_future(self._resolve_service(zc, type_, name))
         self.bg_tasks.add(task)
         task.add_done_callback(self.bg_tasks.discard)

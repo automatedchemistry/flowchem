@@ -47,18 +47,24 @@ class SV06Command:
         if not self.is_factory_command:
             # Standard command format: 8 bytes
             base_command = (
-                f"{self.FRAME_HEADER}"                     
-                f"{self.address:02X}"                      
-                f"{self.function_code}"                
-                f"{self.parameter & 0xFF:02X}"             # Low byte of parameter
-                f"{(self.parameter >> 8) & 0xFF:02X}"      # High byte of parameter
-                f"{self.FRAME_END}"                        # Frame End
+                f"{self.FRAME_HEADER}"
+                f"{self.address:02X}"
+                f"{self.function_code}"
+                f"{self.parameter & 0xFF:02X}"  # Low byte of parameter
+                f"{(self.parameter >> 8) & 0xFF:02X}"  # High byte of parameter
+                f"{self.FRAME_END}"  # Frame End
             )
-            checksum = sum(int(base_command[i:i+2], 16) for i in range(0, len(base_command), 2)) & 0xFFFF
+            checksum = (
+                sum(
+                    int(base_command[i : i + 2], 16)
+                    for i in range(0, len(base_command), 2)
+                )
+                & 0xFFFF
+            )
             compiled_command = (
                 f"{base_command}"
-                f"{checksum & 0xFF:02X}"                   # Low byte of checksum
-                f"{(checksum >> 8) & 0xFF:02X}"            # High byte of checksum
+                f"{checksum & 0xFF:02X}"  # Low byte of checksum
+                f"{(checksum >> 8) & 0xFF:02X}"  # High byte of checksum
             )
         else:
             # Factory command format: 14 bytes
@@ -67,10 +73,16 @@ class SV06Command:
                 f"{self.address:02X}"
                 f"{self.function_code}"
                 f"{self.password}"
-                f"{self.parameter:02X}000000"               
+                f"{self.parameter:02X}000000"
                 f"{self.FRAME_END}"
             )
-            checksum = sum(int(base_command[i:i+2], 16) for i in range(0, len(base_command), 2)) & 0xFFFF
+            checksum = (
+                sum(
+                    int(base_command[i : i + 2], 16)
+                    for i in range(0, len(base_command), 2)
+                )
+                & 0xFFFF
+            )
             compiled_command = (
                 f"{base_command}"
                 f"{checksum & 0xFF:02X}"
@@ -85,7 +97,7 @@ class RunzeValveIO:
 
     DEFAULT_CONFIG = {
         "timeout": 1,
-        "baudrate": 57600,  #The corresponding baudrate can be set through a factory command
+        "baudrate": 57600,  # The corresponding baudrate can be set through a factory command
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
@@ -119,7 +131,9 @@ class RunzeValveIO:
         reply_string = await self._serial.readline_async()
         return reply_string.hex()
 
-    async def write_and_read_reply_async(self, command: SV06Command, raise_errors: bool = True) -> tuple[str,str]:
+    async def write_and_read_reply_async(
+        self, command: SV06Command, raise_errors: bool = True
+    ) -> tuple[str, str]:
         """Send a command to the valve, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
         await self._write_async(bytes.fromhex(f"{command.compile()}\r"))
@@ -132,7 +146,7 @@ class RunzeValveIO:
         return self.parse_response(response=response, raise_errors=raise_errors)
 
     @staticmethod
-    def parse_response(response: str, raise_errors: bool = True) -> tuple[str,str]:
+    def parse_response(response: str, raise_errors: bool = True) -> tuple[str, str]:
         """Split a received line in its components: status, reply."""
         status, parameters = response[4:6], response[6:8]
 
@@ -145,12 +159,12 @@ class RunzeValveIO:
             "05": "Motor stalled",
             "06": "Unknown location",
             "fe": "Task being executed",
-            "ff": "Unknown error"
+            "ff": "Unknown error",
         }
 
         status_string = status_strings.get(status, "Unknown status code")
         # Check if the status indicates an error
-        if status in ("01", "02", "03","04", "05", "06", "fe", "ff"):
+        if status in ("01", "02", "03", "04", "05", "06", "fe", "ff"):
             if raise_errors:
                 logger.error(f"{status_string} (Status code: {status})")
                 raise DeviceError(
@@ -163,6 +177,7 @@ class RunzeValve(FlowchemDevice):
     """
     Control Runze multi position valves.
     """
+
     _io_instances: set[RunzeValveIO] = set()
 
     def __init__(
@@ -232,18 +247,22 @@ class RunzeValve(FlowchemDevice):
                 valve_type = value
             else:
                 if valve_type is None:
-                    logger.error("Failed to recognize the valve type: no successful port value.")
-                    raise ValueError("Unable to recognize the valve type. All port values failed.")
+                    logger.error(
+                        "Failed to recognize the valve type: no successful port value."
+                    )
+                    raise ValueError(
+                        "Unable to recognize the valve type. All port values failed."
+                    )
                 break
 
         return RunzeValveHeads(str(valve_type))
 
     async def _send_command_and_read_reply(
-            self,
-            command: str,
-            parameter: int = 0,
-            raise_errors: bool = True,
-            is_factory_command: bool =False,
+        self,
+        command: str,
+        parameter: int = 0,
+        raise_errors: bool = True,
+        is_factory_command: bool = False,
     ):
         valve_command = SV06Command(
             function_code=command,
@@ -251,26 +270,31 @@ class RunzeValve(FlowchemDevice):
             parameter=parameter,
             is_factory_command=is_factory_command,
         )
-        status, parameters = await self.valve_io.write_and_read_reply_async(valve_command, raise_errors)
+        status, parameters = await self.valve_io.write_and_read_reply_async(
+            valve_command, raise_errors
+        )
         return status, parameters
 
     async def get_raw_position(self, raise_errors: bool = False) -> str:
         """Return current valve position, following valve nomenclature."""
-        status, parameters = await self._send_command_and_read_reply(command="3e", raise_errors=raise_errors)
+        status, parameters = await self._send_command_and_read_reply(
+            command="3e", raise_errors=raise_errors
+        )
         if status == "00":
             logger.info(f"Current valve position is: {parameters}")
             return parameters
         else:
-            logger.warning(f"Something is not working in the valve. "
-                           f"Attempt to get raw position returned status: '{status}'.")
+            logger.warning(
+                f"Something is not working in the valve. "
+                f"Attempt to get raw position returned status: '{status}'."
+            )
             return ""
 
     async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
         """Set valve position, following valve nomenclature."""
         status, parameters = await self._send_command_and_read_reply(
-            command="44",
-            parameter=int(position),
-            raise_errors=raise_errors)
+            command="44", parameter=int(position), raise_errors=raise_errors
+        )
         if status == "00":
             logger.info(f"Valve position set to: {parameters}")
             return True
@@ -278,7 +302,9 @@ class RunzeValve(FlowchemDevice):
             return False
 
     async def set_address(self, address: int) -> str:
-        status, parameters = await self._send_command_and_read_reply(command="00", parameter=address, is_factory_command=True)
+        status, parameters = await self._send_command_and_read_reply(
+            command="00", parameter=address, is_factory_command=True
+        )
         if status == "00":
             self.address = address
         return status
@@ -297,9 +323,7 @@ class RunzeValve(FlowchemDevice):
         if valveio is None:
             # Remove RunzeValve-specific keys to only have RunzeValveIO's configs
             config_for_valveio = {
-                k: v
-                for k, v in config.items()
-                if k not in ("address", "name")
+                k: v for k, v in config.items() if k not in ("address", "name")
             }
             valveio = RunzeValveIO.from_config(config_for_valveio)
 
@@ -323,6 +347,6 @@ if __name__ == "__main__":
     async def main(valve):
         """Test function."""
         await valve.initialize()
-        #response = await valve.get_current_address()
+        # response = await valve.get_current_address()
 
     asyncio.run(main(v))

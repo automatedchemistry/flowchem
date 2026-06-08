@@ -4,14 +4,14 @@ This script guides the reader through the implementation of one of the device fi
 
 To better understand how the package works, let's select a device consisiting of multiple components: the ML600.
 
-The ML600 is a syringe pump developed by 
+The ML600 is a syringe pump developed by
 [Hamilton Company](https://www.hamiltoncompany.com/laboratory-products/microlab-600/stand-alone-syringe-pumps).
 
 There are two models of these pumps, one with a single channel and one with two channels, as shown in the figure above:
 
 ![](example.JPG)
 
-As we can see, one channel consists of a valve connected to the outlet of the syringe. It means that this device has 
+As we can see, one channel consists of a valve connected to the outlet of the syringe. It means that this device has
 more than one component, i.e, valve and pump.
 
 Let's start with the basics, as we learned in [add_new_device](add_to_flowchem.md).
@@ -31,9 +31,9 @@ class ML600(FlowchemDevice):
         self,
         name: str,
     ) -> None:
-        
+
         super().__init__(name)
-        
+
         self.device_info = DeviceInfo(
             manufacturer="Hamilton",
             model="ML600",
@@ -45,7 +45,7 @@ class ML600(FlowchemDevice):
         self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
 ```
 
-We will write a new module in the same folder with the classes for each component. The pump component, for 
+We will write a new module in the same folder with the classes for each component. The pump component, for
 example, we have the `ml600_pump.py`.
 
 ```python
@@ -55,12 +55,12 @@ if TYPE_CHECKING:
     from .ml600 import ML600
 
 class ML600Pump(SyringePump):
-    
+
     pump_code: str
     hw_device: ML600  # for typing's sake
 
     def __init__(self, name: str, hw_device: ML600, pump_code: str = "") -> None:
-        
+
         super().__init__(name, hw_device)
 
     @staticmethod
@@ -105,50 +105,50 @@ class ML600Pump(SyringePump):
         ...
 ```
 
-Observe that the pump component of the device is a syringe pump, which means that we can inherit the functionality 
-of the SyringePump class. We just need to overwrite the methods according to our specific connectivity commands from 
+Observe that the pump component of the device is a syringe pump, which means that we can inherit the functionality
+of the SyringePump class. We just need to overwrite the methods according to our specific connectivity commands from
 the device.
 
-We now have two modules to work on: `ml600.py` and `ml600_pump.py`. We will start by focusing on the less complicated 
-module, `ml600_pump.py`. To avoid overwhelming the reader, we will choose a specific functionality of the device and follow how 
+We now have two modules to work on: `ml600.py` and `ml600_pump.py`. We will start by focusing on the less complicated
+module, `ml600_pump.py`. To avoid overwhelming the reader, we will choose a specific functionality of the device and follow how
 the data is carried out through the modules. For example, let's focus on a specific function `is_pumping`.
 
 ## Component Module `ml600_pump.py`
 
-It is good practice to handle communication with the device in the main class ML600, where the connectivity is 
-established. This means that the methods in our component class should only call methods in the main class where the 
+It is good practice to handle communication with the device in the main class ML600, where the connectivity is
+established. This means that the methods in our component class should only call methods in the main class where the
 actual connectivity is set up.
 
 ```python
 ...
-from flowchem import ureg    
+from flowchem import ureg
 ...
 class ML600Pump(SyringePump):
     def __init__(self, name: str, hw_device: ML600, pump_code: str = "") -> None:
         super().__init__(name, hw_device)
-        self.pump_code = pump_code      
-                                         
+        self.pump_code = pump_code
+
     async def is_pumping(self) -> bool:
         """ ... """
         return await self.hw_device.get_pump_status(self.pump_code)
-    
+
     ...
 ```
 
 ```{note}
-The `pump_code` attribute is specific for the kinf of pump it is. Default is "", which denotes a single syringe. 
-B or C  for dual syringe pump. 
+The `pump_code` attribute is specific for the kinf of pump it is. Default is "", which denotes a single syringe.
+B or C  for dual syringe pump.
 ```
 
-The communication with the device happens inside the methods. In our example this happens through `get_pump_status`, 
-of the `hw_device`. Remember that the `hw_device` is the ML600 main class. Another important point is that this method 
-is overriding a parent method present in the SyringePump, which already has an API router to access this endpoint in 
+The communication with the device happens inside the methods. In our example this happens through `get_pump_status`,
+of the `hw_device`. Remember that the `hw_device` is the ML600 main class. Another important point is that this method
+is overriding a parent method present in the SyringePump, which already has an API router to access this endpoint in
 the API server. This means that it is not necessary to add a new API router for this method.
 
 ## Main module `ml600.py`
 
-Now, let's come back to our main module `ml600.py`. With a careful look at the device 
-[manual](../../../user-guides/reference/devices/pumps/ml600.pdf) we will see how the commands should be written and 
+Now, let's come back to our main module `ml600.py`. With a careful look at the device
+[manual](../../../user-guides/reference/devices/pumps/ml600.pdf) we will see how the commands should be written and
 sent through the serial. Based on this, we can write a data class to help us manage it all.
 
 ```python
@@ -182,7 +182,7 @@ class Protocol1Command:
         return compiled_command + self.execution_command
 ```
 
-The commands can be grouped in an Enum, effectively managing the commands sent to the device. As there are many 
+The commands can be grouped in an Enum, effectively managing the commands sent to the device. As there are many
 commands available for this device, we will focus only on the necessary ones to trigger our command `is_pumping`.
 
 ```python
@@ -198,16 +198,16 @@ class ML600Commands(Enum):
     ...
 ```
 
-According to the manual, to verify if the pump is busy, we only need to send the command `aT1` and wait for the reply. 
+According to the manual, to verify if the pump is busy, we only need to send the command `aT1` and wait for the reply.
 Based on the two classes written above, the command can be better explained according to the description below.
 
 * **a** - It is the pump address;
 * **T1** - It is the command sent to the pump return its status (Busy or not).
 
-And finally, a class to setup up the serial connection, which can control a series of devices 
+And finally, a class to setup up the serial connection, which can control a series of devices
 through the same port. This `HamiltonPumpIO` class serves as a low-level interface for communicating with
-a Hamilton pump over a serial connection using the aioserial library for asynchronous I/O operations. 
-We want to focus solely on the `is_pumping` functionality, so we will explore the methods through which 
+a Hamilton pump over a serial connection using the aioserial library for asynchronous I/O operations.
+We want to focus solely on the `is_pumping` functionality, so we will explore the methods through which
 the command passes.
 
 ```python
@@ -231,7 +231,7 @@ class HamiltonPumpIO:
         return self._parse_response(response)
 ```
 
-The methods writen in the component class to access the functionality of the device are built in the main class of 
+The methods writen in the component class to access the functionality of the device are built in the main class of
 the device `ML600`:
 
 ```python
@@ -241,7 +241,7 @@ class ML600(FlowchemDevice):
         """Send a command to the pump. Here we just add the right pump number."""
         command.target_pump_num = self.address
         return await self.pump_io.write_and_read_reply_async(command)
-    
+
     async def get_pump_status(self, pump: str = "") -> bool:
         """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
@@ -279,16 +279,16 @@ Therefore, the data flux can be visualized in the flowchart below when the comma
 ![](command_flow.JPG)
 
 The command status indicator is triggered to verify if the pump is pumping, and the endpoint 'is_pumping' is activated.
-This triggers the command `get_pump_status`, which is then translated based on the basic commands in the 
-`Protocol1Command` class. This command, translated to `aT1`, is sent to `HamiltoPumpIO`, which is responsible for 
-handling the actual communication with the pump via USB. The reply follows the same flow but in the opposite direction. 
-In this case, it indicates that the pump is idle. In summary, this figure illustrates how a system manages pump 
+This triggers the command `get_pump_status`, which is then translated based on the basic commands in the
+`Protocol1Command` class. This command, translated to `aT1`, is sent to `HamiltoPumpIO`, which is responsible for
+handling the actual communication with the pump via USB. The reply follows the same flow but in the opposite direction.
+In this case, it indicates that the pump is idle. In summary, this figure illustrates how a system manages pump
 operations through a series of command executions and status checks,
 utilizing asynchronous communication over USB.
 
 ## Outlook
 
-The example presented above demonstrates the implementation of a real device in flowchem. It's important to note that 
+The example presented above demonstrates the implementation of a real device in flowchem. It's important to note that
 this explanation has focused on just one of the device's many features. We chose this approach because providing all of
 the ML600's features in this document would overwhelm the reader. The main points to consider when implementing a device
 are:
@@ -300,7 +300,7 @@ to it. Note that the component methods will be available on the API server.
 4. The main class must have an initialization method, which will be triggered when the server is being built. In this
 method, the device must be initialized and inspected to ensure that the functionalities provided in the API are working.
 
-The construction of the component's main class is determined by the constructor. Our aim is to use Python functions 
+The construction of the component's main class is determined by the constructor. Our aim is to use Python functions
 as auxiliary classes to enhance understanding, simplicity, maintainability, and ease of inspecting possible errors.
 The example illustrated in this ML600 document serves as an example of good code structuring when the device is
 highly complex.
@@ -308,7 +308,3 @@ highly complex.
 ## Reference
 
 The code for implementing the ml600 is provided [here](../../foundations/code_structure/flowchem.devices.hamilton.rst).
-
-
-
-

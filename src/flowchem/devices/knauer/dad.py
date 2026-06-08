@@ -1,4 +1,5 @@
 """Control module for the Knauer DAD."""
+
 import asyncio
 from typing import TYPE_CHECKING
 
@@ -30,13 +31,13 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     """DAD control class."""
 
     def __init__(
-            self,
-            ip_address: object = None,
-            mac_address: object = None,
-            name: str | None = None,
-            turn_on_d2: bool = False,
-            turn_on_halogen: bool = False,
-            display_control: bool = True,
+        self,
+        ip_address: object = None,
+        mac_address: object = None,
+        name: str | None = None,
+        turn_on_d2: bool = False,
+        turn_on_halogen: bool = False,
+        display_control: bool = True,
     ) -> None:
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
@@ -152,7 +153,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         return (
             response
             if not response.isnumeric()
-            else _reverse_shutter_mapping[response[response.find(":") + 1:]]
+            else _reverse_shutter_mapping[response[response.find(":") + 1 :]]
         )
 
     async def signal_type(self, s_type: str = "microAU") -> str:
@@ -168,7 +169,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         return (
             response
             if not response.isnumeric()
-            else _reverse_type_mapping[response[response.find(":") + 1:]]
+            else _reverse_type_mapping[response[response.find(":") + 1 :]]
         )
 
     async def get_wavelength(self, channel: int) -> int:

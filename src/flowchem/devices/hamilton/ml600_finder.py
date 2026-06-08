@@ -1,4 +1,5 @@
 """This module is used to discover the serial address of any ML600 connected to the PC."""
+
 import asyncio
 from textwrap import dedent
 

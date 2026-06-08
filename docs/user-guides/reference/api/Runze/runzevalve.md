@@ -3,7 +3,7 @@
 ### `GET /my-runze-valve/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-runze-valve
 **Operation ID:** `get_device_info_my_runze_valve__get`
 

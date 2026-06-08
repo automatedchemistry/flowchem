@@ -1,4 +1,5 @@
 """Test FlowIR, needs actual connection to the device :(."""
+
 from pathlib import Path
 from xprocess import ProcessStarter
 from flowchem.client.client import get_all_flowchem_devices
@@ -11,7 +12,15 @@ import sys
 def api_dev(xprocess):
 
     config_file = Path(__file__).parent.resolve() / "flowir.toml"
-    main = Path(__file__).parent.resolve() / ".." / ".." / ".." / "src" / "flowchem" / "__main__.py"
+    main = (
+        Path(__file__).parent.resolve()
+        / ".."
+        / ".."
+        / ".."
+        / "src"
+        / "flowchem"
+        / "__main__.py"
+    )
 
     class Starter(ProcessStarter):
         # Process startup ends with this text in stdout (timeout is long cause some GA runners are slow)

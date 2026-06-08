@@ -3,7 +3,7 @@
 ### `GET /my-knauer-autosampler/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-knauer-autosampler
 **Operation ID:** `get_device_info_my_knauer_autosampler__get`
 

@@ -31,5 +31,5 @@ class FlowchemComponentClient:
         for key, arg in kwargs.get("params", {}).items():
             if type(arg) is list:
                 kwargs["params"][key] = str(arg)
-        
+
         return self._session.put(self.base_url + "/" + url, data=data, **kwargs)

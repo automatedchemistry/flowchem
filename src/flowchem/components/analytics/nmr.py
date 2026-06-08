@@ -1,4 +1,5 @@
 """An NMR control component."""
+
 from fastapi import BackgroundTasks
 
 from flowchem.components.flowchem_component import FlowchemComponent

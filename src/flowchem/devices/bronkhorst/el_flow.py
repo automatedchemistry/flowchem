@@ -1,4 +1,5 @@
 """Bronkhorst El-flow mass flow controller (MFC) device driver."""
+
 import asyncio
 
 # Manufacturer package, see https://bronkhorst-propar.readthedocs.io/en/latest/introduction.html.
@@ -53,6 +54,7 @@ class EPC(FlowchemDevice):
     get_pressure_percentage() -> float:
         Get the current pressure of the EPC device as a percentage of the maximum pressure.
     """
+
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
     def __init__(
@@ -154,34 +156,35 @@ class EPC(FlowchemDevice):
 
 class MFC(FlowchemDevice):
     """
-   A class to represent a Mass Flow Controller (MFC) device.
+    A class to represent a Mass Flow Controller (MFC) device.
 
-   Attributes:
-   -----------
-   DEFAULT_CONFIG : dict
-       Default configuration for the MFC device.
-   port : str
-       The port to which the MFC device is connected.
-   channel : int
-       The communication channel of the MFC device.
-   address : int
-       The address of the MFC device.
-   max_flow : float
-       The maximum flow rate of the MFC device in ml/min.
-   id : str
-       The identifier of the connected MFC device.
+    Attributes:
+    -----------
+    DEFAULT_CONFIG : dict
+        Default configuration for the MFC device.
+    port : str
+        The port to which the MFC device is connected.
+    channel : int
+        The communication channel of the MFC device.
+    address : int
+        The address of the MFC device.
+    max_flow : float
+        The maximum flow rate of the MFC device in ml/min.
+    id : str
+        The identifier of the connected MFC device.
 
-   Methods:
-   --------
-   initialize():
-       Ensure connection and initialize the MFC device.
-   set_flow_setpoint(flowrate: str):
-       Set the flow rate setpoint of the MFC device.
-   get_flow_setpoint() -> float:
-       Get the current flow rate of the MFC device in ml/min.
-   get_flow_percentage() -> float:
-       Get the current flow rate of the MFC device as a percentage of the maximum flow rate.
-   """
+    Methods:
+    --------
+    initialize():
+        Ensure connection and initialize the MFC device.
+    set_flow_setpoint(flowrate: str):
+        Set the flow rate setpoint of the MFC device.
+    get_flow_setpoint() -> float:
+        Get the current flow rate of the MFC device in ml/min.
+    get_flow_percentage() -> float:
+        Get the current flow rate of the MFC device as a percentage of the maximum flow rate.
+    """
+
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
     def __init__(

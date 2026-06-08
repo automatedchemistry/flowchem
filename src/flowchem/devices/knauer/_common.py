@@ -1,4 +1,5 @@
 """Module for communication with Knauer devices."""
+
 import asyncio
 
 from loguru import logger

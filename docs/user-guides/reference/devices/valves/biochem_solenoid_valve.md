@@ -7,7 +7,7 @@ Configuration sample showing all possible parameters:
 
 ⚙️ BioChemSolenoidValve Initialization Parameters
 
-When creating a BioChemSolenoidValve, you must specify how the valve connects to a device that provides a Relay 
+When creating a BioChemSolenoidValve, you must specify how the valve connects to a device that provides a Relay
 component — either as a single-channel or multi-channel relay controller.
 
 | Parameter          | Type                     | Required                 | Description                                                                                                                                                                                            |
@@ -22,7 +22,7 @@ component — either as a single-channel or multi-channel relay controller.
 type = "BioChemSolenoidValve"  # This is the device identifier
 support_platform = "mybox/relay-A"  # Name of the `device/component` instance to bind to (key in Relay.INSTANCES`).
 channel = 1  # Relay channel index (1–32) on the switch box.
-normally_open = 1 # (optional) : 0 - False and 1 - True, default 1. Electrical/flow logic of the valve. 
+normally_open = 1 # (optional) : 0 - False and 1 - True, default 1. Electrical/flow logic of the valve.
                   # If True, the valve is open by default (no power). If False, the valve is closed by default (no power).
 ```
 
@@ -43,5 +43,3 @@ See the [device API reference](../../api/biochem_solenoid/solenoid_valve.md) for
 ## Further information:
 
 More detail can be found in [datasheet](biochem_solenoids.pdf).
-
-

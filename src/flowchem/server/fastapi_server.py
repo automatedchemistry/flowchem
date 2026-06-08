@@ -1,4 +1,5 @@
 """FastAPI server for devices control."""
+
 from collections.abc import Iterable
 from importlib.metadata import metadata, version
 
@@ -35,10 +36,16 @@ class FastAPIServer:
         logger.debug("HTTP ASGI server app created")
 
     def _add_root_redirect(self) -> None:
-        @self.app.route("/")
-        def home_redirect_to_docs(request):
+        def home_redirect_to_docs():
             """Redirect root to `/docs` to enable interaction w/ API."""
             return RedirectResponse(url="/docs")
+
+        self.app.add_api_route(
+            "/",
+            home_redirect_to_docs,
+            methods=["GET"],
+            include_in_schema=False,
+        )
 
     def _add_configuration_retrieve(self) -> None:
         @self.app.get(
@@ -53,14 +60,26 @@ class FastAPIServer:
             """
             return self.configuration_dict
 
-    def add_background_tasks(self, repeated_tasks: Iterable[RepeatedTaskInfo]):
-        """Schedule repeated tasks to run upon server startup."""
+    def add_background_tasks(
+        self,
+        repeated_tasks: RepeatedTaskInfo | Iterable[RepeatedTaskInfo],
+    ):
+        """Schedule repeated tasks to run upon server startup.
+
+        Note: each task is bound via a default argument to avoid the classic
+        Python loop-closure pitfall where all closures would otherwise share
+        the last value of the loop variable.
+        """
+        if isinstance(repeated_tasks, RepeatedTaskInfo):
+            repeated_tasks = (repeated_tasks,)
+
         for seconds_delay, task in repeated_tasks:
+            # `t=task` captures the current task by value, not by reference.
             @self.app.on_event("startup")
             @repeat_every(seconds=seconds_delay)
-            async def my_task():
+            async def _repeated_task(t=task):
                 logger.debug("Running repeated task...")
-                await task()
+                await t()
 
     def add_device(self, device):
         """Add device to server."""

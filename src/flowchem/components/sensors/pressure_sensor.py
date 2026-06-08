@@ -1,4 +1,5 @@
 """Pressure sensor."""
+
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 from .sensor import Sensor
@@ -33,12 +34,12 @@ class PressureSensor(Sensor):
         super().__init__(name, hw_device)
         self.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
 
-        # Ontology: Pressure Sensor Device
+        # Ontology: Pressure Sensor Device (NCIT_C50167)
         self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/NCIT_C50167",
         )
 
-    async def read_pressure(self, units: str = "bar"):
+    async def read_pressure(self, units: str = "bar") -> float:
         """
         Read the current pressure from the sensor and return it in the specified units.
 
@@ -52,4 +53,11 @@ class PressureSensor(Sensor):
         float
             The current pressure in the specified units.
         """
-        ...
+        raise NotImplementedError
+
+    async def read(self) -> float:
+        """Read the current pressure using the default output units."""
+        pressure = await self.read_pressure()
+        if hasattr(pressure, "m_as"):
+            return float(pressure.m_as("bar"))
+        return float(pressure)

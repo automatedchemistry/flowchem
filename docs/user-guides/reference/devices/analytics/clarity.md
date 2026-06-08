@@ -18,7 +18,7 @@ Configuration sample showing all possible parameters:
 [device.hplc]  # This is the 'device' identifier
 type = "Clarity"
 
-# Optional paramters (default shown)
+# Optional parameters (default shown)
 executable = "C:\\claritychrom\\bin\\claritychrom.exe"
 instrument_number = 1  # Specify the instrument to be controlled (if the same Clarity instance has more than one)
 startup-time = 20  # Max time necessary to start-up Clarity and connect all the instrument specified in the configuration
@@ -26,7 +26,7 @@ startup-method = "startup-method.met"  # Method sent to the device upon startup.
 cmd_timeout =  3  # Max amount of time (in s) to wait for the execution of claritychrom.exe commands.
 user = "admin"  # Default user name
 password = ""  # Empty or option not present for no password
-clarity-cfg-file = ""  # Configuration file for Clarity, if e.g. LaunchManager is used to save different configutations
+clarity-cfg-file = ""  # Configuration file for Clarity, if e.g. LaunchManager is used to save different configurations
 ```
 
 ## API methods

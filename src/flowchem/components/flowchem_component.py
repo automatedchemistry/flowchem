@@ -39,6 +39,7 @@ class FlowchemComponent:
     get_component_info() -> ComponentInfo:
         Retrieve the component's metadata.
     """
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """
         Initialize the FlowchemComponent with a name and associated hardware device.
@@ -55,7 +56,9 @@ class FlowchemComponent:
         self.component_info = ComponentInfo(
             name=name,
             parent_device=self.hw_device.name,
-            corresponding_class=[cls.__name__ for cls in inspect.getmro(self.__class__)]
+            corresponding_class=[
+                cls.__name__ for cls in inspect.getmro(self.__class__)
+            ],
         )
 
         # Initialize router
@@ -114,4 +117,3 @@ class FlowchemComponent:
             Metadata about the component.
         """
         return self.component_info
-

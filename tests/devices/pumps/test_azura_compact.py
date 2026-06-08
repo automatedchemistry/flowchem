@@ -1,6 +1,7 @@
 """Knauer pump
 Run with python -m pytest ./tests -m KPump and updates pump address below.
 """
+
 import asyncio
 import math
 import sys

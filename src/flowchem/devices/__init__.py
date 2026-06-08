@@ -11,6 +11,7 @@ from .knauer import *
 from .magritek import *
 from .manson import *
 from .mettlertoledo import *
+from .ni import *
 from .phidgets import *
 from .vacuubrand import *
 from .vapourtec import *

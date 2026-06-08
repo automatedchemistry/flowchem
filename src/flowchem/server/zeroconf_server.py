@@ -1,4 +1,5 @@
 """Zeroconf (mDNS) server."""
+
 import uuid
 
 from loguru import logger

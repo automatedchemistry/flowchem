@@ -1,4 +1,5 @@
 """Vendored from fastapi_utils due to the package incompatibility with pydantic v2"""
+
 import asyncio
 import logging
 from asyncio import ensure_future

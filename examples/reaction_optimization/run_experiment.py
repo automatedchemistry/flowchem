@@ -130,7 +130,9 @@ def integrate_peaks(ir_spectrum):
     return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
-def run_experiment(SOCl2_equiv: float, temperature: float, residence_time: float) -> float:
+def run_experiment(
+    SOCl2_equiv: float, temperature: float, residence_time: float
+) -> float:
     """Run one experiment with the provided conditions.
 
     Args:

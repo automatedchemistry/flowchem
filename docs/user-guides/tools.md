@@ -10,8 +10,8 @@ this function, simply type the command in the command window.
 ```shell
 flowchem-autodiscover
 ```
-Autodiscover will examine the local network using Zeroconf service discovery to verify if there are any devices 
-connected through Ethernet. Additionally, it will search for devices connected through serial connections based on 
+Autodiscover will examine the local network using Zeroconf service discovery to verify if there are any devices
+connected through Ethernet. Additionally, it will search for devices connected through serial connections based on
 the user's preferences.
 
 ```{warning}
@@ -20,7 +20,7 @@ The autodiscover include modules that involve communication over serial ports. T
 ```
 
 After the examination, a configuration file will be generated with the main characteristics of each identified device.
-This feature saves time when creating the configuration file. The file named `flowchem_config.toml` created is placed 
+This feature saves time when creating the configuration file. The file named `flowchem_config.toml` created is placed
 in the flowchem package folder
 
 ```{note}
@@ -52,18 +52,18 @@ from flowchem.client.client import get_all_flowchem_devices
 devices = get_all_flowchem_devices()
 ```
 
-This variable `devices` can be referred to as "client," as it is a client built on top of flowchem that utilizes its 
+This variable `devices` can be referred to as "client," as it is a client built on top of flowchem that utilizes its
 functionalities.
 
 In a similar way that you can access the functionalities of the devices through the API, you can use the client devices.
-For example, if you have an Elite11 pump, called *pumpG*, running on flowchem, you can send an infuse command to the 
-pump 
-with a volume 
+For example, if you have an Elite11 pump, called *pumpG*, running on flowchem, you can send an infuse command to the
+pump
+with a volume
 of 10 ml and a flow rate of 1 ml/min through the API in the browser.
 
 ![](img.png)
 
-With the client `devices`, this can be done in Python. Using the client `devices`, the construction of protocols directly 
+With the client `devices`, this can be done in Python. Using the client `devices`, the construction of protocols directly
 in Python is facilitated.
 
 ```python
@@ -74,7 +74,7 @@ devices = get_all_flowchem_devices()
 devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
 ```
 
-The example shown in section [example](examples/reaction_optimization.md) presents one way of how the 
+The example shown in section [example](examples/reaction_optimization.md) presents one way of how the
 protocols can be constructed.
 
 ### Direct approach
