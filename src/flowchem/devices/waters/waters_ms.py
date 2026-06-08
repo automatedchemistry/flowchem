@@ -81,10 +81,10 @@ class WatersMS(FlowchemDevice):
         )
 
     async def set_method(
-            self,
-            ms_exp_file: str,
-            tune_file: str | None = None,
-            inlet_method: str | None = None,
+        self,
+        ms_exp_file: str,
+        tune_file: str | None = None,
+        inlet_method: str | None = None,
     ) -> bool:
         """
         Set the MS acquisition method parameters that will be used for the next run(s).
@@ -100,12 +100,12 @@ class WatersMS(FlowchemDevice):
         return True
 
     async def record_mass_spec(
-            self,
-            sample_name: str,
-            run_duration: int = 0,
-            queue_name: str = "next.txt",
-            do_conversion: bool = False,
-            output_dir: str = r"PATH/TO/open_format_ms",
+        self,
+        sample_name: str,
+        run_duration: int = 0,
+        queue_name: str = "next.txt",
+        do_conversion: bool = False,
+        output_dir: str = r"PATH/TO/open_format_ms",
     ) -> bool:
         """
         Create and drop a queue file for AutoLynx to initiate MS acquisition.

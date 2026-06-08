@@ -72,6 +72,7 @@ all = [
     "pytest-mock",
     "pytest-xprocess",
     "phidget22>=1.7.20211005",
+    "nidaqmx>=1.0",
     "furo",
     "mistune==0.8.4",
     "myst-parser",
@@ -129,6 +130,9 @@ test = [
 ]
 phidget = [
     "phidget22>=1.7.20211005",
+]
+ni = [
+    "nidaqmx>=1.0",
 ]
 docs = [
     "furo",

@@ -60,6 +60,8 @@ _REGISTRY: dict[str, str] = {
     "PhidgetPowerSource5V": "flowchem.sim.devices.phidgets.bubble_sim.PhidgetPowerSource5VSim",
     # Mettler-Toledo
     "IcIR": "flowchem.sim.devices.mettlertoledo.icir_sim.IcIRSim",
+    # National Instruments
+    "NI9477": "flowchem.sim.devices.ni.ni9477_sim.NI9477Sim",
     # Magritek
     "Spinsolve": "flowchem.sim.devices.magritek.spinsolve_sim.SpinsolveSim",
     # Waters

@@ -1,0 +1,4 @@
+[device.ni_outputs]
+type = "NI9477"
+module = "Dev1"
+reset_outputs_on_initialize = true
