@@ -41,6 +41,7 @@ SAMPLE_QUERY_VALUES: dict[str, object] = {
     "int_time": 100,
     "method-name": "smoke-method",
     "method_name": "smoke-method",
+    "mode": "fast",
     "output_dir": "PATH/TO/open_format_ms",
     "position": "1",
     "pressure": "1 bar",
@@ -55,6 +56,7 @@ SAMPLE_QUERY_VALUES: dict[str, object] = {
     "sample-name": "smoke-sample",
     "sample_name": "smoke-sample",
     "solvent": "CDCL3",
+    "speed": "100 rpm",
     "switch_to_low_after": "1 s",
     "target_volume": "1 ml",
     "temp": "25 degC",
@@ -161,6 +163,10 @@ def operation_params(
 
     if method == "put" and path.endswith("/monitor_position"):
         params["position"] = str(request_json(path))
+        return params, json_body
+
+    if method == "put" and path.endswith("/fraction-collector/position"):
+        params["position"] = "waste"
         return params, json_body
 
     if method == "put" and path.endswith("/position"):
