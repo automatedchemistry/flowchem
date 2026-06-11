@@ -113,6 +113,11 @@ module = "SimNI6519Dev1"
 type = "NIDAQAnalogIO"
 module = "SimNIDAQDev1"
 
+[device.sim-ni-tc01]
+type = "NIUSBTC01"
+module = "SimUSBTC01Dev1"
+thermocouple_type = "K"
+
 [device.sim-tmcm1111]
 type = "TMCM1111"
 port = "COM_SIM"
