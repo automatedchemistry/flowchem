@@ -154,64 +154,16 @@ def send_until_acknowledged(max_reaction_time=15):
 class ASEthernetDevice:
     TCP_PORT = 2101
     BUFFER_SIZE = 1024
-    # Tolerance for transient connection failures (e.g. the AS momentarily not
-    # listening on its TCP port -> ConnectionRefusedError). Retried before any
-    # command bytes are sent, so retrying is side-effect free.
-    CONNECT_RETRIES = 10
-    CONNECT_RETRY_DELAY = 1.0  # seconds between attempts
-    CONNECT_TIMEOUT = 5.0  # seconds to wait for each connect attempt
 
-    def __init__(self, ip_address, buffersize=None, tcp_port=None,
-                 connect_retries=None, connect_retry_delay=None, connect_timeout=None):
+    def __init__(self, ip_address, buffersize=None, tcp_port=None):
         self.ip_address = str(ip_address)
         self.port = tcp_port if tcp_port else ASEthernetDevice.TCP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
-        self.connect_retries = (
-            connect_retries if connect_retries is not None else ASEthernetDevice.CONNECT_RETRIES
-        )
-        self.connect_retry_delay = (
-            connect_retry_delay if connect_retry_delay is not None else ASEthernetDevice.CONNECT_RETRY_DELAY
-        )
-        self.connect_timeout = (
-            connect_timeout if connect_timeout is not None else ASEthernetDevice.CONNECT_TIMEOUT
-        )
-
-    async def _open_connection_with_retry(self):
-        """Open the TCP connection, retrying on transient connection failures
-        (ConnectionRefusedError / OSError / timeout) until the configured tolerance
-        is exhausted. This is retried *before* any command bytes are sent, so it is
-        safe (no command is duplicated). Raises ConnectionError only after all
-        attempts fail."""
-        last_exc = None
-        for attempt in range(1, self.connect_retries + 1):
-            try:
-                return await asyncio.wait_for(
-                    asyncio.open_connection(self.ip_address, self.port),
-                    timeout=self.connect_timeout,
-                )
-            except (ConnectionRefusedError, ConnectionResetError, OSError, asyncio.TimeoutError) as exc:
-                last_exc = exc
-                if attempt < self.connect_retries:
-                    logger.warning(
-                        f"Autosampler connection attempt {attempt}/{self.connect_retries} to "
-                        f"{self.ip_address}:{self.port} failed ({exc!r}); retrying in "
-                        f"{self.connect_retry_delay} s"
-                    )
-                    await asyncio.sleep(self.connect_retry_delay)
-        logger.error(
-            f"No connection possible to device with IP {self.ip_address}:{self.port} "
-            f"after {self.connect_retries} attempts"
-        )
-        raise ConnectionError(
-            f"No Connection possible to device with IP address {self.ip_address} "
-            f"after {self.connect_retries} attempts"
-        ) from last_exc
 
     async def _send_and_receive(self, message: str):
-        writer = None
         try:
-            # Open a connection (with retry tolerance for transient refusals)
-            reader, writer = await self._open_connection_with_retry()
+            # Open a connection
+            reader, writer = await asyncio.open_connection(self.ip_address, self.port)
             # Send the message
             writer.write(message.encode())
             await writer.drain()
@@ -231,16 +183,16 @@ class ASEthernetDevice:
                 if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
                     break
 
+            writer.close()
+            await writer.wait_closed()  # Close the connection
+
             return reply
 
-        finally:
-            # Always close the connection, even if reading raised
-            if writer is not None:
-                writer.close()
-                try:
-                    await writer.wait_closed()
-                except Exception:
-                    pass
+        except asyncio.TimeoutError:
+            logger.error(f"No connection possible to device with IP {self.ip_address}")
+            raise ConnectionError(
+                f"No Connection possible to device with IP address {self.ip_address}"
+            )
 
 
 class ASSerialDevice:
