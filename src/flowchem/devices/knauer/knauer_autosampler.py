@@ -234,10 +234,13 @@ class ASEthernetDevice:
             return reply
 
         finally:
-            # Always close the connection, even if reading raised
+            # Always close the connection, even if reading raised. The Knauer AS
+            # resets the TCP connection (WinError 10054) on close, which can surface
+            # from either close() or wait_closed() during teardown. The reply is
+            # already captured by this point, so swallow any teardown error.
             if writer is not None:
-                writer.close()
                 try:
+                    writer.close()
                     await writer.wait_closed()
                 except Exception:
                     pass
