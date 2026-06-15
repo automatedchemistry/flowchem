@@ -175,6 +175,8 @@ class ASEthernetDevice:
         self.connect_timeout = (
             connect_timeout if connect_timeout is not None else ASEthernetDevice.CONNECT_TIMEOUT
         )
+        # Strong refs to background teardown tasks so they aren't GC'd while pending.
+        self._bg_close_tasks: set = set()
 
     async def _open_connection_with_retry(self):
         """Open the TCP connection, retrying on transient connection failures
@@ -234,16 +236,32 @@ class ASEthernetDevice:
             return reply
 
         finally:
-            # Always close the connection, even if reading raised. The Knauer AS
-            # resets the TCP connection (WinError 10054) on close, which can surface
-            # from either close() or wait_closed() during teardown. The reply is
-            # already captured by this point, so swallow any teardown error.
+            # Close the connection, but DO NOT `await writer.wait_closed()` inline.
+            # The Knauer AS sends a TCP RST on close (WinError 10054); on the Windows
+            # selector event loop that reset is raised from the loop's socket read
+            # callback during teardown. A try/except around an inline
+            # `await wait_closed()` in this finally does NOT reliably suppress it, and
+            # a finally that raises also discards the already-read reply -> turns a
+            # successful command into a 500. The reply is captured by this point, so
+            # we only initiate the close here and absorb any teardown reset in a
+            # background task, off the request path.
             if writer is not None:
-                try:
-                    writer.close()
-                    await writer.wait_closed()
-                except Exception:
-                    pass
+                writer.close()
+                task = asyncio.ensure_future(self._absorb_close(writer))
+                self._bg_close_tasks.add(task)
+                task.add_done_callback(self._bg_close_tasks.discard)
+
+    @staticmethod
+    async def _absorb_close(writer):
+        """Wait for connection teardown to finish, swallowing the RST the Knauer AS
+        sends on close (WinError 10054). Runs as a background task (not in the
+        request's finally) so a teardown reset never propagates into the request
+        that already received its reply, and the close-waiter's exception is
+        retrieved here rather than logged as 'never retrieved'."""
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
 
 
 class ASSerialDevice:
