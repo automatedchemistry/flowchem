@@ -775,7 +775,19 @@ class KnauerAutosampler(FlowchemDevice):
         command_string = await self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         reply = str(await self._query(command_string))
         reply = (3 - len(reply)) * "0" + reply
-        return ASStatus(reply).name  # type: ignore
+        try:
+            return ASStatus(reply).name  # type: ignore
+        except ValueError:
+            # The AS returned a status code that is not in the ASStatus enum (there
+            # are gaps in the documented codes). Returning the raw code instead of
+            # raising keeps a single odd status poll from becoming a 500 that kills
+            # the experiment thread. Callers compare against named states (e.g.
+            # "NEEDLE_RUNNING"), so an unmapped code simply reads as "not that state".
+            logger.warning(
+                f"AS returned status code {reply!r} not in ASStatus enum; "
+                f"returning raw code instead of raising."
+            )
+            return reply
 
     async def set_needle_vertical_offset(self, offset: float | int | None = None):
         return await self._set_get_value(VerticalNeedleOffsetCommand, offset)  # type: ignore
