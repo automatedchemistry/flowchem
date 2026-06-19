@@ -234,6 +234,7 @@ class ASEthernetDevice:
 
                 # Receive the reply in chunks
                 reply = b""
+                complete = False
                 while True:
                     chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
                     if not chunk:
@@ -241,11 +242,25 @@ class ASEthernetDevice:
                     reply += chunk
                     try:
                         CommunicationFlags(chunk)  # type: ignore
+                        complete = True
                         break
                     except ValueError:
                         pass
                     if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
+                        complete = True
                         break
+
+                # The AS sometimes closes the connection cleanly before sending a full
+                # frame, leaving an empty or truncated reply. That is NOT a socket error
+                # (read() just returns b"" at EOF), so it bypasses the except-handler retry
+                # below and would otherwise reach _parse_*_reply, which rejects the bad
+                # frame with CommunicationError -> 500 that kills the experiment thread.
+                # Treat an unterminated reply as the same transient fault as a mid-read
+                # reset and re-issue the exchange (safe for idempotent commands).
+                if not complete:
+                    raise ConnectionResetError(
+                        f"AS closed connection with incomplete reply {reply!r}"
+                    )
 
                 return reply
             except (ConnectionResetError, ConnectionError, OSError) as exc:
