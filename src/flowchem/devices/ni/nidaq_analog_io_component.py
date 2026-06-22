@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pint
 from loguru import logger
 from pint.errors import DimensionalityError, UndefinedUnitError
 
@@ -40,7 +41,7 @@ class NIDAQAnalogOutput(MultiChannelDAC):
     async def set(self, channel: str = "1", value: str = "0 V") -> bool:  # type: ignore[override]
         """Set one analog output channel."""
         try:
-            parsed_value = ureg.Quantity(value)
+            parsed_value: pint.Quantity = ureg.Quantity(value)
         except (UndefinedUnitError, DimensionalityError, Exception) as error:
             logger.error(f"Invalid DAC value '{value}' for channel {channel}: {error}")
             return False
