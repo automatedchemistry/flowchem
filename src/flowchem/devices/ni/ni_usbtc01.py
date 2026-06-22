@@ -57,6 +57,7 @@ class NIUSBTC01(FlowchemDevice):
         tc_type_upper = thermocouple_type.upper()
         if tc_type_upper not in _VALID_TC_TYPES:
             from flowchem.utils.exceptions import InvalidConfigurationError
+
             raise InvalidConfigurationError(
                 f"Invalid thermocouple_type '{thermocouple_type}'. "
                 f"Valid values: {list(_VALID_TC_TYPES)}."

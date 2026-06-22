@@ -39,7 +39,7 @@ _REGISTRY: dict[str, str] = {
     # Huber
     "HuberChiller": "flowchem.sim.devices.huber.huber_sim.HuberChillerSim",
     # Heidolph
-    "HeiConnect": "flowchem.devices.heidolph.hei_connect.SimulatedHeiConnect",
+    "HeiConnect": "flowchem.sim.devices.heidolph.hei_connect_sim.HeiConnectSim",
     # Harvard Apparatus
     "Elite11": "flowchem.sim.devices.harvardapparatus.elite11_sim.Elite11Sim",
     # Vacuubrand

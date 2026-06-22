@@ -5,7 +5,11 @@ import importlib
 import pytest
 
 from flowchem.devices.list_known_device_type import autodiscover_device_classes
-from flowchem.devices.ni.ni6519 import NI6519, NI6519_INPUT_CHANNEL_COUNT, NI6519_OUTPUT_CHANNEL_COUNT
+from flowchem.devices.ni.ni6519 import (
+    NI6519,
+    NI6519_INPUT_CHANNEL_COUNT,
+    NI6519_OUTPUT_CHANNEL_COUNT,
+)
 from flowchem.components.technical.relay import Relay
 from flowchem.utils.exceptions import InvalidConfigurationError
 
@@ -79,7 +83,10 @@ def test_from_config_without_nidaqmx_raises_helpful_error(monkeypatch):
 
 
 async def test_initializes_relay_and_digital_input_components(ni6519):
-    assert [component.name for component in ni6519.components] == ["relay", "digital-input"]
+    assert [component.name for component in ni6519.components] == [
+        "relay",
+        "digital-input",
+    ]
     assert Relay.INSTANCES["test-ni6519/relay"] is ni6519.components[0]
 
 

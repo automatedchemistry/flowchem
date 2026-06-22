@@ -35,7 +35,8 @@ def resolve_ni_device(
     matching_devices = [
         device
         for device in devices
-        if product_fragment is None or product_fragment in _normalized_product_type(device)
+        if product_fragment is None
+        or product_fragment in _normalized_product_type(device)
     ]
 
     if module is not None:
@@ -46,7 +47,10 @@ def resolve_ni_device(
                 f"NI module '{module}' was not found by NI-DAQmx. "
                 "Check the NI MAX device name and hardware connection.",
             ) from error
-        if product_fragment is not None and product_fragment not in _normalized_product_type(selected):
+        if (
+            product_fragment is not None
+            and product_fragment not in _normalized_product_type(selected)
+        ):
             raise InvalidConfigurationError(
                 f"NI module '{module}' is '{getattr(selected, 'product_type', 'unknown')}', "
                 f"not a {device_label}.",
@@ -91,7 +95,9 @@ def channel_sort_key(channel_name: str) -> tuple[str, int]:
     return prefix, number
 
 
-def terminal_config_from_string(constants: Any, terminal_config: str | None) -> Any | None:
+def terminal_config_from_string(
+    constants: Any, terminal_config: str | None
+) -> Any | None:
     """Translate a user-friendly terminal config string to a NI-DAQmx enum value."""
     if terminal_config is None or terminal_config == "":
         return None
@@ -109,7 +115,12 @@ def terminal_config_from_string(constants: Any, terminal_config: str | None) -> 
 
 
 def _normalized_product_type(device: Any) -> str:
-    return str(getattr(device, "product_type", "")).upper().replace("-", "").replace(" ", "")
+    return (
+        str(getattr(device, "product_type", ""))
+        .upper()
+        .replace("-", "")
+        .replace(" ", "")
+    )
 
 
 def _split_trailing_number(value: str) -> tuple[str, int]:

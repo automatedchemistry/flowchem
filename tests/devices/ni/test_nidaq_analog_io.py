@@ -92,8 +92,12 @@ def test_from_config_uses_explicit_channels_without_ranges(monkeypatch):
 
     class FakeDAQTask:
         def __init__(self) -> None:
-            self.ai_channels = types.SimpleNamespace(add_ai_voltage_chan=self.add_ai_voltage_chan)
-            self.ao_channels = types.SimpleNamespace(add_ao_voltage_chan=self.add_ao_voltage_chan)
+            self.ai_channels = types.SimpleNamespace(
+                add_ai_voltage_chan=self.add_ai_voltage_chan
+            )
+            self.ao_channels = types.SimpleNamespace(
+                add_ao_voltage_chan=self.add_ao_voltage_chan
+            )
             self.ai_args: tuple | None = None
             self.ai_kwargs: dict | None = None
             self.ao_args: tuple | None = None

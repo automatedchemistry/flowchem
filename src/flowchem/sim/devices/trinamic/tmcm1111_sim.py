@@ -93,7 +93,9 @@ class TMCM1111Sim(TMCM1111):
         **serial_kwargs,
     ) -> "TMCM1111Sim":
         sim_io = SimulatedTMCM1111IO()
-        configured_positions = {"waste": 0, "vial_1": 12000} if positions is None else positions
+        configured_positions = (
+            {"waste": 0, "vial_1": 12000} if positions is None else positions
+        )
         instance = cls(
             tmcm_io=sim_io,
             positions=configured_positions,

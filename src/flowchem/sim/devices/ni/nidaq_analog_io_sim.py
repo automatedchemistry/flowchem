@@ -57,8 +57,12 @@ class NIDAQAnalogIOSim(NIDAQAnalogIO):
         name: str = "",
     ) -> "NIDAQAnalogIOSim":
         module_name = module or "SimNIDAQDev1"
-        adc_channel_names = list(adc_channels or [f"{module_name}/ai0", f"{module_name}/ai1"])
-        dac_channel_names = list(dac_channels or [f"{module_name}/ao0", f"{module_name}/ao1"])
+        adc_channel_names = list(
+            adc_channels or [f"{module_name}/ai0", f"{module_name}/ai1"]
+        )
+        dac_channel_names = list(
+            dac_channels or [f"{module_name}/ao0", f"{module_name}/ao1"]
+        )
         adc_task = SimulatedNIDAQAnalogInputTask([0.0] * len(adc_channel_names))
         dac_task = SimulatedNIDAQAnalogOutputTask()
         instance = cls(

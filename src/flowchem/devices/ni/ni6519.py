@@ -44,10 +44,14 @@ class NI6519(FlowchemDevice):
         self._output_task = output_task
         self.reset_outputs_on_initialize = reset_outputs_on_initialize
         self._input_line_names = (
-            list(input_line_names) if input_line_names else self.default_input_line_names(module)
+            list(input_line_names)
+            if input_line_names
+            else self.default_input_line_names(module)
         )
         self._output_line_names = (
-            list(output_line_names) if output_line_names else self.default_output_line_names(module)
+            list(output_line_names)
+            if output_line_names
+            else self.default_output_line_names(module)
         )
         self._output_channel_states = [False] * NI6519_OUTPUT_CHANNEL_COUNT
         self._input_lock = asyncio.Lock()
@@ -124,7 +128,9 @@ class NI6519(FlowchemDevice):
     async def initialize(self) -> None:
         """Register digital input and relay components and optionally set outputs OFF."""
         if self.reset_outputs_on_initialize:
-            initialized = await self.set_output_channels([False] * NI6519_OUTPUT_CHANNEL_COUNT)
+            initialized = await self.set_output_channels(
+                [False] * NI6519_OUTPUT_CHANNEL_COUNT
+            )
             if not initialized:
                 raise InvalidConfigurationError(
                     "Could not reset NI6519 output channels during initialization."
@@ -155,7 +161,9 @@ class NI6519(FlowchemDevice):
         next_states = [bool(state) for state in states]
         async with self._output_lock:
             try:
-                await asyncio.to_thread(self._output_task.write, next_states, auto_start=True)
+                await asyncio.to_thread(
+                    self._output_task.write, next_states, auto_start=True
+                )
             except Exception:
                 logger.exception(
                     f"Could not write output state to NI6519 module '{self.module}'."
@@ -211,7 +219,9 @@ class NI6519(FlowchemDevice):
         ]
 
     @classmethod
-    def _discover_input_line_names(cls, module_device: Any, module_name: str) -> list[str]:
+    def _discover_input_line_names(
+        cls, module_device: Any, module_name: str
+    ) -> list[str]:
         line_names = cls._filter_ports(
             physical_channel_names(getattr(module_device, "di_lines", ())),
             ports=("port0", "port1"),
@@ -225,7 +235,9 @@ class NI6519(FlowchemDevice):
         return cls.default_input_line_names(module_name)
 
     @classmethod
-    def _discover_output_line_names(cls, module_device: Any, module_name: str) -> list[str]:
+    def _discover_output_line_names(
+        cls, module_device: Any, module_name: str
+    ) -> list[str]:
         line_names = cls._filter_ports(
             physical_channel_names(getattr(module_device, "do_lines", ())),
             ports=("port2", "port3"),
@@ -241,7 +253,11 @@ class NI6519(FlowchemDevice):
     @staticmethod
     def _filter_ports(line_names: Sequence[str], ports: tuple[str, ...]) -> list[str]:
         return sorted(
-            [line_name for line_name in line_names if any(f"/{port}/" in line_name for port in ports)],
+            [
+                line_name
+                for line_name in line_names
+                if any(f"/{port}/" in line_name for port in ports)
+            ],
             key=line_sort_key,
         )
 
@@ -263,7 +279,9 @@ class NI6519(FlowchemDevice):
             except TypeError:
                 values = [values]
         if len(values) != expected_count:
-            raise ValueError(f"NI6519 expected {expected_count} input values, got {len(values)}.")
+            raise ValueError(
+                f"NI6519 expected {expected_count} input values, got {len(values)}."
+            )
         return [bool(value) for value in values]
 
 
@@ -271,7 +289,9 @@ def _channel_index(channel: str | int, max_channel: int, label: str) -> int:
     try:
         channel_number = int(channel)
     except (TypeError, ValueError) as error:
-        raise ValueError(f"{label} channel must be an integer from 1 to {max_channel}.") from error
+        raise ValueError(
+            f"{label} channel must be an integer from 1 to {max_channel}."
+        ) from error
     if not 1 <= channel_number <= max_channel:
         raise ValueError(f"{label} channel must be between 1 and {max_channel}.")
     return channel_number - 1

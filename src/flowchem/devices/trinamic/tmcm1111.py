@@ -114,7 +114,9 @@ def tmcl_checksum(frame_without_checksum: bytes) -> int:
 def decode_tmcl_reply(frame: bytes, expected_command: int | None = None) -> TMCLReply:
     """Decode and validate one TMCL reply frame."""
     if len(frame) != TMCL_FRAME_SIZE:
-        raise DeviceError(f"TMCL reply must be {TMCL_FRAME_SIZE} bytes, got {len(frame)}.")
+        raise DeviceError(
+            f"TMCL reply must be {TMCL_FRAME_SIZE} bytes, got {len(frame)}."
+        )
     if tmcl_checksum(frame[:-1]) != frame[-1]:
         raise DeviceError("TMCL reply checksum mismatch.")
 
@@ -132,7 +134,9 @@ def decode_tmcl_reply(frame: bytes, expected_command: int | None = None) -> TMCL
         )
     if reply.status != 100:
         status_message = TMCL_STATUS_MESSAGES.get(reply.status, "Unknown TMCL status")
-        raise DeviceError(f"TMCL command failed with status {reply.status}: {status_message}.")
+        raise DeviceError(
+            f"TMCL command failed with status {reply.status}: {status_message}."
+        )
     return reply
 
 
@@ -198,10 +202,14 @@ class TMCM1111(FlowchemDevice):
     ) -> None:
         super().__init__(name)
         if not positions:
-            raise InvalidConfigurationError("TMCM1111 requires at least one named position.")
+            raise InvalidConfigurationError(
+                "TMCM1111 requires at least one named position."
+            )
         self.tmcm_io = tmcm_io
         self.address = address
-        self.positions = {str(position_name): int(steps) for position_name, steps in positions.items()}
+        self.positions = {
+            str(position_name): int(steps) for position_name, steps in positions.items()
+        }
         self.home_position = home_position
         self.home_on_initialize = home_on_initialize
         self.reference_search_mode = reference_search_mode
@@ -262,7 +270,9 @@ class TMCM1111(FlowchemDevice):
         """Move to a named configured position or raw microstep position."""
         target = self._position_to_steps(position)
         await self._mvp_abs(target)
-        logger.info(f"TMCM-1111 '{self.name}' moving to {position} ({target} microsteps).")
+        logger.info(
+            f"TMCM-1111 '{self.name}' moving to {position} ({target} microsteps)."
+        )
         return True
 
     async def get_position(self) -> str | int:
@@ -314,11 +324,17 @@ class TMCM1111(FlowchemDevice):
 
     async def _configure_reference_search(self) -> None:
         if self.reference_search_mode is not None:
-            await self._sap(AxisParameter.REFERENCE_SEARCH_MODE, self.reference_search_mode)
+            await self._sap(
+                AxisParameter.REFERENCE_SEARCH_MODE, self.reference_search_mode
+            )
         if self.reference_search_speed is not None:
-            await self._sap(AxisParameter.REFERENCE_SEARCH_SPEED, self.reference_search_speed)
+            await self._sap(
+                AxisParameter.REFERENCE_SEARCH_SPEED, self.reference_search_speed
+            )
         if self.reference_switch_speed is not None:
-            await self._sap(AxisParameter.REFERENCE_SWITCH_SPEED, self.reference_switch_speed)
+            await self._sap(
+                AxisParameter.REFERENCE_SWITCH_SPEED, self.reference_switch_speed
+            )
 
     async def _wait_for_reference_search(self, timeout: float) -> None:
         deadline = asyncio.get_running_loop().time() + timeout
@@ -330,7 +346,9 @@ class TMCM1111(FlowchemDevice):
 
     async def _apply_home_position(self) -> None:
         if self.home_position:
-            await self._sap(AxisParameter.ACTUAL_POSITION, self.positions[self.home_position])
+            await self._sap(
+                AxisParameter.ACTUAL_POSITION, self.positions[self.home_position]
+            )
 
     async def _mvp_abs(self, target_position: int) -> TMCLReply:
         return await self._execute(

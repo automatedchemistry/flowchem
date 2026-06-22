@@ -36,7 +36,9 @@ class NI6519Relay(MultiChannelRelay):
     async def power_off(self, channel: str | int = "1") -> bool:  # type: ignore[override]
         """Deactivate one NI-6519 output channel."""
         try:
-            return await self.hw_device.set_output_channel(channel=channel, active=False)
+            return await self.hw_device.set_output_channel(
+                channel=channel, active=False
+            )
         except ValueError as error:
             logger.error(str(error))
             return False

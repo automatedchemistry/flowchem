@@ -86,7 +86,9 @@ class NIDAQAnalogIO(FlowchemDevice):
         module_device = None
         module_name = module or ""
         if module is not None:
-            module_device = resolve_ni_device(system, module, device_label="NI analog I/O device")
+            module_device = resolve_ni_device(
+                system, module, device_label="NI analog I/O device"
+            )
             module_name = module_device.name
 
         adc_channel_names = list(adc_channels or [])
@@ -153,16 +155,16 @@ class NIDAQAnalogIO(FlowchemDevice):
     async def read_all_adc(self) -> dict[str, float]:
         """Read all ADC channels in volts."""
         values = await self._read_adc_values()
-        return {
-            f"ADC{index + 1}": value
-            for index, value in enumerate(values)
-        }
+        return {f"ADC{index + 1}": value for index, value in enumerate(values)}
 
     async def set_dac(self, channel: str | int, value: pint.Quantity) -> bool:
         """Set one DAC channel from a unit-aware value."""
         index = self._dac_channel_index(channel)
         volts = float(value.to("V").magnitude)
-        if self._dac_range is not None and not self._dac_range[0] <= volts <= self._dac_range[1]:
+        if (
+            self._dac_range is not None
+            and not self._dac_range[0] <= volts <= self._dac_range[1]
+        ):
             raise ValueError(
                 f"DAC channel {channel} setpoint {volts} V is outside configured range "
                 f"{self._dac_range[0]} to {self._dac_range[1]} V."
@@ -174,11 +176,17 @@ class NIDAQAnalogIO(FlowchemDevice):
             if self._dac_task is None:
                 raise ValueError("No DAC channels are configured.")
             write_value: float | list[float]
-            write_value = next_setpoints[0] if len(next_setpoints) == 1 else next_setpoints
+            write_value = (
+                next_setpoints[0] if len(next_setpoints) == 1 else next_setpoints
+            )
             try:
-                await asyncio.to_thread(self._dac_task.write, write_value, auto_start=True)
+                await asyncio.to_thread(
+                    self._dac_task.write, write_value, auto_start=True
+                )
             except Exception:
-                logger.exception(f"Could not write DAC state to NI module '{self.module}'.")
+                logger.exception(
+                    f"Could not write DAC state to NI module '{self.module}'."
+                )
                 return False
             self._dac_setpoints = next_setpoints
         return True
@@ -246,7 +254,9 @@ def _channel_index(channel: str | int, max_channel: int, label: str) -> int:
     try:
         channel_number = int(channel)
     except (TypeError, ValueError) as error:
-        raise ValueError(f"{label} channel must be an integer from 1 to {max_channel}.") from error
+        raise ValueError(
+            f"{label} channel must be an integer from 1 to {max_channel}."
+        ) from error
     if not 1 <= channel_number <= max_channel:
         raise ValueError(f"{label} channel must be between 1 and {max_channel}.")
     return channel_number - 1
@@ -272,13 +282,19 @@ def _optional_range_kwargs(configured_range: Sequence[str] | None) -> dict[str, 
     return {"min_val": voltage_range[0], "max_val": voltage_range[1]}
 
 
-def _range_to_volts(configured_range: Sequence[str] | None) -> tuple[float, float] | None:
+def _range_to_volts(
+    configured_range: Sequence[str] | None,
+) -> tuple[float, float] | None:
     if configured_range is None:
         return None
     if len(configured_range) != 2:
-        raise InvalidConfigurationError("Analog channel ranges must have exactly two values.")
+        raise InvalidConfigurationError(
+            "Analog channel ranges must have exactly two values."
+        )
     lower = float(ureg.Quantity(configured_range[0]).to("V").magnitude)
     upper = float(ureg.Quantity(configured_range[1]).to("V").magnitude)
     if lower >= upper:
-        raise InvalidConfigurationError("Analog channel range lower bound must be smaller than upper bound.")
+        raise InvalidConfigurationError(
+            "Analog channel range lower bound must be smaller than upper bound."
+        )
     return lower, upper

@@ -20,7 +20,10 @@ async def sim_ni6519() -> NI6519Sim:
 
 
 async def test_sim_initializes_components(sim_ni6519):
-    assert [component.name for component in sim_ni6519.components] == ["relay", "digital-input"]
+    assert [component.name for component in sim_ni6519.components] == [
+        "relay",
+        "digital-input",
+    ]
     assert len(sim_ni6519.sim_output_task.writes) == 1
 
 

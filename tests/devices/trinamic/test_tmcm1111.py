@@ -86,8 +86,13 @@ async def test_home_applies_home_position_and_reference_settings():
 
     assert await device.home() is True
     assert device.sim_io.axis_parameters[int(AxisParameter.REFERENCE_SEARCH_MODE)] == 1
-    assert device.sim_io.axis_parameters[int(AxisParameter.REFERENCE_SEARCH_SPEED)] == 51200
-    assert device.sim_io.axis_parameters[int(AxisParameter.REFERENCE_SWITCH_SPEED)] == 4096
+    assert (
+        device.sim_io.axis_parameters[int(AxisParameter.REFERENCE_SEARCH_SPEED)]
+        == 51200
+    )
+    assert (
+        device.sim_io.axis_parameters[int(AxisParameter.REFERENCE_SWITCH_SPEED)] == 4096
+    )
     assert await device.get_position() == "waste"
 
 
