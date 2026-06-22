@@ -11,5 +11,7 @@ huber_chiller
 
 hei_connect
 ni9477
+ni6519
+nidaq_analog_io
 
 ```

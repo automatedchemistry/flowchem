@@ -13,6 +13,7 @@ from .manson import *
 from .mettlertoledo import *
 from .ni import *
 from .phidgets import *
+from .trinamic import *
 from .vacuubrand import *
 from .vapourtec import *
 from .vicivalco import *
