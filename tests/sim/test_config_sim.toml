@@ -30,6 +30,10 @@ ip_address = "127.0.0.1"
 type = "HuberChiller"
 port = "COM_SIM"
 
+[device.sim-heidolph]
+type = "HeiConnect"
+port = "COM_SIM"
+
 [device.sim-elite11]
 type = "Elite11"
 port = "COM_SIM"
@@ -101,6 +105,25 @@ address = 0
 [device.sim-ni]
 type = "NI9477"
 module = "SimNI9477Mod1"
+
+[device.sim-ni6519]
+type = "NI6519"
+module = "SimNI6519Dev1"
+
+[device.sim-nidaq-analog]
+type = "NIDAQAnalogIO"
+module = "SimNIDAQDev1"
+
+[device.sim-ni-tc01]
+type = "NIUSBTC01"
+module = "SimUSBTC01Dev1"
+thermocouple_type = "K"
+
+[device.sim-tmcm1111]
+type = "TMCM1111"
+port = "COM_SIM"
+positions = { waste = 0, vial_1 = 12000, vial_2 = 24000 }
+home_position = "waste"
 
 [device.sim-solenoid]
 type = "BioChemSolenoidValve"

@@ -259,7 +259,7 @@ class SimulatedHeiConnect(HeiConnectBase):
         self._connection_check_enabled = False
 
     @classmethod
-    def from_config(cls, name="", connection_check: bool = True):
+    def from_config(cls, name="", connection_check: bool = True, **_):
         """Create simulated device from config."""
         return cls(name=name, connection_check=connection_check)
 

@@ -38,6 +38,8 @@ _REGISTRY: dict[str, str] = {
     "KnauerDAD": "flowchem.sim.devices.knauer.dad_sim.KnauerDADSim",
     # Huber
     "HuberChiller": "flowchem.sim.devices.huber.huber_sim.HuberChillerSim",
+    # Heidolph
+    "HeiConnect": "flowchem.sim.devices.heidolph.hei_connect_sim.HeiConnectSim",
     # Harvard Apparatus
     "Elite11": "flowchem.sim.devices.harvardapparatus.elite11_sim.Elite11Sim",
     # Vacuubrand
@@ -61,7 +63,12 @@ _REGISTRY: dict[str, str] = {
     # Mettler-Toledo
     "IcIR": "flowchem.sim.devices.mettlertoledo.icir_sim.IcIRSim",
     # National Instruments
+    "NI6519": "flowchem.sim.devices.ni.ni6519_sim.NI6519Sim",
     "NI9477": "flowchem.sim.devices.ni.ni9477_sim.NI9477Sim",
+    "NIUSBTC01": "flowchem.sim.devices.ni.ni_usbtc01_sim.NIUSBTC01Sim",
+    "NIDAQAnalogIO": "flowchem.sim.devices.ni.nidaq_analog_io_sim.NIDAQAnalogIOSim",
+    # Trinamic / Analog Devices
+    "TMCM1111": "flowchem.sim.devices.trinamic.tmcm1111_sim.TMCM1111Sim",
     # Magritek
     "Spinsolve": "flowchem.sim.devices.magritek.spinsolve_sim.SpinsolveSim",
     # Waters
