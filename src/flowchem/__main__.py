@@ -48,9 +48,6 @@ def main(device_config_file, logfile, host, debug):
         host: IP on which the server will be listening. Loopback IP as default, use LAN IP to enable remote access.
         debug: Print debug info
     """
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
     if not debug:
         # Set stderr to info
         logger.remove()

@@ -111,9 +111,6 @@ def main(device_config_file, logfile, host, debug):
     real device driver with its simulation counterpart.  No physical
     instruments need to be connected.
     """
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
     if not debug:
         logger.remove()
         logger.add(sys.stderr, level="INFO")

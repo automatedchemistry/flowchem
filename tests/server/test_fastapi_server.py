@@ -11,7 +11,7 @@ def test_add_background_tasks_accepts_single_repeated_task():
 
     server.add_background_tasks(RepeatedTaskInfo(seconds_every=5, task=_noop))
 
-    assert len(server.app.router.on_startup) == 1
+    assert len(server._startup_tasks) == 1
 
 
 def test_add_background_tasks_accepts_multiple_repeated_tasks():
@@ -23,4 +23,4 @@ def test_add_background_tasks_accepts_multiple_repeated_tasks():
 
     server.add_background_tasks(tasks)
 
-    assert len(server.app.router.on_startup) == 2
+    assert len(server._startup_tasks) == 2

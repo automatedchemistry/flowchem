@@ -479,8 +479,9 @@ class TestSimulatedIO:
         """BUSY_STATUS should always return the idle bit pattern in simulation."""
         io = SimulatedHamiltonPumpIO(num_pumps=1)
         response = io._dispatch("aT1R\r", pump_num=1)
-        # '@' = 0x40; when reversed its bit pattern has all busy bits = 0 (idle).
-        assert chr(6) + "@" in response
+        # '?' = 0x3F = 0b00111111; reversed = "11111100".
+        # system_status checks all_status[i] == "0" for busy; bits 0-5 are "1" → idle.
+        assert chr(6) + "?" in response
 
     def test_dispatch_init_syringe_resets_position(self):
         """INIT_SYRINGE_ONLY should set syringe_position to 0."""

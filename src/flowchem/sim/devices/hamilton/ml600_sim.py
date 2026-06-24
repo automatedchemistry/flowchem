@@ -296,8 +296,10 @@ class SimulatedHamiltonPumpIO(HamiltonPumpIO):
             return _ack(state.firmware_version)
 
         # BUSY_STATUS: "T1"  → all-idle bit pattern.
+        # "?" = 0x3F = 0b00111111; reversed = "11111100".
+        # system_status checks all_status[i] == "0" for busy; bits 0-5 are "1" → idle.
         if "T1" in cmd_body:
-            return _ack("@")
+            return _ack("?")
 
         # STATUS_REQUEST: "E1"  → no errors, all bits clear
         if "E1" in cmd_body:

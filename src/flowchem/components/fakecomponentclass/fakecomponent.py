@@ -42,6 +42,6 @@ class FakeComponent(FlowchemComponent):
         This function demonstrates how the commands request of data can be sent through the API build
         """
         ...
-    
+
     async def is_reachable(self) -> ReachabilityStatus:
         return ReachabilityStatus.ONLINE  # fake device is always on

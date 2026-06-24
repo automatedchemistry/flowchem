@@ -2,30 +2,13 @@
 Run with python -m pytest ./tests -m KPump and updates pump address below.
 """
 
-import asyncio
 import math
-import sys
 
 import pint
 import pytest
 
 from flowchem import ureg
 from flowchem.devices.knauer.azura_compact import AzuraCompact, AzuraPumpHeads
-
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
-# noinspection PyUnusedLocal
-@pytest.fixture(scope="session")
-def event_loop(request):
-    """Args:
-    ----
-        request:
-    """
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="session")
