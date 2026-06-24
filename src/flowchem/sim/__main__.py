@@ -61,7 +61,7 @@ def _instantiate_with_sim_mapper(config: dict):
 class SimFlowchem(Flowchem):
     """Flowchem subclass that uses simulated devices."""
 
-    async def setup(self, config):  # type: ignore[override]
+    async def setup(self, config, parallel: bool = False):  # type: ignore[override]
         from flowchem.server.configuration_parser import parse_config as _parse_config
 
         self.config = _parse_config(config)
@@ -69,8 +69,11 @@ class SimFlowchem(Flowchem):
         self.devices = _instantiate_with_sim_mapper(self.config)
 
         logger.info("[SIM] Initializing simulated device connection(s)...")
-        for dev in self.devices:
-            await dev.initialize()
+        if parallel:
+            await asyncio.gather(*[dev.initialize() for dev in self.devices])
+        else:
+            for dev in self.devices:
+                await dev.initialize()
         logger.info("[SIM] Simulated device(s) connected")
 
         for device in self.devices:
@@ -102,9 +105,15 @@ class SimFlowchem(Flowchem):
     help="Server host. 0.0.0.0 binds to all addresses.",
 )
 @click.option("-d", "--debug", is_flag=True, help="Print debug info.")
+@click.option(
+    "--parallel-init",
+    "parallel_init",
+    is_flag=True,
+    help="Initialize all devices simultaneously instead of one by one.",
+)
 @click.version_option()
 @click.command()
-def main(device_config_file, logfile, host, debug):
+def main(device_config_file, logfile, host, debug, parallel_init):
     """flowchem-sim — start FlowChem with simulated (no-hardware) devices.
 
     Reads the same TOML configuration file as `flowchem` but replaces every
@@ -122,7 +131,7 @@ def main(device_config_file, logfile, host, debug):
 
     async def main_loop():
         flowchem = SimFlowchem()
-        await flowchem.setup(Path(device_config_file))
+        await flowchem.setup(Path(device_config_file), parallel=parallel_init)
 
         config = uvicorn.Config(
             flowchem.http.app,

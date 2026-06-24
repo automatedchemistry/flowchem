@@ -44,6 +44,30 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 This means that the flowchem server has been started correctly.
 You can visit [http://127.0.0.1:8000](http://127.0.0.1:8000) to see a list of commands available for your test device.
 
+### Device initialization order
+
+By default, flowchem initializes devices **one by one** in the order they appear in the configuration file. This is
+the safe default: if one device fails to connect, subsequent devices are not attempted and the error is immediately
+visible.
+
+If all your devices can be initialized independently and you want to reduce startup time, use the `--parallel-init`
+flag to initialize them all simultaneously:
+
+```shell
+flowchem --parallel-init flowchem_config.toml
+```
+
+```{note}
+With `--parallel-init`, log messages from different devices will be interleaved rather than appearing in
+configuration-file order. If a device fails to initialize, errors from other devices may appear before it in the log.
+```
+
+The same flag is available for `flowchem-sim`:
+
+```shell
+flowchem-sim --parallel-init flowchem_config.toml
+```
+
 ```{note}
 The device name is used as first subdirectory in the URL of the commands relative to this device.
 For example, in this case, the commands relative to our test device will be available under `http://localhost:8000/example1/`.

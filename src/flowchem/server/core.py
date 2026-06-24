@@ -78,7 +78,7 @@ class Flowchem:
     def port(self):
         return self.config.get("port", 8000)
 
-    async def setup(self, config: BytesIO | Path):
+    async def setup(self, config: BytesIO | Path, parallel: bool = False):
         self.config = parse_config(config)
         self.http.configuration_dict = deepcopy(self.config)
         self.devices = instantiate_device_from_config(self.config)
@@ -86,10 +86,11 @@ class Flowchem:
         """Initialize connection to devices and create API endpoints."""
         logger.info("Initializing device connection(s)...")
 
-        # Run `initialize` async method of all hw devices in parallel
-        # await asyncio.gather(*[dev.initialize() for dev in self.devices])
-        for dev in self.devices:
-            await dev.initialize()
+        if parallel:
+            await asyncio.gather(*[dev.initialize() for dev in self.devices])
+        else:
+            for dev in self.devices:
+                await dev.initialize()
         logger.info("Device(s) connected")
 
         # Create entities for the configured devices.

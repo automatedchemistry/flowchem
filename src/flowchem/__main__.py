@@ -34,9 +34,15 @@ from flowchem.server.core import Flowchem
     help="Server host. 0.0.0.0 is used to bind to all addresses, do not use for internet-exposed devices!",
 )
 @click.option("-d", "--debug", is_flag=True, help="Print debug info.")
+@click.option(
+    "--parallel-init",
+    "parallel_init",
+    is_flag=True,
+    help="Initialize all devices simultaneously instead of one by one.",
+)
 @click.version_option()
 @click.command()
-def main(device_config_file, logfile, host, debug):
+def main(device_config_file, logfile, host, debug, parallel_init):
     """Flowchem main program.
 
     Parse device_config_file and starts a server exposing the devices via REST-ful API.
@@ -47,6 +53,7 @@ def main(device_config_file, logfile, host, debug):
         logfile: Output file for logs.
         host: IP on which the server will be listening. Loopback IP as default, use LAN IP to enable remote access.
         debug: Print debug info
+        parallel_init: Initialize all devices simultaneously (asyncio.gather) instead of one by one.
     """
     if not debug:
         # Set stderr to info
@@ -61,7 +68,7 @@ def main(device_config_file, logfile, host, debug):
     async def main_loop():
         """Main application loop, the event loop is shared between uvicorn and flowchem."""
         flowchem = Flowchem()
-        await flowchem.setup(Path(device_config_file))
+        await flowchem.setup(Path(device_config_file), parallel=parallel_init)
 
         config = uvicorn.Config(
             flowchem.http.app,
