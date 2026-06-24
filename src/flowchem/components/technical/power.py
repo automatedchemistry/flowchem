@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -21,6 +22,15 @@ class PowerSwitch(FlowchemComponent):
     async def power_off(self):
         """Turn off power."""
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Not implemented — PowerSwitch exposes only power_on()/power_off() (PUT) commands.
+
+        There is no read-only probe available at this level. Subclasses that
+        expose readable state (e.g. PowerControl) should override with a
+        device-specific query.
+        """
+        return ReachabilityStatus.UNKNOWN
 
 
 class PowerControl(PowerSwitch):
@@ -50,3 +60,11 @@ class PowerControl(PowerSwitch):
     async def get_voltage(self) -> float:
         """Return voltage in Volt."""
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the power controller responds to a voltage query."""
+        try:
+            await self.get_voltage()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

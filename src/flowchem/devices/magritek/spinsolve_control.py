@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from fastapi import BackgroundTasks
 
 from flowchem.components.analytics.nmr import NMRControl
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from .spinsolve import Spinsolve
@@ -41,6 +42,19 @@ class SpinsolveControl(NMRControl):
             self.hw_device.is_protocol_running,
             methods=["GET"],
         )
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the Spinsolve responds over the network.
+
+        Uses is_protocol_running() as a lightweight read-only probe — the return
+        value (whether a protocol is active) is discarded; any successful response
+        confirms the instrument is reachable.
+        """
+        try:
+            await self.hw_device.is_protocol_running()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
 
     async def acquire_spectrum(
         self,

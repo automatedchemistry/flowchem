@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -41,3 +42,11 @@ class MassFlowController(FlowchemComponent):
     async def stop(self) -> bool:
         """Stop the mass flow controller by setting the flow rate to 0 ml/min."""
         raise NotImplementedError("Subclasses must override this method.")
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the mass flow controller responds to a setpoint query."""
+        try:
+            await self.get_flow_setpoint()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

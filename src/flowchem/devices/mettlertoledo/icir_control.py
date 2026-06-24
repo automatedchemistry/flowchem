@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from flowchem.components.analytics.ir import IRControl, IRSpectrum
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from .icir import IcIR
@@ -82,3 +83,8 @@ class IcIRControl(IRControl):
             bool: True if the experiment was successfully stopped, False otherwise.
         """
         return await self.hw_device.stop_experiment()
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the iCIR OPC UA connection to the instrument is active."""
+        connected = await self.hw_device.is_iCIR_connected()
+        return ReachabilityStatus.ONLINE if connected else ReachabilityStatus.OFFLINE

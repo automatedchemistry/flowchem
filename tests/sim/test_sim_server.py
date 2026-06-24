@@ -42,6 +42,8 @@ SAMPLE_QUERY_VALUES: dict[str, object] = {
     "method-name": "smoke-method",
     "method_name": "smoke-method",
     "mode": "fast",
+    "offset": 2.0,
+    "onoff": "on",
     "output_dir": "PATH/TO/open_format_ms",
     "position": "1",
     "pressure": "1 bar",

@@ -2,13 +2,13 @@
 
 import uuid
 
+import ifaddr
 from loguru import logger
 from zeroconf import (
     IPVersion,
     NonUniqueNameException,
     ServiceInfo,
     Zeroconf,
-    get_all_addresses,
 )
 
 
@@ -22,10 +22,12 @@ class ZeroconfServer:
 
         # Get list of host addresses
         self.mdns_addresses = [
-            ip
-            for ip in get_all_addresses()  # Get all local IP
-            if ip not in ("127.0.0.1", "0.0.0.0")
-            and not ip.startswith("169.254")  # Remove invalid IPs
+            addr.ip
+            for adapter in ifaddr.get_adapters()
+            for addr in adapter.ips
+            if isinstance(addr.ip, str)
+            and addr.ip not in ("127.0.0.1", "0.0.0.0")
+            and not addr.ip.startswith("169.254")
         ]
         if not self.mdns_addresses:
             self.mdns_addresses.append("127.0.0.1")

@@ -9,6 +9,7 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -79,3 +80,11 @@ class TemperatureControl(FlowchemComponent):
     async def power_off(self):
         """Turn off temperature control."""
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the temperature controller responds to a temperature query."""
+        try:
+            await self.get_temperature()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

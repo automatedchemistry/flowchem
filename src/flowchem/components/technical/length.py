@@ -2,6 +2,7 @@
 
 from loguru import logger
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -125,3 +126,11 @@ class LengthControl(FlowchemComponent):
                 - For continuous mode: [min, max] bounds.
         """
         return self._available_positions
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the axis responds to a position query."""
+        try:
+            await self.get_position()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

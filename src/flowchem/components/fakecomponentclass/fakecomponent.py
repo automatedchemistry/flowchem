@@ -1,6 +1,7 @@
 """Base FakeComponent."""
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -41,3 +42,6 @@ class FakeComponent(FlowchemComponent):
         This function demonstrates how the commands request of data can be sent through the API build
         """
         ...
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        return ReachabilityStatus.ONLINE  # fake device is always on

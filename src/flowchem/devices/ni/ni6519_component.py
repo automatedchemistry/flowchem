@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.MultiChannels import MultiChannelRelay
 
 if TYPE_CHECKING:
@@ -102,3 +103,11 @@ class NI6519DigitalInput(FlowchemComponent):
     async def read_all(self) -> list[int]:
         """Read all 16 digital input channels."""
         return [int(state) for state in await self.hw_device.read_input_channels()]
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the NI-6519 digital input task responds."""
+        try:
+            await self.read_all()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

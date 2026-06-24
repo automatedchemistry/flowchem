@@ -77,5 +77,6 @@ class WatersMSSim(WatersMS):
         file_path = self.queue_path / Path(queue_name)
         with open(file_path, "w") as f:
             f.write(self.fields)
-            f.write(f"\n{sample_name}{self.rows}")
+            f.write(f"\n{self._build_queue_row(sample_name)}")
         # Skip do_conversion — never invoke subprocess in simulation.
+        return True

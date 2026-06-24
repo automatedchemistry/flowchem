@@ -192,3 +192,15 @@ class KnauerAutosamplerSim(FlowchemDevice):
 
     async def measure_tray_temperature(self) -> int:
         return self._sim_tray_temp_sp
+
+    async def set_tray_temperature_control(self, onoff: str = "on") -> bool:
+        logger.debug(f"[SIM] Tray temperature control → {onoff}")
+        return True
+
+    async def compressor(self, onoff: str = "on") -> bool:
+        logger.debug(f"[SIM] Compressor → {onoff}")
+        return True
+
+    async def set_needle_vertical_offset(self, offset: float = 2.0) -> bool:
+        logger.debug(f"[SIM] Needle vertical offset → {offset} mm")
+        return True

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -37,3 +38,11 @@ class Photoreactor(FlowchemComponent):
     async def power_off(self):
         """Turn off light."""
         ...
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the photoreactor responds to an intensity query."""
+        try:
+            await self.get_intensity()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

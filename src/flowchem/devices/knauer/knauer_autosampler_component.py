@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from .knauer_autosampler import KnauerAutosampler
 
 from flowchem.components.meta_components.gantry3D import Gantry3D
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.pumps.syringe_pump import SyringePump
 from flowchem.components.valves.distribution_valves import FourPortDistributionValve
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
@@ -313,6 +314,14 @@ class AutosamplerGantry3D(Gantry3D):
             return True
         else:
             return False
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the Knauer autosampler responds to a status query."""
+        try:
+            await self.hw_device.get_status()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
 
 
 class AutosamplerPump(SyringePump):

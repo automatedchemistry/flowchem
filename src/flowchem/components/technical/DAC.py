@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -34,6 +35,14 @@ class DigitalAnalogConverter(FlowchemComponent):
         Read the DAC output of a channel.
         """
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the DAC responds to a read request."""
+        try:
+            await self.read()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
 
     async def set(self, value: str = "0 V") -> bool:
         """

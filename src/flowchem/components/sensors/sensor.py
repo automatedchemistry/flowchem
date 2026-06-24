@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.ADC import AnalogDigitalConverter
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -49,3 +50,15 @@ class Sensor(AnalogDigitalConverter):
     async def power_off(self):
         """Power off the sensor."""
         return True
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the sensor responds to a read request.
+
+        Delegates to read(), which every concrete sensor overrides with a
+        real hardware measurement. Any successful response confirms the device is alive.
+        """
+        try:
+            await self.read()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

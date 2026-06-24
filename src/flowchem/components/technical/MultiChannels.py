@@ -1,3 +1,4 @@
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.ADC import AnalogDigitalConverter
 from flowchem.components.technical.DAC import DigitalAnalogConverter
 from flowchem.components.technical.relay import Relay
@@ -33,6 +34,14 @@ class MultiChannelADC(AnalogDigitalConverter):
         """
         raise NotImplementedError
 
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the multi-channel ADC responds to a read-all request."""
+        try:
+            await self.read_all()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
+
 
 class MultiChannelDAC(DigitalAnalogConverter):
 
@@ -57,6 +66,15 @@ class MultiChannelDAC(DigitalAnalogConverter):
             True if the value was accepted and applied successfully.
         """
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Not implemented — MultiChannelDAC exposes no channel-free read-only probe.
+
+        read(channel) requires a mandatory channel argument, making it unsuitable
+        as a generic connectivity probe. Device-specific subclasses that have
+        additional read-only queries (e.g. NIDAQAnalogOutput) should override.
+        """
+        return ReachabilityStatus.UNKNOWN
 
 
 class MultiChannelRelay(Relay):
@@ -167,3 +185,15 @@ class MultiChannelRelay(Relay):
                 - 0, 1 → valid relay state.
         """
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the multi-channel relay responds to a channel-states query.
+
+        Uses read_channels_set_point() rather than is_on(channel) because
+        is_on() requires a mandatory channel argument.
+        """
+        try:
+            await self.read_channels_set_point()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

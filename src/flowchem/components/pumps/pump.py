@@ -1,6 +1,7 @@
 """Base pump component."""
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -38,3 +39,15 @@ class Pump(FlowchemComponent):
     async def withdraw(self, rate: str = "", volume: str = "") -> bool:
         """Pump in the opposite direction of infuse."""
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the pump responds to a status query.
+
+        Delegates to is_pumping(), which every concrete pump overrides with
+        a real hardware query. Any successful response confirms the device is alive.
+        """
+        try:
+            await self.is_pumping()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
