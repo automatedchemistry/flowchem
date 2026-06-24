@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flowchem.components.analytics.ms import MSControl
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices import WatersMS
@@ -54,6 +55,15 @@ class WatersMSControl(MSControl):
             tune_file=tune_file,
             inlet_method=inlet_method,
         )
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Not implemented — WatersMS exposes no read-only status endpoint.
+
+        The WatersMS driver only provides set_method() and record_mass_spec(),
+        both of which are mutating operations. A safe connectivity probe is not
+        available without additional instrument support.
+        """
+        return ReachabilityStatus.UNKNOWN
 
     async def run_sample(
         self,

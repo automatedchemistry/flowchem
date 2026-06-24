@@ -1,6 +1,7 @@
 """Base Gantry3D meta component."""
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.length import LengthControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -83,6 +84,15 @@ class Gantry3D(FlowchemComponent):
             position = float(position) if "." in position else int(position)
         await self.z_axis.set_position(position)
         return True
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Not implemented at the Gantry3D base level.
+
+        Gantry3D only exposes axis-positioning (PUT) commands; there is no
+        device-independent read-only probe. Subclasses backed by real hardware
+        (e.g. AutosamplerGantry3D) should override with a device-specific query.
+        """
+        return ReachabilityStatus.UNKNOWN
 
 
 gantry3D = Gantry3D

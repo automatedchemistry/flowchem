@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -65,6 +66,14 @@ class SolenoidValve(FlowchemComponent):
     async def get_status(self) -> bool:
         """Backward-compatible alias for checking whether the valve is open."""
         return await self.is_open()
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the solenoid valve responds to a state query."""
+        try:
+            await self.is_open()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
 
 
 class SolenoidValve2Way(SolenoidValve):

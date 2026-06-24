@@ -8,6 +8,7 @@ from typing import Any, List, Optional, Protocol, cast
 from pydantic import BaseModel
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
@@ -338,6 +339,14 @@ class Valve(FlowchemComponent):
         This mainly has informative purpose
         """
         return ValveInfo(ports=self._stator_ports, positions=self._positions)
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the valve responds to a position query."""
+        try:
+            await self.get_position()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
 
     # Philosophy: explicitly specify which ports to connect
     # In case of a simple multiposition valve, it always connects the always open central port to the requested port.

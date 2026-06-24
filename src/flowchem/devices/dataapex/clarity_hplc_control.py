@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from fastapi import Query
 
 from flowchem.components.analytics.hplc import HPLCControl
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices import Clarity
@@ -47,6 +48,15 @@ class ClarityComponent(HPLCControl):
         super().__init__(name, hw_device)
         # Clarity-specific command
         self.add_api_route("/exit", self.exit, methods=["PUT"])
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Not implemented — Clarity exposes only a mutating command API.
+
+        All communication with ClarityChrom goes through execute_command(), which
+        sends a CLI command to the instrument. There is no read-only status or ping
+        command available, so a safe connectivity probe cannot be made.
+        """
+        return ReachabilityStatus.UNKNOWN
 
     async def exit(self) -> bool:
         """

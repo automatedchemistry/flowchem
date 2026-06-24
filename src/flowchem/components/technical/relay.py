@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.power import PowerSwitch
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -95,3 +96,15 @@ class Relay(PowerSwitch):
             NotImplementedError: If the method is not overridden by a subclass.
         """
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the relay responds to a state query.
+
+        Delegates to is_on(), which every concrete relay overrides with a
+        real hardware query. Any successful response confirms the device is alive.
+        """
+        try:
+            await self.is_on()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

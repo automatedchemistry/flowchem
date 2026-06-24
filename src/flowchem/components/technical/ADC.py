@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -39,3 +40,11 @@ class AnalogDigitalConverter(FlowchemComponent):
             float: The measured or estimated signal value.
         """
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the ADC responds to a read request."""
+        try:
+            await self.read()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

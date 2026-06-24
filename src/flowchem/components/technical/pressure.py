@@ -9,6 +9,7 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -57,3 +58,11 @@ class PressureControl(FlowchemComponent):
     async def power_off(self):
         """Turn off the pressure control."""
         raise NotImplementedError
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the pressure controller responds to a pressure query."""
+        try:
+            await self.get_pressure()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE

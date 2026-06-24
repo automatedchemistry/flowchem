@@ -9,6 +9,7 @@ from loguru import logger
 from pint.errors import DimensionalityError, UndefinedUnitError
 
 from flowchem import ureg
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.MultiChannels import MultiChannelADC, MultiChannelDAC
 
 if TYPE_CHECKING:
@@ -28,6 +29,14 @@ class NIDAQAnalogInput(MultiChannelADC):
         """Read all configured analog input channels in volts."""
         return await self.hw_device.read_all_adc()
 
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the NI-DAQmx analog input task responds."""
+        try:
+            await self.read_all()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
+
 
 class NIDAQAnalogOutput(MultiChannelDAC):
     """Multi-channel DAC component for NI-DAQmx analog outputs."""
@@ -37,6 +46,16 @@ class NIDAQAnalogOutput(MultiChannelDAC):
     async def read(self, channel: str) -> float:  # type: ignore[override]
         """Return the cached analog output setpoint in volts."""
         return self.hw_device.read_dac(channel)
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return OFFLINE if the NI-DAQmx analog output task failed to initialise, UNKNOWN otherwise.
+
+        The DAC task existing confirms initialisation succeeded, but there is no
+        live hardware probe to confirm the physical device is still responding.
+        """
+        if self.hw_device._dac_task is None:
+            return ReachabilityStatus.OFFLINE
+        return ReachabilityStatus.UNKNOWN
 
     async def set(self, channel: str = "1", value: str = "0 V") -> bool:  # type: ignore[override]
         """Set one analog output channel."""

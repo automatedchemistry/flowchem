@@ -3,6 +3,7 @@
 from pydantic import BaseModel
 
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -37,3 +38,12 @@ class IRControl(FlowchemComponent):
     async def stop(self):
         """Stop acquisition and exit gracefully."""
         ...
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Not implemented at the base IR class level.
+
+        The IRControl base class has no device-independent read-only probe.
+        Subclasses backed by a real instrument (e.g. IcIRControl) should
+        override this with a device-specific connectivity check.
+        """
+        return ReachabilityStatus.UNKNOWN

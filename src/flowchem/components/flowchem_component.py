@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from loguru import logger
 
 from flowchem.components.component_info import ComponentInfo
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -73,6 +74,8 @@ class FlowchemComponent:
             response_model=ComponentInfo,
         )
 
+        self.add_api_route("/is-reachable", self.is_reachable, methods=["GET"])
+
     @property
     def router(self):
         """
@@ -117,3 +120,13 @@ class FlowchemComponent:
             Metadata about the component.
         """
         return self.component_info
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Check whether the device is reachable and operational.
+
+        Subclasses should override this with the most appropriate read-only probe
+        for their hardware (e.g. reading a channel state, querying a position).
+        Returns UNKNOWN by default so components without a probe do not falsely
+        report the device as offline.
+        """
+        return ReachabilityStatus.UNKNOWN

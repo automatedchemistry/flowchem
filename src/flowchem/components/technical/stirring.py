@@ -9,6 +9,7 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -85,3 +86,11 @@ class StirringControl(FlowchemComponent):
     async def is_on(self) -> bool:  # type: ignore
         """Return whether stirring is active."""
         ...
+
+    async def is_reachable(self) -> ReachabilityStatus:
+        """Return ONLINE if the stirring controller responds to a speed query."""
+        try:
+            await self.get_speed()
+            return ReachabilityStatus.ONLINE
+        except Exception:
+            return ReachabilityStatus.OFFLINE
