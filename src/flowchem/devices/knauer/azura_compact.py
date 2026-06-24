@@ -463,12 +463,6 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
 
 
 if __name__ == "__main__":
-    # This is a bug of asyncio on Windows :|
-    import sys
-
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
     p = AzuraCompact(ip_address="192.168.1.119")
 
     async def main(pump: AzuraCompact):

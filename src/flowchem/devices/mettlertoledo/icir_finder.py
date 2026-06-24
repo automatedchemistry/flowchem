@@ -1,7 +1,6 @@
 """Autodiscover iCIR opcua server locally."""
 
 import asyncio
-import sys
 from textwrap import dedent
 
 from loguru import logger
@@ -40,10 +39,6 @@ async def generate_icir_config() -> str:
 
 def icir_finder():
     """Attempt connection on local iCIR instance."""
-    # This is a bug of asyncio on Windows :|
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
     try:
         return [asyncio.run(generate_icir_config())]
     except OSError:

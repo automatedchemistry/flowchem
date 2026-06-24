@@ -3,7 +3,6 @@
 import asyncio
 import queue
 import socket
-import sys
 from textwrap import dedent
 
 import ifaddr
@@ -197,10 +196,6 @@ def autodiscover_knauer(network: str = "") -> dict[str, str]:
 
 def knauer_finder(source_ip: str = ""):
     """Execute autodiscovery. This is the entry point of the `knauer-finder` CLI command."""
-    # This is a bug of asyncio on Windows :|
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
     # Autodiscover devices (returns dict with MAC as index, IP as value)
     devices = autodiscover_knauer(source_ip)
     dev_config = set()

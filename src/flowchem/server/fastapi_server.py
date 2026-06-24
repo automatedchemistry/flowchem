@@ -1,11 +1,12 @@
 """FastAPI server for devices control."""
 
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable
+from contextlib import asynccontextmanager
 from importlib.metadata import metadata, version
+from typing import Any
 
 from fastapi import APIRouter, FastAPI
 from loguru import logger
-from typing import Any
 from starlette.responses import RedirectResponse
 
 from flowchem.components.device_info import DeviceInfo
@@ -17,6 +18,14 @@ class FastAPIServer:
     def __init__(
         self, filename: str = "", host: str = "127.0.0.1", port: int = 8000
     ) -> None:
+        self._startup_tasks: list = []
+
+        @asynccontextmanager
+        async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+            for task in self._startup_tasks:
+                await task()
+            yield
+
         # Create FastAPI app
         self.app = FastAPI(
             title=f"Flowchem - {filename}",
@@ -26,6 +35,7 @@ class FastAPIServer:
                 "name": "MIT License",
                 "url": "https://opensource.org/licenses/MIT",
             },
+            lifespan=lifespan,
         )
         self.base_url = rf"http://{host}:{port}"
         self.configuration_dict: dict[str, Any] = {}
@@ -75,11 +85,12 @@ class FastAPIServer:
 
         for seconds_delay, task in repeated_tasks:
             # `t=task` captures the current task by value, not by reference.
-            @self.app.on_event("startup")
             @repeat_every(seconds=seconds_delay)
             async def _repeated_task(t=task):
                 logger.debug("Running repeated task...")
                 await t()
+
+            self._startup_tasks.append(_repeated_task)
 
     def add_device(self, device):
         """Add device to server."""
