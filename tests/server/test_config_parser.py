@@ -2,7 +2,7 @@ from io import BytesIO
 from textwrap import dedent
 
 import pytest
-from flowchem_test.fakedevice import FakeDevice
+from flowchem.devices.fakedevice import FakeDevice
 
 from flowchem.server.configuration_parser import (
     parse_config,

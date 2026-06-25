@@ -40,6 +40,7 @@ from flowchem.devices.hamilton.ml600 import (
     HamiltonPumpIO,
     ML600,
     PUMP_ADDRESS,
+    Protocol1Command,
 )
 from flowchem.utils.exceptions import InvalidConfigurationError
 
@@ -206,7 +207,12 @@ class SimulatedHamiltonPumpIO(HamiltonPumpIO):
     # Normal command path (used by write_and_read_reply_async)
     # ------------------------------------------------------------------
 
-    async def write_and_read_reply_async(self, command) -> str:
+    async def write_and_read_reply_async(
+        self,
+        command: Protocol1Command,
+        retries: int = 3,
+        retry_delay: float = 0.2,
+    ) -> str:
         """Parse the compiled command string and return a simulated ACK reply."""
         async with self._serial_lock:
             compiled = f"{command.compile()}\r"
@@ -215,7 +221,12 @@ class SimulatedHamiltonPumpIO(HamiltonPumpIO):
             logger.debug(f"[SIM] → {response!r}")
             return self._parse_response(response)
 
-    async def multiple_write_and_read_reply_async(self, command) -> str:
+    async def multiple_write_and_read_reply_async(
+        self,
+        command: list[Protocol1Command] | Protocol1Command,
+        retries: int = 3,
+        retry_delay: float = 0.2,
+    ) -> str:
         """Handle compound (dual-syringe) commands — parse each sub-command."""
         async with self._serial_lock:
             if not isinstance(command, list):

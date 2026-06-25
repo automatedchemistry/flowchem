@@ -12,13 +12,13 @@ def test_get_all_flowchem_devices(flowchem_test_instance):
 
     test_device = dev_dict["test-device"]
     assert isinstance(test_device, FlowchemDeviceClient)
-    assert len(test_device.components) == 1
+    assert len(test_device.components) == 2
 
-    test_component = test_device["test-component"]
-    assert test_component is dev_dict["test-device"]["test-component"]
+    test_component = test_device["FakeSpecificComponent"]
+    assert test_component is dev_dict["test-device"]["FakeSpecificComponent"]
     assert isinstance(test_component, FlowchemComponentClient)
-    assert test_component.component_info.name == "test-component"
-    assert test_component.get("test").text == "true"
+    assert test_component.component_info.name == "FakeSpecificComponent"
+    assert test_component.get("fake_receive_data").json() == 0.5
 
 
 async def test_async_get_all_flowchem_devices(flowchem_test_instance):

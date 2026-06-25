@@ -92,7 +92,12 @@ class TemperatureControl(FlowchemComponent):
             return ReachabilityStatus.ONLINE
         except Exception:
             return ReachabilityStatus.OFFLINE
-    
+
     async def get_temperature_setpoint(self) -> float:
         """Return temperature in Celsius."""
-        return NotImplemented
+        logger.error(
+            "Temperature setpoint endpoint is not implemented for component '{}' on device '{}'",
+            self.name,
+            self.hw_device.name,
+        )
+        return -1

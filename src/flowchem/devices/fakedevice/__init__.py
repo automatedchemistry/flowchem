@@ -1,3 +1,5 @@
 from .fakedevice import FakeDeviceExample
 
-__all__ = ["FakeDeviceExample"]
+FakeDevice = FakeDeviceExample
+
+__all__ = ["FakeDevice", "FakeDeviceExample"]

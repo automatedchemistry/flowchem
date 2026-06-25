@@ -10,11 +10,11 @@ def test_read_main(flowchem_test_instance):
     assert "Flowchem" in response.text
 
     response = requests.get(
-        r"http://127.0.0.1:8000/test-device/test-component/test",
+        r"http://127.0.0.1:8000/test-device/FakeSpecificComponent/fake_receive_data",
         timeout=5,
     )
     assert response.status_code == OK
-    assert response.text == "true"
+    assert response.json() == 0.5
 
     response = requests.get(r"http://127.0.0.1:8000/test-device2", timeout=5)
     assert response.status_code == NOT_FOUND
