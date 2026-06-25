@@ -12,6 +12,7 @@ from .magritek import *
 from .manson import *
 from .mettlertoledo import *
 from .ni import *
+from .oceanoptics import *
 from .phidgets import *
 from .trinamic import *
 from .vacuubrand import *
