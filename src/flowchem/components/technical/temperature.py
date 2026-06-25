@@ -37,6 +37,10 @@ class TemperatureControl(FlowchemComponent):
 
         self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
 
+        self.add_api_route(
+            "/temperature-setpoint", self.get_temperature_setpoint, methods=["GET"]
+        )
+
         self._limits = temp_limits
 
     async def set_temperature(self, temp: str) -> pint.Quantity | bool:
@@ -88,3 +92,7 @@ class TemperatureControl(FlowchemComponent):
             return ReachabilityStatus.ONLINE
         except Exception:
             return ReachabilityStatus.OFFLINE
+    
+    async def get_temperature_setpoint(self) -> float:
+        """Return temperature in Celsius."""
+        return NotImplemented

@@ -61,9 +61,6 @@ class HeiConnectTemperatureControl(TemperatureControl):
                 max=ureg.Quantity("300 degC"),
             ),
         )
-        self.add_api_route(
-            "/temperature-setpoint", self.get_temperature_setpoint, methods=["GET"]
-        )
         self.add_api_route("/heating-mode", self.get_heating_mode, methods=["GET"])
         self.add_api_route("/heating-mode", self.set_heating_mode, methods=["PUT"])
         self.add_api_route(
