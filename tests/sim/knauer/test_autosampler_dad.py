@@ -136,6 +136,18 @@ class TestKnauerAutosamplerSim:
         result = await gantry.set_needle_position("WASH")
         assert result is True
 
+    async def test_gantry_connect_to_predefined_position(self, gantry):
+        result = await gantry.connect_to_position(tray="WASH")
+        assert result is True
+
+    async def test_gantry_get_tray_temperature(self, gantry):
+        result = await gantry.get_tray_temperature()
+        assert result.isdigit()
+
+    async def test_gantry_compressor(self, gantry):
+        result = await gantry.compressor("on")
+        assert result is True
+
     async def test_pump_infuse(self, as_pump):
         result = await as_pump.infuse(volume="0.1 mL")
         assert result is True

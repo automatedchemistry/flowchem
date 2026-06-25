@@ -154,45 +154,144 @@ def send_until_acknowledged(max_reaction_time=15):
 class ASEthernetDevice:
     TCP_PORT = 2101
     BUFFER_SIZE = 1024
+    # The Knauer AS exposes a single TCP server on port 2101 and is opened/closed
+    # once per command. It transiently (a) refuses the connect (WinError 10061) and
+    # (b) resets on close (WinError 10054). These constants tune how hard we retry
+    # the *connect* before giving up. Retrying the connect is side-effect free: no
+    # command bytes have been sent yet, so nothing can ever be executed twice.
+    CONNECT_RETRIES = 10
+    CONNECT_RETRY_DELAY = 1.0  # seconds between connect attempts
+    CONNECT_TIMEOUT = 5.0  # seconds to wait for each connect attempt
+    # How many times to re-issue a full command exchange when the AS resets the
+    # connection mid-transfer (WinError 10054 raised from read). Re-issuing is safe
+    # for idempotent commands (all queries, needle/valve/tray moves); it is
+    # suppressed for non-idempotent ones (aspirate/dispense) once bytes were sent.
+    COMMAND_RETRIES = 5
+    COMMAND_RETRY_DELAY = 0.3  # seconds between command re-issues
 
     def __init__(self, ip_address, buffersize=None, tcp_port=None):
         self.ip_address = str(ip_address)
         self.port = tcp_port if tcp_port else ASEthernetDevice.TCP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
 
-    async def _send_and_receive(self, message: str):
-        try:
-            # Open a connection
-            reader, writer = await asyncio.open_connection(self.ip_address, self.port)
-            # Send the message
-            writer.write(message.encode())
-            await writer.drain()
+    async def _open_connection_with_retry(self):
+        """Open the TCP connection, retrying the transient connect failures the AS
+        produces on its port (ConnectionRefusedError / reset / timeout). Retried
+        BEFORE any command bytes are sent, so it is side-effect free. Raises
+        ConnectionError only after all attempts are exhausted."""
+        last_exc: Exception | None = None
+        for attempt in range(1, ASEthernetDevice.CONNECT_RETRIES + 1):
+            try:
+                return await asyncio.wait_for(
+                    asyncio.open_connection(self.ip_address, self.port),
+                    timeout=ASEthernetDevice.CONNECT_TIMEOUT,
+                )
+            except (
+                ConnectionRefusedError,
+                ConnectionResetError,
+                OSError,
+                asyncio.TimeoutError,
+            ) as exc:
+                last_exc = exc
+                if attempt < ASEthernetDevice.CONNECT_RETRIES:
+                    logger.warning(
+                        f"AS connect attempt {attempt}/{ASEthernetDevice.CONNECT_RETRIES} "
+                        f"to {self.ip_address}:{self.port} failed ({exc!r}); retrying in "
+                        f"{ASEthernetDevice.CONNECT_RETRY_DELAY}s"
+                    )
+                    await asyncio.sleep(ASEthernetDevice.CONNECT_RETRY_DELAY)
+        logger.error(
+            f"No connection possible to device with IP {self.ip_address}:{self.port} "
+            f"after {ASEthernetDevice.CONNECT_RETRIES} attempts"
+        )
+        raise ConnectionError(
+            f"No Connection possible to device with IP address {self.ip_address}"
+        ) from last_exc
 
-            # Receive the reply in chunks
-            reply = b""
-            while True:
-                chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
-                if not chunk:
-                    break
-                reply += chunk
-                try:
-                    CommunicationFlags(chunk)  # type: ignore
-                    break
-                except ValueError:
-                    pass
-                if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
-                    break
+    async def _send_and_receive(self, message: str, idempotent: bool = True):
+        """Open a connection, send ``message``, read the reply, close.
 
-            writer.close()
-            await writer.wait_closed()  # Close the connection
+        Resilient to the two transient TCP faults the AS produces:
+          * connect refused (WinError 10061) -> retried before sending (always safe);
+          * connection reset mid-read (WinError 10054) -> the whole exchange is
+            re-issued, but ONLY when ``idempotent`` is True. For non-idempotent
+            commands (aspirate/dispense) a reset that happens *after* the bytes were
+            sent is surfaced instead of re-sent, to avoid double-execution.
+        The teardown reset (on close) is avoided entirely by not awaiting
+        ``wait_closed()``.
+        """
+        last_exc: Exception | None = None
+        for attempt in range(1, ASEthernetDevice.COMMAND_RETRIES + 1):
+            writer = None
+            sent = False
+            try:
+                # Connect with retry tolerance (safe: no command bytes sent yet).
+                reader, writer = await self._open_connection_with_retry()
+                # Send the message
+                writer.write(message.encode())
+                await writer.drain()
+                sent = True
 
-            return reply
+                # Receive the reply in chunks
+                reply = b""
+                complete = False
+                while True:
+                    chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
+                    if not chunk:
+                        break
+                    reply += chunk
+                    try:
+                        CommunicationFlags(chunk)  # type: ignore
+                        complete = True
+                        break
+                    except ValueError:
+                        pass
+                    if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
+                        complete = True
+                        break
 
-        except asyncio.TimeoutError:
-            logger.error(f"No connection possible to device with IP {self.ip_address}")
-            raise ConnectionError(
-                f"No Connection possible to device with IP address {self.ip_address}"
-            )
+                # The AS sometimes closes the connection cleanly before sending a full
+                # frame, leaving an empty or truncated reply. That is NOT a socket error
+                # (read() just returns b"" at EOF), so it bypasses the except-handler retry
+                # below and would otherwise reach _parse_*_reply, which rejects the bad
+                # frame with CommunicationError -> 500 that kills the experiment thread.
+                # Treat an unterminated reply as the same transient fault as a mid-read
+                # reset and re-issue the exchange (safe for idempotent commands).
+                if not complete:
+                    raise ConnectionResetError(
+                        f"AS closed connection with incomplete reply {reply!r}"
+                    )
+
+                return reply
+            except (ConnectionResetError, ConnectionError, OSError) as exc:
+                last_exc = exc
+                # The command was already transmitted and is NOT safe to repeat
+                # (aspirate/dispense) -> surface rather than risk double-execution.
+                if sent and not idempotent:
+                    raise
+                if attempt < ASEthernetDevice.COMMAND_RETRIES:
+                    logger.warning(
+                        f"AS command exchange attempt {attempt}/{ASEthernetDevice.COMMAND_RETRIES} "
+                        f"to {self.ip_address}:{self.port} reset mid-transfer ({exc!r}); "
+                        f"retrying in {ASEthernetDevice.COMMAND_RETRY_DELAY}s"
+                    )
+                    await asyncio.sleep(ASEthernetDevice.COMMAND_RETRY_DELAY)
+            finally:
+                if writer is not None:
+                    # Close the socket but DO NOT `await writer.wait_closed()`. The AS
+                    # resets on close (WinError 10054); on the Windows selector loop that
+                    # reset is raised from the loop's read callback during teardown and is
+                    # NOT reliably catchable here. close() alone is enough -- the OS tears
+                    # the socket down, and any teardown reset stays a background log line.
+                    writer.close()
+        logger.error(
+            f"No reply from device with IP {self.ip_address}:{self.port} after "
+            f"{ASEthernetDevice.COMMAND_RETRIES} attempts"
+        )
+        raise ConnectionError(
+            f"No reply possible from device with IP address {self.ip_address} "
+            f"after {ASEthernetDevice.COMMAND_RETRIES} attempts"
+        ) from last_exc
 
 
 class ASSerialDevice:
@@ -220,8 +319,13 @@ class ASSerialDevice:
             ) from serial_exception
         self._lock = asyncio.Lock()
 
-    async def _send_and_receive(self, message: str) -> bytes:
-        """Send and receive messages over Serial communication."""
+    async def _send_and_receive(self, message: str, idempotent: bool = True) -> bytes:
+        """Send and receive messages over Serial communication.
+
+        ``idempotent`` is accepted for signature parity with the Ethernet device
+        (which uses it to decide whether a reset command may be re-sent); serial
+        communication has no TCP reset semantics, so it is ignored here.
+        """
         async with self._lock:
             self._serial.reset_input_buffer()
             logger.debug(f"Sending message to Serial: {message}")
@@ -400,15 +504,18 @@ class KnauerAutosampler(FlowchemDevice):
         return f"{CommunicationFlags.MESSAGE_START.value.decode()}{self.autosampler_id}{ADDITIONAL_INFO}{communication_string}{CommunicationFlags.MESSAGE_END.value.decode()}"  # type: ignore
 
     @send_until_acknowledged(max_reaction_time=10)
-    async def _set(self, message: str):
+    async def _set(self, message: str, idempotent: bool = True):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
         :param message:
+        :param idempotent: whether re-sending the command on a mid-transfer
+            connection reset is safe. True for moves/valve switches (default);
+            pass False for non-idempotent commands such as aspirate/dispense.
         :return: reply: str
         """
 
-        reply = await self.io._send_and_receive(message)
+        reply = await self.io._send_and_receive(message, idempotent=idempotent)
         # this only checks that it was acknowledged
         await self._parse_setting_reply(reply)
         return True
@@ -643,7 +750,8 @@ class KnauerAutosampler(FlowchemDevice):
             )
         volume = int(round(volume, 3) * 1000)
         command_string = await self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)  # type: ignore
-        return await self._set(command_string)
+        # Non-idempotent: never auto-resend on a mid-transfer reset (double-aspirate).
+        return await self._set(command_string, idempotent=False)
 
     async def dispense(self, volume, flow_rate=None):
         """
@@ -662,7 +770,8 @@ class KnauerAutosampler(FlowchemDevice):
             )
         volume = int(round(volume, 3) * 1000)
         command_string = await self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)  # type: ignore
-        return await self._set(command_string)
+        # Non-idempotent: never auto-resend on a mid-transfer reset (double-dispense).
+        return await self._set(command_string, idempotent=False)
 
     async def _move_tray(self, tray_type: str, sample_position: str | int):
         command_string = await self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)  # type: ignore
@@ -681,7 +790,19 @@ class KnauerAutosampler(FlowchemDevice):
         command_string = await self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         reply = str(await self._query(command_string))
         reply = (3 - len(reply)) * "0" + reply
-        return ASStatus(reply).name  # type: ignore
+        try:
+            return ASStatus(reply).name  # type: ignore
+        except ValueError:
+            # The AS returned a status code that is not in the ASStatus enum (there
+            # are gaps in the documented codes). Returning the raw code instead of
+            # raising keeps a single odd status poll from becoming a 500 that kills
+            # the experiment thread. Callers compare against named states (e.g.
+            # "NEEDLE_RUNNING"), so an unmapped code simply reads as "not that state".
+            logger.warning(
+                f"AS returned status code {reply!r} not in ASStatus enum; "
+                f"returning raw code instead of raising."
+            )
+            return reply
 
     async def set_needle_vertical_offset(self, offset: float | int | None = None):
         return await self._set_get_value(VerticalNeedleOffsetCommand, offset)  # type: ignore
