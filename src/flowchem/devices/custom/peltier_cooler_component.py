@@ -14,13 +14,6 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
 
     hw_device: PeltierCooler  # for typing's sake
 
-    def __init__(
-        self, name: str, hw_device: PeltierCooler, temp_limits: TempRange
-    ) -> None:
-        """Create a TemperatureControl object."""
-        super().__init__(name, hw_device, temp_limits)
-        self.add_api_route("/set_temperature", self.get_set_temperature, methods=["GET"])
-
     async def set_temperature(self, temperature: str):
         """Set the target temperature to the given string in "magnitude and unit" format."""
         set_t = await super().set_temperature(temperature)
@@ -41,7 +34,7 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
         else:
             return False
 
-    async def get_set_temperature(self) -> float:
+    async def get_temperature_setpoint(self) -> float:
         """Return the current set temperature from the Peltier parameter list."""
         params = await self.hw_device.get_parameters()
         values = params.split(",")
