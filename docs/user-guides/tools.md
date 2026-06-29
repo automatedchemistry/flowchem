@@ -2,6 +2,31 @@
 
 There are additional tools in flowchem to help users create the configuration file and utilize the API server.
 
+## Flowchem-qt
+
+`flowchem-qt` is a desktop application that provides a graphical interface for managing the FlowChem server. It bundles four main features into a single window:
+
+- **Config editor** — load, edit, and save the `config.toml` file without leaving the app.
+- **Server control** — start and stop the FlowChem server, choose the bind address, and open the interactive API browser.
+- **Autodiscover** — run `flowchem-autodiscover` and stream the output directly into the config editor.
+- **Logs** — live log viewer that streams server output in real time.
+
+The application can also run in the system tray, keeping the server alive in the background when the main window is closed.
+
+Install it with:
+
+```shell
+pip install flowchem-qt
+```
+
+Then launch with:
+
+```shell
+flowchem-qt
+```
+
+For a full description of all controls and options, see the [flowchem-qt README](https://github.com/automatedchemistry/flowchem-qt#readme).
+
 ## Autodiscover
 
 Some devices implemented in flowchem can be discovered using the autodiscover function present in flowchem. To activate
