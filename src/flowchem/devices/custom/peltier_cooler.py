@@ -338,7 +338,7 @@ class PeltierTubeReactor(PeltierDefaults):
     BASE_TEMP = -10
     state_dependent_data: List[List[float]] = [
         [-50, -45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 5, 10, 15, 20],
-        [14, 13, 11, 9, 8, 7, 6, 5, 4, 2, 1, 0, 0, 0, 0],  # before [12, 11, 10, 9, 8, 7, 6, 5, 4, 2, 1, 0, 0, 0, 0],
+        [14, 13, 12, 10, 8, 7, 6, 5, 4, 2, 1, 0, 0, 0, 0],  # before [12, 11, 10, 9, 8, 7, 6, 5, 4, 2, 1, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1.5, 2, 3, 4, 4, 4],
     ]
     STATE_DEPENDANT_CURRENT_LIMITS = np.array(
