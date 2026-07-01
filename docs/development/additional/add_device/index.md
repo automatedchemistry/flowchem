@@ -17,6 +17,8 @@ barebone device type called FakeDevice for use in tests.
 
 [add device real example](example_explained.md)
 
+If you want to use an AI agent to assist you in adding a device, ask it to read the [add-device skill](add_device_skill.md).
+
 ```{toctree}
 :maxdepth: 2
 :hidden:
