@@ -8,12 +8,20 @@ if TYPE_CHECKING:
 
 
 class GeneralSensor(PhotoSensor):
+    hw_device: "FlameOptical"  # just for typing
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/get-wavelength", self.get_wavelength, methods=["GET"])
-        self.add_api_route("/set-integration-time", self.set_integration_time, methods=["PUT"])
-        self.add_api_route("/get-scans-to-average", self.get_scans_to_average, methods=["GET"])
-        self.add_api_route("/set-scans-to-average", self.set_scans_to_average, methods=["PUT"])
+        self.add_api_route(
+            "/set-integration-time", self.set_integration_time, methods=["PUT"]
+        )
+        self.add_api_route(
+            "/get-scans-to-average", self.get_scans_to_average, methods=["GET"]
+        )
+        self.add_api_route(
+            "/set-scans-to-average", self.set_scans_to_average, methods=["PUT"]
+        )
         self.add_api_route("/get-trigger-mode", self.get_trigger_mode, methods=["GET"])
         self.add_api_route("/set-trigger-mode", self.set_trigger_mode, methods=["PUT"])
 
@@ -41,8 +49,8 @@ class GeneralSensor(PhotoSensor):
     async def set_trigger_mode(self, mode: int):
         return await self.hw_device.set_trigger_mode(mode)
 
-    async def power_on(self) -> str:
+    async def power_on(self):
         return await self.hw_device.power_on()
 
-    async def power_off(self) -> str:
+    async def power_off(self):
         return await self.hw_device.power_off()

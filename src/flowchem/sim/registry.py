@@ -81,6 +81,8 @@ _REGISTRY: dict[str, str] = {
     # Bio-Chem solenoid valves
     "BioChemSolenoidValve": "flowchem.sim.devices.biochem.solenoid_sim.BioChemSolenoidValveSim",
     "BioChemSolenoid2WayValve": "flowchem.sim.devices.biochem.solenoid_sim.BioChemSolenoid2WayValveSim",
+    # Ocean Optics
+    "FlameOptical": "flowchem.sim.devices.oceanoptics.flame_sim.FlameOpticalSim",
 }
 
 

@@ -57,6 +57,7 @@ SAMPLE_QUERY_VALUES: dict[str, object] = {
     "sample": "smoke-sample",
     "sample-name": "smoke-sample",
     "sample_name": "smoke-sample",
+    "scans": 5,
     "solvent": "CDCL3",
     "speed": "100 rpm",
     "switch_to_low_after": "1 s",
@@ -187,6 +188,8 @@ def operation_params(
         local_values["position"] = "a"
     elif path.endswith("/set_z_position"):
         local_values["position"] = "UP"
+    elif path.endswith("/set-trigger-mode"):
+        local_values["mode"] = 0
 
     for parameter in spec.get("parameters", []):
         name = parameter["name"]

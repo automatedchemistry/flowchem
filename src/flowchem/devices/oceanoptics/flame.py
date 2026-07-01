@@ -12,12 +12,20 @@ import sys
 import sysconfig
 
 import numpy as np
-import seabreeze
 from loguru import logger
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.oceanoptics.flame_spectrometer import GeneralSensor
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import wei_hsin
+
+try:
+    import seabreeze
+
+    HAS_SEABREEZE = True
+except ImportError:
+    seabreeze = None  # type: ignore[assignment]
+    HAS_SEABREEZE = False
 
 
 def _configure_libusb_for_windows() -> None:
@@ -66,7 +74,9 @@ def _select_backend(requested: str | None) -> str:
             return backend_name
         except Exception as exc:  # pragma: no cover - environment-specific
             last_error = exc
-            logger.warning(f"Failed to activate seabreeze backend '{backend_name}': {exc}")
+            logger.warning(
+                f"Failed to activate seabreeze backend '{backend_name}': {exc}"
+            )
 
     raise RuntimeError(
         "No usable seabreeze backend found for Ocean Optics. "
@@ -91,6 +101,10 @@ class FlameOptical(FlowchemDevice):
         backend: str | None = None,
         name: str = "",
     ) -> None:
+        if not HAS_SEABREEZE:
+            raise InvalidConfigurationError(
+                "Ocean Optics unusable: seabreeze package not installed."
+            )
         self.serial_n = serial_number
         self.backend = _select_backend(backend)
         self.scans_to_average = 1
@@ -115,7 +129,9 @@ class FlameOptical(FlowchemDevice):
         self.model: str = self.spectrometer.model
         self.max_intensity: float = self.spectrometer.max_intensity
         self.pixels: int = self.spectrometer.pixels
-        self.integration_time_micros_limits: tuple = self.spectrometer.integration_time_micros_limits
+        self.integration_time_micros_limits: tuple = (
+            self.spectrometer.integration_time_micros_limits
+        )
         self.wavelengths = self.spectrometer.wavelengths()
 
     async def initialize(self):
@@ -142,9 +158,11 @@ class FlameOptical(FlowchemDevice):
             return self.spectrometer.intensities().tolist()
 
         samples = [self.spectrometer.intensities() for _ in range(scans)]
-        return np.mean(samples, axis=0).tolist()
+        return list(np.mean(np.array(samples, dtype=float), axis=0).tolist())
 
-    async def get_intensity(self, absolute: bool = False, scans_to_average: int | None = None):
+    async def get_intensity(
+        self, absolute: bool = False, scans_to_average: int | None = None
+    ):
         intensities = self._read_raw_intensities(scans_to_average)
         if absolute:
             return intensities
@@ -158,10 +176,14 @@ class FlameOptical(FlowchemDevice):
         if low <= int_time <= high:
             self.spectrometer.integration_time_micros(int_time)
         elif int_time < low:
-            logger.warning("Requested integration time below device limit; using minimum value instead.")
+            logger.warning(
+                "Requested integration time below device limit; using minimum value instead."
+            )
             self.spectrometer.integration_time_micros(low)
         else:
-            logger.warning("Requested integration time above device limit; using maximum value instead.")
+            logger.warning(
+                "Requested integration time above device limit; using maximum value instead."
+            )
             self.spectrometer.integration_time_micros(high)
 
     async def set_scans_to_average(self, scans: int):
@@ -179,7 +201,9 @@ class FlameOptical(FlowchemDevice):
         try:
             self.spectrometer.trigger_mode(mode)
         except AttributeError as exc:
-            raise RuntimeError("This Ocean Optics device/backend does not support trigger mode control.") from exc
+            raise RuntimeError(
+                "This Ocean Optics device/backend does not support trigger mode control."
+            ) from exc
         self.trigger_mode_value = mode
         return self.trigger_mode_value
 
