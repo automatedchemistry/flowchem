@@ -52,6 +52,7 @@ class AutosamplerGantry3D(Gantry3D):
             "/tray_temperature", self.get_tray_temperature, methods=["GET"]
         )
         self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
+        self.add_api_route("/tray_position", self.tray_position, methods=["PUT"])
         self.add_api_route(
             "/connect_to_position", self.connect_to_position, methods=["PUT"]
         )
@@ -153,6 +154,23 @@ class AutosamplerGantry3D(Gantry3D):
             return True
         else:
             return False
+
+    async def tray_position(self, position: str = "") -> bool:
+        """
+        Move the tray to a predefined tray position.
+
+        position:
+            HOME
+            EXCHANGE_NEEDLE
+            TRAY_FRONT
+        """
+        if position is None or position == "":
+            raise ValueError("position must be provided")
+        success = await self.hw_device._move_tray("NO_PLATE", position)
+        if success:
+            logger.info(f"Tray moved successfully to position: {position}")
+            return True
+        return False
 
     async def set_z_position(self, position: int | float | str) -> bool:
         """

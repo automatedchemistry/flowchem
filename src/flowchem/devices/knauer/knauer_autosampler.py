@@ -39,6 +39,7 @@ import asyncio
 from typing import Type
 
 import functools
+import socket
 import time
 import pint
 from flowchem import ureg
@@ -143,7 +144,8 @@ def send_until_acknowledged(max_reaction_time=15):
                 except ASBusyError:
                     # If the device is busy, wait and retry
                     elapsed_time = time.time() - start_time
-                    remaining_time = 10 - elapsed_time
+                    remaining_time = max_reaction_time - elapsed_time
+                    await asyncio.sleep(0.4)
             raise ASError("Maximum reaction time exceeded")
 
         return wrapper
@@ -154,6 +156,10 @@ def send_until_acknowledged(max_reaction_time=15):
 class ASEthernetDevice:
     TCP_PORT = 2101
     BUFFER_SIZE = 1024
+    TIMEOUT = 2.0
+    POST_CONNECT_DELAY = 0.2
+    REQUEST_RETRIES = 3
+    RETRY_DELAY = 0.4
 
     def __init__(self, ip_address, buffersize=None, tcp_port=None):
         self.ip_address = str(ip_address)
@@ -161,38 +167,49 @@ class ASEthernetDevice:
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
 
     async def _send_and_receive(self, message: str):
+        return await asyncio.to_thread(self._send_and_receive_sync, message)
+
+    def _send_and_receive_sync(self, message: str):
+        last_reply = b""
         try:
-            # Open a connection
-            reader, writer = await asyncio.open_connection(self.ip_address, self.port)
-            # Send the message
-            writer.write(message.encode())
-            await writer.drain()
+            for attempt in range(ASEthernetDevice.REQUEST_RETRIES):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(ASEthernetDevice.TIMEOUT)
+                    sock.connect((self.ip_address, self.port))
+                    time.sleep(ASEthernetDevice.POST_CONNECT_DELAY)
+                    sock.sendall(message.encode("ascii"))
 
-            # Receive the reply in chunks
-            reply = b""
-            while True:
-                chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
-                if not chunk:
-                    break
-                reply += chunk
-                try:
-                    CommunicationFlags(chunk)  # type: ignore
-                    break
-                except ValueError:
-                    pass
-                if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
-                    break
+                    reply = b""
+                    while True:
+                        try:
+                            chunk = sock.recv(self.buffersize)
+                        except (socket.timeout, ConnectionResetError):
+                            break
+                        if not chunk:
+                            break
+                        reply += chunk
+                        try:
+                            CommunicationFlags(reply)  # type: ignore
+                            break
+                        except ValueError:
+                            pass
+                        if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
+                            break
 
-            writer.close()
-            await writer.wait_closed()  # Close the connection
+                    if reply:
+                        return reply
+                    last_reply = reply
 
-            return reply
+                if attempt < ASEthernetDevice.REQUEST_RETRIES - 1:
+                    time.sleep(ASEthernetDevice.RETRY_DELAY)
 
-        except asyncio.TimeoutError:
+            return last_reply
+
+        except (OSError, socket.timeout) as error:
             logger.error(f"No connection possible to device with IP {self.ip_address}")
             raise ConnectionError(
                 f"No Connection possible to device with IP address {self.ip_address}"
-            )
+            ) from error
 
 
 class ASSerialDevice:
@@ -281,6 +298,7 @@ class KnauerAutosampler(FlowchemDevice):
         port: str | None = None,
         _syringe_volume: str = "",
         tray_type: str = "",
+        initialize_hardware: bool = True,
         **kwargs,
     ):
         # Ensure only one communication mode is set
@@ -363,6 +381,7 @@ class KnauerAutosampler(FlowchemDevice):
         self.autosampler_id = autosampler_id
         self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
+        self.initialize_hardware = initialize_hardware
         self._syringe_volume = _syringe_volume_ if _syringe_volume_ else _syringe_volume
         self.device_info = DeviceInfo(
             authors=[jakob, miguel, samuel_saraiva],
@@ -442,6 +461,15 @@ class KnauerAutosampler(FlowchemDevice):
             )
 
     async def _parse_query_reply(self, reply) -> int:
+        if reply == CommunicationFlags.TRY_AGAIN.value:  # type: ignore
+            raise ASBusyError
+        if reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:  # type: ignore
+            raise CommandOrValueError
+        if reply == CommunicationFlags.ACKNOWLEDGE.value:  # type: ignore
+            raise ASError("Autosampler acknowledged query without returning a value")
+        if not reply:
+            raise CommunicationError("Autosampler did not return a reply")
+
         stx_end = ReplyStructure.STX_END.value  # type: ignore[name-defined]
         etx_start = ReplyStructure.ETX_START.value  # type: ignore[name-defined]
         id_end = ReplyStructure.ID_END.value  # type: ignore[name-defined]
@@ -511,15 +539,18 @@ class KnauerAutosampler(FlowchemDevice):
 
     async def initialize(self):
         """Sets initial positions."""
-        errors = await self.get_errors()
-        if errors:
-            logger.info(f"On init Error: {errors} was present")
-        await self.reset_errors()
-        # Sets initial positions of needle and valve
-        await self._move_needle_vertical(NeedleVerticalPositions.UP.name)  # type: ignore
-        await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)  # type: ignore
-        await self.syringe_valve_position(SyringeValvePositions.WASTE.name)  # type: ignore
-        await self.injector_valve_position(InjectorValvePositions.LOAD.name)  # type: ignore
+        if self.initialize_hardware:
+            errors = await self.get_errors()
+            if errors:
+                logger.info(f"On init Error: {errors} was present")
+            await self.reset_errors()
+            # Sets initial positions of needle and valve
+            await self._move_needle_vertical(NeedleVerticalPositions.UP.name)  # type: ignore
+            await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)  # type: ignore
+            await self.syringe_valve_position(SyringeValvePositions.WASTE.name)  # type: ignore
+            await self.injector_valve_position(InjectorValvePositions.LOAD.name)  # type: ignore
+        else:
+            logger.info("Skipping Knauer AutoSampler hardware initialization.")
 
         logger.info("Knauer AutoSampler device was successfully initialized!")
         self.components.extend(

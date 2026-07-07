@@ -42,7 +42,9 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     """
 
     def __init__(self, ip_address=None, mac_address=None, **kwargs) -> None:
-        super().__init__(ip_address, mac_address, **kwargs)
+        super().__init__(
+            ip_address, mac_address, persistent_connection=False, **kwargs
+        )
         self.eol = b"\r\n"
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],

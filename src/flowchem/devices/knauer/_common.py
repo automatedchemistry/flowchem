@@ -1,6 +1,8 @@
 """Module for communication with Knauer devices."""
 
 import asyncio
+import socket
+import time
 
 from loguru import logger
 
@@ -14,6 +16,9 @@ class KnauerEthernetDevice:
 
     TCP_PORT = 10001
     BUFFER_SIZE = 1024
+    TIMEOUT = 3.0
+    POST_CONNECT_DELAY = 0.2
+    POST_COMMAND_DELAY = 0.2
     _id_counter = 0
 
     def __init__(self, ip_address, mac_address, network="", **kwargs):
@@ -37,6 +42,7 @@ class KnauerEthernetDevice:
             self.ip_address = self._ip_from_mac(mac_address.lower(), network=network)
         else:
             self.ip_address = ip_address
+        self.persistent_connection = kwargs.get("persistent_connection", True)
 
         # These will be set in initialize()
         self._reader: asyncio.StreamReader = None  # type: ignore
@@ -64,6 +70,16 @@ class KnauerEthernetDevice:
 
     async def initialize(self):
         """Initialize connection."""
+        if not self.persistent_connection:
+            try:
+                await asyncio.to_thread(self._probe_connection)
+                return
+            except OSError as connection_error:
+                logger.exception(connection_error)
+                raise InvalidConfigurationError(
+                    f"Cannot open connection with device {self.__class__.__name__} at IP={self.ip_address}"
+                ) from connection_error
+
         # Future used to set shorter timeout than default
         future = asyncio.open_connection(host=self.ip_address, port=10001)
         try:
@@ -80,6 +96,9 @@ class KnauerEthernetDevice:
             ) from timeout_error
 
     async def _send_and_receive(self, message: str) -> str:
+        if not self.persistent_connection:
+            return await asyncio.to_thread(self._send_and_receive_once, message)
+
         async with self._lock:
             self._writer.write(message.encode("ascii") + self.eol)
             await self._writer.drain()
@@ -87,3 +106,33 @@ class KnauerEthernetDevice:
             reply = await self._reader.readuntil(separator=b"\r")
         logger.debug(f"READ <<< '{reply.decode().strip()}' ")
         return reply.decode("ascii").strip()
+
+    def _probe_connection(self) -> None:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(self.TIMEOUT)
+            sock.connect((self.ip_address, self.TCP_PORT))
+
+    def _send_and_receive_once(self, message: str) -> str:
+        logger.debug(f"WRITE >>> '{message}' ")
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(self.TIMEOUT)
+            sock.connect((self.ip_address, self.TCP_PORT))
+            time.sleep(self.POST_CONNECT_DELAY)
+            sock.sendall(message.encode("ascii") + self.eol)
+            time.sleep(self.POST_COMMAND_DELAY)
+
+            reply = b""
+            while True:
+                try:
+                    chunk = sock.recv(self.BUFFER_SIZE)
+                except socket.timeout:
+                    break
+                if not chunk:
+                    break
+                reply += chunk
+                if b"\r" in chunk:
+                    break
+
+        decoded_reply = reply.decode("ascii", errors="replace").strip()
+        logger.debug(f"READ <<< '{decoded_reply}' ")
+        return decoded_reply
