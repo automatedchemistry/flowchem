@@ -383,7 +383,7 @@ class ML600(FlowchemDevice):
     def _validate_syringe_volume(self, syringe_volume: str) -> pint.Quantity:
         """Parse a syringe volume string and check it against the valid sizes."""
         try:
-            volume = ureg.Quantity(syringe_volume)
+            volume: pint.Quantity = ureg.Quantity(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfigurationError(
