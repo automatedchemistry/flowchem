@@ -170,18 +170,19 @@ class ML600Pump(SyringePump):
         if not rate:
             rate = cast(str, self.hw_device.config["default_withdraw_rate"])
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
+        syringe_volume = self.hw_device.syringe_volume(self.pump_code)
         if volume is None:
-            target_vol = self.hw_device.syringe_volume
+            target_vol = syringe_volume
             logger.warning(
-                f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}"
+                f"the volume to withdraw is not provided. set to {syringe_volume}"
             )
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
             target_vol = current_volume + ureg.Quantity(volume)
-            if target_vol > self.hw_device.syringe_volume:
+            if target_vol > syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
-                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
+                    f"Max volume left is {syringe_volume - current_volume}!",
                 )
                 return False
 
@@ -190,7 +191,7 @@ class ML600Pump(SyringePump):
         )
         logger.info(
             "withdrawing is run. it will take "
-            f"{ureg.Quantity(volume if volume else self.hw_device.syringe_volume) / ureg.Quantity(rate)} to finish."
+            f"{ureg.Quantity(volume if volume else syringe_volume) / ureg.Quantity(rate)} to finish."
         )
         return await self.hw_device.get_pump_status(self.pump_code)
 
@@ -210,7 +211,9 @@ class ML600Pump(SyringePump):
         Initialize syringe on specified side only
         flowrate: ml/min
         """
-        speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(rate))
+        speed = self.hw_device._flowrate_to_seconds_per_stroke(
+            ureg.Quantity(rate), self.pump_code
+        )
         return await self.hw_device.initialize_syringe(
             speed=ureg.Quantity(speed), pump=self.pump_code
         )

@@ -333,6 +333,8 @@ class ML600(FlowchemDevice):
         syringe_volume: str,
         name: str,
         address: int = 1,
+        left_syringe_volume: str = "",
+        right_syringe_volume: str = "",
         **config,
     ) -> None:
         """Default constructor, needs an HamiltonPumpIO object. See from_config() for config-based init."""
@@ -346,8 +348,24 @@ class ML600(FlowchemDevice):
         ML600._io_instances.add(self.pump_io)
         self.address = int(address)
 
+        # The left ("B") and right ("C") drives can carry differently sized
+        # syringes; each side falls back to the shared syringe_volume when not
+        # given its own value.
+        self._syringe_volume: dict[str, pint.Quantity] = {
+            "B": self._validate_syringe_volume(left_syringe_volume or syringe_volume),
+            "C": self._validate_syringe_volume(right_syringe_volume or syringe_volume),
+        }
+        self._steps_per_ml: dict[str, pint.Quantity] = {
+            code: ureg.Quantity(f"{48000 / volume} step")
+            for code, volume in self._syringe_volume.items()
+        }
+        self.inspect_valve_argument(config)
+        self.dual_syringe = False
+
+    def _validate_syringe_volume(self, syringe_volume: str) -> pint.Quantity:
+        """Parse a syringe volume string and check it against the valid sizes."""
         try:
-            self.syringe_volume: pint.Quantity = ureg.Quantity(syringe_volume)
+            volume = ureg.Quantity(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfigurationError(
@@ -355,16 +373,20 @@ class ML600(FlowchemDevice):
                 "The syringe volume is a string with units, e.g. '5 ml'."
             ) from attribute_error
 
-        if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
+        if volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
             raise InvalidConfigurationError(
                 f"The specified syringe volume ({syringe_volume}) is invalid!\n"
                 f"The volume (in ml) has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
-        self._steps_per_ml: pint.Quantity = ureg.Quantity(
-            f"{48000 / self.syringe_volume} step"
-        )
-        self.inspect_valve_argument(config)
-        self.dual_syringe = False
+        return volume
+
+    def syringe_volume(self, pump: str = "") -> pint.Quantity:
+        """Syringe volume of the given drive ('B' left/single, 'C' right)."""
+        return self._syringe_volume[pump or "B"]
+
+    def _steps_per_ml_for(self, pump: str = "") -> pint.Quantity:
+        """Step-per-ml conversion factor of the given drive."""
+        return self._steps_per_ml[pump or "B"]
 
     def inspect_valve_argument(self, config: dict):
         if config.get("left_valve") and config.get("left_valve") not in ValveType:
@@ -392,13 +414,22 @@ class ML600(FlowchemDevice):
                 k: v
                 for k, v in config.items()
                 if k
-                not in ("syringe_volume", "address", "name", *cls.DEFAULT_CONFIG.keys())
+                not in (
+                    "syringe_volume",
+                    "left_syringe_volume",
+                    "right_syringe_volume",
+                    "address",
+                    "name",
+                    *cls.DEFAULT_CONFIG.keys(),
+                )
             }
             pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
         configuration = {k: config[k] for k in cls.DEFAULT_CONFIG.keys() if k in config}
         return cls(
             pumpio,
             syringe_volume=config.get("syringe_volume", ""),
+            left_syringe_volume=config.get("left_syringe_volume", ""),
+            right_syringe_volume=config.get("right_syringe_volume", ""),
             address=config.get("address", 1),
             name=config.get("name", ""),
             **configuration,
@@ -508,21 +539,23 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(init_syringe)
 
-    def _flowrate_to_seconds_per_stroke(self, flowrate: pint.Quantity) -> pint.Quantity:
+    def _flowrate_to_seconds_per_stroke(
+        self, flowrate: pint.Quantity, pump: str = ""
+    ) -> pint.Quantity:
         """Convert flow rate to seconds per stroke."""
-        flowrate_in_steps_sec = flowrate * self._steps_per_ml
+        flowrate_in_steps_sec = flowrate * self._steps_per_ml_for(pump)
         return (1 / flowrate_in_steps_sec).to("second/stroke")
 
     def _seconds_per_stroke_to_flowrate(
-        self, second_per_stroke: pint.Quantity
+        self, second_per_stroke: pint.Quantity, pump: str = ""
     ) -> pint.Quantity:
         """Convert seconds per stroke to flow rate."""
-        flowrate = 1 / (second_per_stroke * self._steps_per_ml)
+        flowrate = 1 / (second_per_stroke * self._steps_per_ml_for(pump))
         return flowrate.to("ml/min")
 
-    def _volume_to_step_position(self, volume: pint.Quantity) -> int:
+    def _volume_to_step_position(self, volume: pint.Quantity, pump: str = "") -> int:
         """Convert a volume to a step position."""
-        steps = volume * self._steps_per_ml
+        steps = volume * self._steps_per_ml_for(pump)
         return round(steps.m_as("steps"))
 
     async def get_current_volume(self, pump: str = "") -> pint.Quantity:
@@ -533,15 +566,15 @@ class ML600(FlowchemDevice):
             )
         )
         current_steps = int(syringe_pos) * ureg.step
-        return current_steps / self._steps_per_ml
+        return current_steps / self._steps_per_ml_for(pump)
 
     async def set_to_volume(
         self, target_volume: pint.Quantity, rate: pint.Quantity, pump: str = ""
     ):
         """Absolute move to target volume at the given rate."""
-        speed = self._flowrate_to_seconds_per_stroke(rate)
+        speed = self._flowrate_to_seconds_per_stroke(rate, pump)
         set_speed = self._validate_speed(speed)
-        position = self._volume_to_step_position(target_volume)
+        position = self._volume_to_step_position(target_volume, pump)
         logger.debug(
             f"Pump {self.name} set to volume {target_volume} at speed {set_speed}"
         )
@@ -847,12 +880,13 @@ class ML600(FlowchemDevice):
             )
 
         set_speed_right = self._validate_speed(
-            self._flowrate_to_seconds_per_stroke(rate_right)
+            self._flowrate_to_seconds_per_stroke(rate_right, "C")
         )
         set_speed_left = self._validate_speed(
-            self._flowrate_to_seconds_per_stroke(rate_left)
+            self._flowrate_to_seconds_per_stroke(rate_left, "B")
         )
-        position = self._volume_to_step_position(target_volume)
+        position_left = self._volume_to_step_position(target_volume, "B")
+        position_right = self._volume_to_step_position(target_volume, "C")
         logger.debug(
             f"Pumps {self.name} set to volume {target_volume} at speeds left: {set_speed_left}, right: {set_speed_right}"
         )
@@ -878,14 +912,14 @@ class ML600(FlowchemDevice):
                 Protocol1Command(
                     command=ML600Commands.ABSOLUTE_MOVE,
                     optional_parameter="S",
-                    command_value=str(position),
+                    command_value=str(position_left),
                     parameter_value=set_speed_left,
                     target_component="B",
                 ),
                 Protocol1Command(
                     command=ML600Commands.ABSOLUTE_MOVE,
                     optional_parameter="S",
-                    command_value=str(position),
+                    command_value=str(position_right),
                     parameter_value=set_speed_right,
                     target_component="C",
                 ),

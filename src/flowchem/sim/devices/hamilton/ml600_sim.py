@@ -434,6 +434,8 @@ class ML600Sim(ML600):
         """
         dual_syringe: bool = config.pop("dual_syringe", False)
         syringe_volume: str = config.pop("syringe_volume", "10 ml")
+        left_syringe_volume: str = config.pop("left_syringe_volume", "")
+        right_syringe_volume: str = config.pop("right_syringe_volume", "")
         address: int = int(config.pop("address", 1))
         name: str = config.pop("name", "sim-ml600")
         firmware_version: str = config.pop("firmware_version", "NV01.02.3")
@@ -455,6 +457,8 @@ class ML600Sim(ML600):
         instance = cls(
             pump_io=sim_io,
             syringe_volume=syringe_volume,
+            left_syringe_volume=left_syringe_volume,
+            right_syringe_volume=right_syringe_volume,
             name=name,
             address=address,
             **extra_config,
