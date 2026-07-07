@@ -41,8 +41,19 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     DIP switch for valve selection
     """
 
-    def __init__(self, ip_address=None, mac_address=None, **kwargs) -> None:
-        super().__init__(ip_address, mac_address, **kwargs)
+    def __init__(
+        self,
+        ip_address=None,
+        mac_address=None,
+        persistent_connection: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            ip_address,
+            mac_address,
+            persistent_connection=persistent_connection,
+            **kwargs,
+        )
         self.eol = b"\r\n"
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],

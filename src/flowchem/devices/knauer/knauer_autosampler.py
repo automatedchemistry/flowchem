@@ -143,7 +143,9 @@ def send_until_acknowledged(max_reaction_time=15):
                 except ASBusyError:
                     # If the device is busy, wait and retry
                     elapsed_time = time.time() - start_time
-                    remaining_time = 10 - elapsed_time
+                    remaining_time = max_reaction_time - elapsed_time
+                    if remaining_time > 0:
+                        await asyncio.sleep(0.4)
             raise ASError("Maximum reaction time exceeded")
 
         return wrapper
@@ -385,6 +387,7 @@ class KnauerAutosampler(FlowchemDevice):
         port: str | None = None,
         _syringe_volume: str = "",
         tray_type: str = "",
+        initialize_hardware: bool = True,
         **kwargs,
     ):
         # Ensure only one communication mode is set
@@ -467,6 +470,7 @@ class KnauerAutosampler(FlowchemDevice):
         self.autosampler_id = autosampler_id
         self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
+        self.initialize_hardware = initialize_hardware
         self._syringe_volume = _syringe_volume_ if _syringe_volume_ else _syringe_volume
         self.device_info = DeviceInfo(
             authors=[jakob, miguel, samuel_saraiva],
@@ -618,17 +622,21 @@ class KnauerAutosampler(FlowchemDevice):
 
     async def initialize(self):
         """Sets initial positions."""
-        errors = await self.get_errors()
-        if errors:
-            logger.info(f"On init Error: {errors} was present")
-        await self.reset_errors()
-        # Sets initial positions of needle and valve
-        await self._move_needle_vertical(NeedleVerticalPositions.UP.name)  # type: ignore
-        await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)  # type: ignore
-        await self.syringe_valve_position(SyringeValvePositions.WASTE.name)  # type: ignore
-        await self.injector_valve_position(InjectorValvePositions.LOAD.name)  # type: ignore
-
-        logger.info("Knauer AutoSampler device was successfully initialized!")
+        if self.initialize_hardware:
+            errors = await self.get_errors()
+            if errors:
+                logger.info(f"On init Error: {errors} was present")
+            await self.reset_errors()
+            # Sets initial positions of needle and valve
+            await self._move_needle_vertical(NeedleVerticalPositions.UP.name)  # type: ignore
+            await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)  # type: ignore
+            await self.syringe_valve_position(SyringeValvePositions.WASTE.name)  # type: ignore
+            await self.injector_valve_position(InjectorValvePositions.LOAD.name)  # type: ignore
+            logger.info("Knauer AutoSampler device was successfully initialized!")
+        else:
+            logger.info(
+                "Knauer AutoSampler hardware initialization skipped (initialize_hardware=False)."
+            )
         self.components.extend(
             [
                 AutosamplerGantry3D("gantry3D", self),
