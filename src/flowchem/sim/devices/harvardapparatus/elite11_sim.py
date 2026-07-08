@@ -137,6 +137,15 @@ class SimulatedHarvardApparatusPumpIO(HarvardApparatusPumpIO):
             # Status query
             return self._make_reply()
 
+        if c == "crate":
+            if self._sim_status is PumpStatus.INFUSING:
+                return self._make_reply(f"Infusing at {self._sim_flow_rate:.3f} ml/min")
+            if self._sim_status is PumpStatus.WITHDRAWING:
+                return self._make_reply(
+                    f"Withdrawing at {self._sim_withdraw_rate:.3f} ml/min"
+                )
+            return self._make_reply()
+
         if c == "metrics":
             lines = [
                 f"0{self._address}:  Pump type          Pump 11",

@@ -360,6 +360,29 @@ class Elite11(FlowchemDevice):
             parameter=f"{set_rate:.10f} m/m",
         )
 
+    async def get_current_flow_rate(self) -> float:
+        """Return the rate the motor is actually running at right now, in ml/min.
+
+        Queries "crate", which the manufacturer's manual documents as returning a valid
+        reply only in dynamic situations (i.e. while the pump is moving), with the reply
+        stating the direction, e.g. "Infusing at 1.000 ml/min" or "Withdrawing at 0.500 ml/min".
+        This is a genuine hardware readback of the currently active rate, unlike
+        `get_flow_rate()`/`get_withdrawing_flow_rate()` which only report the configured
+        setpoints for infuse/withdraw respectively.
+
+        Returns 0 if the pump is idle, positive while infusing, negative while withdrawing.
+        """
+        if not await self.is_moving():
+            return 0.0
+
+        reply = await self._send_command_and_read_reply("crate")
+        direction, _, value_str = reply.partition(" at ")
+        flowrate = ureg.Quantity(value_str)
+        signed_rate = flowrate.m_as("ml/min")
+        if direction.strip().lower().startswith("withdraw"):
+            signed_rate = -signed_rate
+        return signed_rate
+
     async def get_withdrawing_flow_rate(self) -> float:
         """Return the withdrawing flow rate as ml/min."""
         flow_value = await self._send_command_and_read_reply("wrate")
