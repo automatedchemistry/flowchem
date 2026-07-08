@@ -63,6 +63,7 @@ class AutosamplerGantry3D(Gantry3D):
         self.add_api_route(
             "/needle_vertical_offset", self.needle_vertical_offset, methods=["PUT"]
         )
+        self.add_api_route("/tray_position", self.tray_position, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -322,6 +323,23 @@ class AutosamplerGantry3D(Gantry3D):
             return ReachabilityStatus.ONLINE
         except Exception:
             return ReachabilityStatus.OFFLINE
+
+    async def tray_position(self, position: str = "") -> bool:
+        """
+        Move the tray to a predefined tray position.
+
+        position:
+            HOME
+            EXCHANGE_NEEDLE
+            TRAY_FRONT
+        """
+        if position is None or position == "":
+            raise ValueError("position must be provided")
+        success = await self.hw_device._move_tray("NO_PLATE", position)
+        if success:
+            logger.info(f"Tray moved successfully to position: {position}")
+            return True
+        return False
 
 
 class AutosamplerPump(SyringePump):

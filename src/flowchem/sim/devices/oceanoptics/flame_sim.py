@@ -67,7 +67,11 @@ class FlameOpticalSim(FlowchemDevice):
 
     def _synthetic_intensities(self) -> np.ndarray:
         """A synthetic spectrum: a gaussian peak on top of a flat baseline."""
-        peak = self.max_intensity * 0.5 * np.exp(-((self.wavelengths - 500.0) ** 2) / (2 * 40.0**2))
+        peak = (
+            self.max_intensity
+            * 0.5
+            * np.exp(-((self.wavelengths - 500.0) ** 2) / (2 * 40.0**2))
+        )
         baseline = self.max_intensity * 0.01
         return peak + baseline
 
@@ -80,7 +84,9 @@ class FlameOpticalSim(FlowchemDevice):
     async def get_spectrum(self):
         return self._synthetic_intensities()
 
-    async def get_intensity(self, absolute: bool = False, scans_to_average: int | None = None):
+    async def get_intensity(
+        self, absolute: bool = False, scans_to_average: int | None = None
+    ):
         intensities = self._synthetic_intensities()
         if absolute:
             return intensities.tolist()

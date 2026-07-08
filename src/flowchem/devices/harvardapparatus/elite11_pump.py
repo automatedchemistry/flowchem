@@ -44,6 +44,14 @@ class Elite11PumpOnly(SyringePump):
         """Stop pump."""
         await self.hw_device.stop()
 
+    async def get_flowrate(self) -> float:
+        """Return the rate the pump is actually running at, in ml/min.
+
+        Queries the pump directly (CRATE). Positive while infusing, negative while
+        withdrawing (on models capable of it), 0 when idle.
+        """
+        return await self.hw_device.get_current_flow_rate()
+
     async def infuse(self, rate: str = "", volume: str = "0 ml") -> bool:
         """
         Infuse at the specified rate and volume.

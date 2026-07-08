@@ -51,6 +51,10 @@ class ML600Pump(SyringePump):
         self.pump_code = pump_code
         # self.add_api_route("/pump", self.get_monitor_position, methods=["GET"])
 
+        # Signed ml/min from the last infuse()/withdraw() issued via this driver.
+        # Used by get_flowrate(from_hardware=False), see there for why this exists.
+        self._last_signed_rate: float = 0.0
+
     @staticmethod
     def is_withdrawing_capable() -> bool:
         """
@@ -80,6 +84,7 @@ class ML600Pump(SyringePump):
             True if the pump successfully stops, False otherwise.
         """
         await self.hw_device.stop(self.pump_code)
+        self._last_signed_rate = 0.0
         # todo: sometime it take more then two seconds.
         await asyncio.sleep(1)
         if not await self.hw_device.get_pump_status(self.pump_code):
@@ -88,6 +93,39 @@ class ML600Pump(SyringePump):
             logger.warning("the first check show false. try again.")
             await asyncio.sleep(1)
             return not await self.hw_device.get_pump_status(self.pump_code)
+
+    async def get_flowrate(
+        self, from_hardware: bool = False, sample_interval: str = "0.2 s"
+    ) -> float:
+        """Return the pump's current flow rate in ml/min (+infusing / -withdrawing).
+
+        Hamilton's Protocol1/RNO+ command set has no live-speed register for the ML600:
+        the only speed-related query (YQS) reports the configured default speed, not the
+        speed of an in-progress move, and there is no motor tachometer feedback. So there
+        are two ways to answer "what's the flow rate right now", selected by `from_hardware`:
+
+        - False (default, "soft" tracking): report the rate/direction from the last
+          infuse()/withdraw() call issued through this driver, 0 once stop() was called
+          or the pump reports idle. Instant and stable, but not verified against the
+          pump itself - it will be wrong if the syringe was driven by another controller,
+          if the move already completed on its own (target volume reached), or after a stall.
+        - True (hardware sampling): sample the real syringe position (YQP) twice,
+          `sample_interval` apart, and derive ml/min (and sign) from the actual volume
+          change. This is grounded in hardware, but takes ~`sample_interval` seconds per
+          call and is noisier at low flow rates or short intervals.
+        """
+        if not from_hardware:
+            return self._last_signed_rate if await self.is_pumping() else 0.0
+
+        interval: pint.Quantity = ureg.Quantity(sample_interval)
+        volume_before = await self.hw_device.get_current_volume(self.pump_code)
+        await asyncio.sleep(interval.m_as("s"))
+        volume_after = await self.hw_device.get_current_volume(self.pump_code)
+
+        # Syringe volume decreases while infusing (dispensing) and increases while
+        # withdrawing (drawing in), so this difference is already correctly signed.
+        delta_ml = (volume_before - volume_after).m_as("ml")
+        return delta_ml / interval.m_as("min")
 
     async def infuse(self, rate: str = "1 ml/min", volume: str = "") -> bool:
         """Start infusion with given rate and volume (both optional).
@@ -137,6 +175,7 @@ class ML600Pump(SyringePump):
         await self.hw_device.set_to_volume(
             target_vol, ureg.Quantity(rate), self.pump_code
         )
+        self._last_signed_rate = ureg.Quantity(rate).m_as("ml/min")
         logger.info(
             f"infusing is run. it will take {effective_volume / ureg.Quantity(rate)} to finish."
         )
@@ -170,27 +209,29 @@ class ML600Pump(SyringePump):
         if not rate:
             rate = cast(str, self.hw_device.config["default_withdraw_rate"])
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
+        syringe_volume = self.hw_device.syringe_volume(self.pump_code)
         if volume is None:
-            target_vol = self.hw_device.syringe_volume
+            target_vol = syringe_volume
             logger.warning(
-                f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}"
+                f"the volume to withdraw is not provided. set to {syringe_volume}"
             )
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
             target_vol = current_volume + ureg.Quantity(volume)
-            if target_vol > self.hw_device.syringe_volume:
+            if target_vol > syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
-                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
+                    f"Max volume left is {syringe_volume - current_volume}!",
                 )
                 return False
 
         await self.hw_device.set_to_volume(
             target_vol, ureg.Quantity(rate), self.pump_code
         )
+        self._last_signed_rate = -ureg.Quantity(rate).m_as("ml/min")
         logger.info(
             "withdrawing is run. it will take "
-            f"{ureg.Quantity(volume if volume else self.hw_device.syringe_volume) / ureg.Quantity(rate)} to finish."
+            f"{ureg.Quantity(volume if volume else syringe_volume) / ureg.Quantity(rate)} to finish."
         )
         return await self.hw_device.get_pump_status(self.pump_code)
 
@@ -210,7 +251,9 @@ class ML600Pump(SyringePump):
         Initialize syringe on specified side only
         flowrate: ml/min
         """
-        speed = self.hw_device._flowrate_to_seconds_per_stroke(ureg.Quantity(rate))
+        speed = self.hw_device._flowrate_to_seconds_per_stroke(
+            ureg.Quantity(rate), self.pump_code
+        )
         return await self.hw_device.initialize_syringe(
             speed=ureg.Quantity(speed), pump=self.pump_code
         )

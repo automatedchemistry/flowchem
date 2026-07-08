@@ -12,6 +12,7 @@ class Pump(FlowchemComponent):
         self.add_api_route("/infuse", self.infuse, methods=["PUT"])
         self.add_api_route("/stop", self.stop, methods=["PUT"])
         self.add_api_route("/is-pumping", self.is_pumping, methods=["GET"])
+        self.add_api_route("/flowrate", self.get_flowrate, methods=["GET"])
         if self.is_withdrawing_capable():
             self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
         self.component_info.type = "Pump"
@@ -26,6 +27,13 @@ class Pump(FlowchemComponent):
 
     async def is_pumping(self) -> bool:
         """Is pump running?"""
+        raise NotImplementedError
+
+    async def get_flowrate(self) -> float:
+        """Return the pump's current flow rate in ml/min.
+
+        Positive while infusing, negative while withdrawing, 0 when idle.
+        """
         raise NotImplementedError
 
     @staticmethod

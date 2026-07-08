@@ -101,3 +101,14 @@ class AzuraCompactPump(HPLCPump):
             bool: True if the pump is running, False otherwise.
         """
         return self.hw_device.is_running()
+
+    async def get_flowrate(self) -> float:
+        """Return the current flow rate in ml/min, 0 if not pumping.
+
+        The Azura Compact has no flow sensor: FLOW? echoes the setpoint register rather
+        than an independently measured value, so this reflects the commanded rate while
+        running. Always non-negative, as this pump cannot withdraw.
+        """
+        if not self.hw_device.is_running():
+            return 0.0
+        return await self.hw_device.get_flow_rate()
