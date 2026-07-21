@@ -6,10 +6,10 @@
 %We designed flowchem to be a solid foundation for other modules to be based on.
 %We try to follow the unix philosophy: do one thing, and do it well. Flowchem provides uniform API endpoints for the heterogeneous environment of lab devices.
 
-%### Why Python 3.10?
+%### Why Python 3.11?
 %The recommended use of flowchem is to run it as standalone app to provide homogeneous REST API access to the variegated landscape of lab devices. The direct import of device objects is highly discouraged.
 %This allows us to use a recent version of Python and to exploit all the newly introduced features.
-%For example, in the codebase are used the walrus operator (`:=`) and `importlib.metadata` introduced in 3.8, the dict merge with OR operator introduced in 3.9 and the type hints unions with the OR operator introduced in 3.10. We are looking forward to the inclusion of `tomllib` in the stdlib for 3.11 to drop the external dependency on `tomli`.
+%For example, in the codebase are used the walrus operator (`:=`) and `importlib.metadata` introduced in 3.8, the dict merge with OR operator introduced in 3.9, the type hints unions with the OR operator introduced in 3.10, and `tomllib`/`typing.Self` introduced in 3.11.
 
 %### Why FastAPI?
 %To create the API endpoints we use fastAPI mainly for its simplicity and for the ability to automatically generate openAPI specs from the type hints.

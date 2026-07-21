@@ -8,7 +8,7 @@ version = "1.1.2"
 
 description = "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 license-files = ['LICEN[CS]E*',]
 keywords = ["chemistry", "automation", "laboratory", "science"]
@@ -24,7 +24,6 @@ maintainers = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Development Status :: 5 - Production/Stable",
@@ -47,7 +46,6 @@ dependencies = [
     "pyserial>=3",
     "requests",
     "rich_click>=1.6.1",
-    "tomli; python_version < \"3.11\"",
     "uvicorn>=0.19.0",
     "zeroconf>=0.147.0,<0.149",  # Issue with zeroconf>=0.149.0
     "python-multipart>=0.0.20",
