@@ -39,6 +39,11 @@ class SimulatedTMCM1111IO:
             value=value,
         )
 
+    async def request_raw(self, request: TMCLRequest, read_length: int) -> bytes:
+        """Return a plausible get-firmware-version string reply for a TMCM-1111."""
+        self.requests.append(request)
+        return b"1111V113"
+
     def _dispatch(self, request: TMCLRequest) -> int:
         command = TMCLCommandNumber(request.command)
         if command == TMCLCommandNumber.MVP:
