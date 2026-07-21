@@ -39,6 +39,11 @@ class SimulatedTMCM1111IO:
             value=value,
         )
 
+    async def request_raw(self, request: TMCLRequest, read_length: int) -> bytes:
+        """Return a plausible get-firmware-version string reply for a TMCM-1111."""
+        self.requests.append(request)
+        return b"1111V113"
+
     def _dispatch(self, request: TMCLRequest) -> int:
         command = TMCLCommandNumber(request.command)
         if command == TMCLCommandNumber.MVP:
@@ -90,6 +95,9 @@ class TMCM1111Sim(TMCM1111):
         reference_search_mode: int | None = None,
         reference_search_speed: int | None = None,
         reference_switch_speed: int | None = None,
+        reverse_shaft: bool | None = None,
+        max_positioning_speed: int | None = None,
+        max_acceleration: int | None = None,
         **serial_kwargs,
     ) -> "TMCM1111Sim":
         sim_io = SimulatedTMCM1111IO()
@@ -106,6 +114,9 @@ class TMCM1111Sim(TMCM1111):
             reference_search_mode=reference_search_mode,
             reference_search_speed=reference_search_speed,
             reference_switch_speed=reference_switch_speed,
+            reverse_shaft=reverse_shaft,
+            max_positioning_speed=max_positioning_speed,
+            max_acceleration=max_acceleration,
         )
         instance.sim_io = sim_io
         return instance
