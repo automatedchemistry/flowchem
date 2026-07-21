@@ -1,0 +1,6 @@
+[device.fraction_collector]
+type = "TMCM1111"
+port = "COM6"
+positions = { waste = 0, vial_1 = 12000, vial_2 = 24000 }
+home_position = "waste"
+home_on_initialize = false
