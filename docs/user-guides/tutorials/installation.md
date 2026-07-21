@@ -2,7 +2,7 @@
 
 ## Install flowchem
 
-Flowchem requires a Python version of 3.10 or later.
+Flowchem requires a Python version of 3.11 or later.
 You can get the latest version of Python from [python.org](https://www.python.org/downloads/).
 
 To get started with flowchem run in the terminal (preferably in a dedicated

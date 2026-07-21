@@ -1,20 +1,13 @@
 """Parse a device config file."""
 
 import inspect
-import sys
+import tomllib
 import typing
 from io import BytesIO
 from pathlib import Path
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.list_known_device_type import autodiscover_device_classes
-
-if sys.version_info >= (3, 11):
-    # noinspection PyUnresolvedReferences
-    import tomllib
-else:
-    import tomli as tomllib
-
 from loguru import logger
 
 from flowchem.devices.known_plugins import plugin_devices

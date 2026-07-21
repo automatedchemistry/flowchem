@@ -38,7 +38,7 @@ We are open to contributions!
 read how to do that in the documentation.
 
 ## Install flowchem
-To install `flowchem`, ensure you have Python >= 3.10 installed, then run:
+To install `flowchem`, ensure you have Python >= 3.11 installed, then run:
 ```shell
 pip install flowchem
 ```
