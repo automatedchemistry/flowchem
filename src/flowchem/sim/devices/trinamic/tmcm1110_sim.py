@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Self
+
 from flowchem.devices.trinamic.tmcl import TMCLRequest
 from flowchem.devices.trinamic.tmcm1110 import TMCM1110
 from flowchem.sim.devices.trinamic.tmcm1111_sim import SimulatedTMCM1111IO
@@ -38,8 +40,11 @@ class TMCM1110Sim(TMCM1110):
         reference_search_mode: int | None = None,
         reference_search_speed: int | None = None,
         reference_switch_speed: int | None = None,
+        reverse_shaft: bool | None = None,
+        max_positioning_speed: int | None = None,
+        max_acceleration: int | None = None,
         **serial_kwargs,
-    ) -> "TMCM1110Sim":
+    ) -> Self:
         sim_io = SimulatedTMCM1110IO()
         configured_positions = (
             {"waste": 0, "vial_1": 12000} if positions is None else positions
@@ -54,6 +59,9 @@ class TMCM1110Sim(TMCM1110):
             reference_search_mode=reference_search_mode,
             reference_search_speed=reference_search_speed,
             reference_switch_speed=reference_switch_speed,
+            reverse_shaft=reverse_shaft,
+            max_positioning_speed=max_positioning_speed,
+            max_acceleration=max_acceleration,
         )
         instance.sim_io = sim_io
         return instance

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import IntEnum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from loguru import logger
 
@@ -47,6 +47,8 @@ class AxisParameter(IntEnum):
 
     TARGET_POSITION = 0
     ACTUAL_POSITION = 1
+    MAX_POSITIONING_SPEED = 4
+    MAX_ACCELERATION = 5
     POSITION_REACHED = 8
     HOME_SWITCH_STATE = 9
     RIGHT_LIMIT_SWITCH_STATE = 10
@@ -65,6 +67,12 @@ class TMCMStepRockerBase(FlowchemDevice):
     MODEL_DISPLAY_NAME: ClassVar[str]
     #: FlowchemComponent subclass registered on initialize().
     COMPONENT_CLASS: ClassVar[type[FlowchemComponent]]
+    #: Axis parameter number for "reverse shaft" (reverses which physical
+    #: rotation direction the board treats as positive, independent of which
+    #: switch a reference-search mode watches). Confirmed as #251 on the
+    #: TMCM-1111; None (unsupported/unknown) by default so models that don't
+    #: define it simply skip the read-back/apply logic in initialize().
+    REVERSE_SHAFT_PARAM: ClassVar[int | None] = None
 
     def __init__(
         self,
@@ -77,6 +85,9 @@ class TMCMStepRockerBase(FlowchemDevice):
         reference_search_mode: int | None = None,
         reference_search_speed: int | None = None,
         reference_switch_speed: int | None = None,
+        reverse_shaft: bool | None = None,
+        max_positioning_speed: int | None = None,
+        max_acceleration: int | None = None,
     ) -> None:
         super().__init__(name)
         if not positions:
@@ -93,6 +104,9 @@ class TMCMStepRockerBase(FlowchemDevice):
         self.reference_search_mode = reference_search_mode
         self.reference_search_speed = reference_search_speed
         self.reference_switch_speed = reference_switch_speed
+        self.reverse_shaft = reverse_shaft
+        self.max_positioning_speed = max_positioning_speed
+        self.max_acceleration = max_acceleration
 
         if self.home_position and self.home_position not in self.positions:
             raise InvalidConfigurationError(
@@ -121,8 +135,11 @@ class TMCMStepRockerBase(FlowchemDevice):
         reference_search_mode: int | None = None,
         reference_search_speed: int | None = None,
         reference_switch_speed: int | None = None,
+        reverse_shaft: bool | None = None,
+        max_positioning_speed: int | None = None,
+        max_acceleration: int | None = None,
         **serial_kwargs,
-    ) -> "TMCMStepRockerBase":
+    ) -> Self:
         """Create a StepRocker device from Flowchem TOML configuration."""
         tmcm_io = TMCLSerialIO.from_config(port, **serial_kwargs)
         return cls(
@@ -135,17 +152,73 @@ class TMCMStepRockerBase(FlowchemDevice):
             reference_search_mode=reference_search_mode,
             reference_search_speed=reference_search_speed,
             reference_switch_speed=reference_switch_speed,
+            reverse_shaft=reverse_shaft,
+            max_positioning_speed=max_positioning_speed,
+            max_acceleration=max_acceleration,
         )
 
     async def initialize(self) -> None:
         """Verify the hardware model, register the component, and optionally home."""
         await self._verify_hardware_model()
+        await self._configure_reverse_shaft()
+        await self._configure_motion_parameters()
         if self.home_on_initialize:
             await self.home(wait=True)
         self.components.append(self.COMPONENT_CLASS("fraction-collector", self))
         logger.info(
             f"Connected to {self.MODEL_DISPLAY_NAME} fraction collector '{self.name}'."
         )
+
+    async def _configure_reverse_shaft(self) -> None:
+        """Log and optionally set the model's "reverse shaft" axis parameter.
+
+        Rotation direction and reference-search switch selection can be
+        independently inverted per physical unit (e.g. two boards of the
+        same model can rotate opposite ways for the same reference_search_mode
+        value). This parameter (axis parameter #251 on the TMCM-1111) fixes
+        the rotation-direction half of that without touching which switch a
+        mode targets. Always logs the board's current value so it's visible
+        without a separate diagnostic script; only writes it if reverse_shaft
+        was explicitly configured.
+        """
+        param = type(self).REVERSE_SHAFT_PARAM
+        if param is None:
+            return
+        current = await self._gap(param)
+        logger.info(
+            f"{self.MODEL_DISPLAY_NAME} '{self.name}' reverse_shaft (axis parameter "
+            f"#{param}) currently reads {current}."
+        )
+        if self.reverse_shaft is not None:
+            await self._sap(param, int(self.reverse_shaft))
+            logger.info(
+                f"Set reverse_shaft (axis parameter #{param}) to {int(self.reverse_shaft)}."
+            )
+
+    async def _configure_motion_parameters(self) -> None:
+        """Set MVP's own ramp parameters (axis parameters #4/#5), if configured.
+
+        MVP (the "move to position" command behind PUT /position) is governed
+        by its own maximum positioning speed (#4) and maximum acceleration
+        (#5) - entirely separate from RFS's reference_search_speed/
+        reference_switch_speed (#194/#195). Flowchem never set these before,
+        which is easy to miss because it works fine as long as the board
+        already has usable values loaded (e.g. from a previous TMCL-IDE
+        session) - but axis parameters are volatile SRAM, so a power cycle
+        resets them, and MVP then silently computes a valid target with zero
+        velocity (no motion, no error) while RFS keeps working normally since
+        it has its own explicitly-configured speed parameters.
+        """
+        if self.max_positioning_speed is not None:
+            await self._sap(
+                AxisParameter.MAX_POSITIONING_SPEED,
+                await self._encode_speed(self.max_positioning_speed),
+            )
+        if self.max_acceleration is not None:
+            await self._sap(
+                AxisParameter.MAX_ACCELERATION,
+                await self._encode_acceleration(self.max_acceleration),
+            )
 
     async def move_to_position(self, position: str | int) -> bool:
         """Move to a named configured position or raw microstep position."""
@@ -229,6 +302,17 @@ class TMCMStepRockerBase(FlowchemDevice):
         """
         return pps
 
+    async def _encode_acceleration(self, pps2: int) -> int:
+        """Convert a pps² value to whatever units axis parameter #5 expects.
+
+        Identity by default (TMC4361-based controllers, e.g. TMCM-1111, accept
+        real pps² directly). TMC429-based controllers (e.g. TMCM-1110) use a
+        different conversion than _encode_speed - a separate ramp divisor
+        (axis parameter #153), not just the pulse divisor - so this is a
+        distinct hook rather than reusing _encode_speed.
+        """
+        return pps2
+
     async def _verify_hardware_model(self) -> None:
         """Best-effort check that the connected board matches the configured model.
 
@@ -297,10 +381,11 @@ class TMCMStepRockerBase(FlowchemDevice):
     async def _wait_for_reference_search(self, timeout: float) -> None:
         deadline = asyncio.get_running_loop().time() + timeout
         while await self.reference_search_active():
-            print(f"Reference search still active for '{self.name}'...")
             if asyncio.get_running_loop().time() >= deadline:
                 await self._rfs(RFSType.STOP)
-                raise DeviceError(f"{self.MODEL_DISPLAY_NAME} reference search timed out.")
+                raise DeviceError(
+                    f"{self.MODEL_DISPLAY_NAME} reference search timed out."
+                )
             await asyncio.sleep(0.1)
 
     async def _apply_home_position(self) -> None:
