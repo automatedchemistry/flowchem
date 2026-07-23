@@ -39,7 +39,10 @@ class SimulatedRunzeValveIO(RunzeValveIO):
         return ""  # Not used in sim path
 
     async def write_and_read_reply_async(
-        self, command: SV06Command, raise_errors: bool = True
+        self,
+        command: SV06Command,
+        raise_errors: bool = True,
+        read_timeout: float | None = None,
     ) -> tuple[str, str]:
         fc = command.function_code.lower()
 
