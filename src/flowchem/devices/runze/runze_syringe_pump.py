@@ -223,7 +223,9 @@ class RunzeSyringePump(FlowchemDevice):
         """
         return self._last_valve_position
 
-    async def set_raw_position(self, position: str | int, raise_errors: bool = True) -> bool:
+    async def set_raw_position(
+        self, position: str | int, raise_errors: bool = True
+    ) -> bool:
         """Set valve position, following valve nomenclature.
 
         Per the manual, 0x44 may reply immediately with status `fe`/`04`
@@ -409,7 +411,9 @@ if __name__ == "__main__":
     def snapshot(label: str) -> None:
         global _snapshot_count
         if not CAM_SCRIPT.exists():
-            print(f"  (skipping snapshot -- {CAM_SCRIPT} not found from cwd {Path.cwd()})")
+            print(
+                f"  (skipping snapshot -- {CAM_SCRIPT} not found from cwd {Path.cwd()})"
+            )
             return
         _snapshot_count += 1
         out = Path(f"pump_{_snapshot_count:02d}_{label}.png")
@@ -424,10 +428,17 @@ if __name__ == "__main__":
         except Exception as exc:
             print(f"  camera snapshot failed: {exc}")
 
-    async def raw(pump: RunzeSyringePump, command: str, parameter: int = 0, timeout: float | None = None):
+    async def raw(
+        pump: RunzeSyringePump,
+        command: str,
+        parameter: int = 0,
+        timeout: float | None = None,
+    ):
         """Send one command and print its raw status/parameters/latency, bypassing
         every higher-level helper (retries, completion-polling, error-raising)."""
-        cmd = RunzeCommand(function_code=command, address=pump.address, parameter=parameter)
+        cmd = RunzeCommand(
+            function_code=command, address=pump.address, parameter=parameter
+        )
         t0 = time.perf_counter()
         try:
             status, parameters = await pump.pump_io.write_and_read_reply_async(
@@ -436,7 +447,9 @@ if __name__ == "__main__":
         except InvalidConfigurationError:
             status, parameters = "<no reply>", ""
         dt = time.perf_counter() - t0
-        print(f"  0x{command} param={parameter:<6} -> status={status!r:8} params={parameters!r:8} ({dt:.2f}s)")
+        print(
+            f"  0x{command} param={parameter:<6} -> status={status!r:8} params={parameters!r:8} ({dt:.2f}s)"
+        )
         return status, parameters
 
     async def call(label: str, coro) -> object | None:
@@ -452,7 +465,9 @@ if __name__ == "__main__":
             print(f"  {label:32} -> {result!r} ({time.perf_counter() - t0:.1f}s)")
             return result
         except Exception as exc:
-            print(f"  {label:32} -> RAISED {type(exc).__name__}: {exc} ({time.perf_counter() - t0:.1f}s)")
+            print(
+                f"  {label:32} -> RAISED {type(exc).__name__}: {exc} ({time.perf_counter() - t0:.1f}s)"
+            )
             return None
 
     async def test_component_endpoints(pump: RunzeSyringePump) -> None:
@@ -465,19 +480,29 @@ if __name__ == "__main__":
         component = next(c for c in pump.components if c.name == "pump")
         assert isinstance(component, RunzeSyringePumpComponent)
 
-        print("\n== component endpoint tests (direct Python calls, no HTTP/flowchem server) ==")
+        print(
+            "\n== component endpoint tests (direct Python calls, no HTTP/flowchem server) =="
+        )
 
         await call("is_reachable()", component.is_reachable())
         await call("get_current_volume()", component.get_current_volume())
         await call("is_pumping()", component.is_pumping())
-        await raw(pump, "4a")  # raw status, for comparison with is_pumping()'s interpretation
-        await raw(pump, "66")  # raw position, ground truth for the volume conversion above
+        await raw(
+            pump, "4a"
+        )  # raw status, for comparison with is_pumping()'s interpretation
+        await raw(
+            pump, "66"
+        )  # raw position, ground truth for the volume conversion above
 
         snapshot("component_start")
 
-        print("\n  -- withdraw(volume='0.5 mL') / infuse(volume='0.5 mL') round trip --")
+        print(
+            "\n  -- withdraw(volume='0.5 mL') / infuse(volume='0.5 mL') round trip --"
+        )
         await call("withdraw(volume='0.5 mL')", component.withdraw(volume="0.5 mL"))
-        await raw(pump, "4a")  # if the move above hung, see what status the device reports right now
+        await raw(
+            pump, "4a"
+        )  # if the move above hung, see what status the device reports right now
         await call("get_current_volume()", component.get_current_volume())
         snapshot("after_withdraw_0.5ml")
 

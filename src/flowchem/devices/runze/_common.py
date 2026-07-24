@@ -110,7 +110,11 @@ class RunzeSerialIO:
     """
 
     DEFAULT_CONFIG = {
-        "timeout": 1,
+        # The manual specs <1s response time, but real hardware has been observed
+        # to occasionally miss that window on a quick, otherwise-successful
+        # command (confirmed transient: an identical retry succeeded immediately) --
+        # padded to 3s to absorb that without raising InvalidConfigurationError.
+        "timeout": 3,
         "baudrate": 57600,  # The corresponding baudrate can be set through a factory command
         "parity": serial.PARITY_NONE,
         "stopbits": serial.STOPBITS_ONE,
@@ -149,7 +153,9 @@ class RunzeSerialIO:
 
         return cls(serial_object)
 
-    def _write_and_read_sync(self, command_bytes: bytes, read_timeout: float | None) -> bytes:
+    def _write_and_read_sync(
+        self, command_bytes: bytes, read_timeout: float | None
+    ) -> bytes:
         """Reset the input buffer, write, and read exactly one reply frame --
         entirely synchronous, meant to run on `_io_executor`'s single thread
         so a given exchange never splits its write and read across two OS
@@ -278,12 +284,8 @@ async def detect_valve_type(
             break
 
     if valve_type is None:
-        logger.error(
-            "Failed to recognize the valve type: no successful port value."
-        )
-        raise ValueError(
-            "Unable to recognize the valve type. All port values failed."
-        )
+        logger.error("Failed to recognize the valve type: no successful port value.")
+        raise ValueError("Unable to recognize the valve type. All port values failed.")
 
     return RunzeValveHeads(str(valve_type))
 
