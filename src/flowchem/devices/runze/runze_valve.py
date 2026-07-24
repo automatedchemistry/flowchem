@@ -115,8 +115,9 @@ class RunzeValve(FlowchemDevice):
             command="3e", raise_errors=raise_errors
         )
         if status == "00":
-            logger.info(f"Current valve position is: {parameters}")
-            return parameters
+            position = str(int(parameters, 16))
+            logger.info(f"Current valve position is: {position}")
+            return position
         else:
             logger.warning(
                 f"Something is not working in the valve. "

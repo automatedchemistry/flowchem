@@ -26,9 +26,7 @@ class TestParseResponse:
     def test_task_suspending_status_does_not_raise_when_allowed(self):
         # `fe` ("task suspending") must be observable by callers that poll for
         # completion (see `send_and_await_completion`), not just swallowed.
-        status, _ = RunzeSerialIO.parse_response(
-            "cc00fe0000dd0000", raise_errors=False
-        )
+        status, _ = RunzeSerialIO.parse_response("cc00fe0000dd0000", raise_errors=False)
         assert status == "fe"
 
 
