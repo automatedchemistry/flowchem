@@ -6,5 +6,6 @@
 ml600
 elite11
 azura_compact
+runze_syringe_pump
 
 ```
