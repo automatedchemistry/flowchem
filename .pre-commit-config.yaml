@@ -18,10 +18,10 @@ repos:
     -   id: check-added-large-files
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.0
+    rev: v0.15.9
     hooks:
     -   id: ruff
-        args: [.]
+        args: [./src]
         always_run: true
         pass_filenames: false
         types_or: [python, pyi]

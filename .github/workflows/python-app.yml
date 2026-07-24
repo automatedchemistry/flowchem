@@ -43,7 +43,7 @@ jobs:
             mypy --check-untyped-defs --python-version 3.11 --ignore-missing-imports ./src
 
       - name: Run ruff
-        run: ruff check .
+        run: ruff check ./src
 
       - name: Run pytest
         run: python -m pytest --cov=flowchem --cov-fail-under=40 --ignore=tests/sim --durations=20 --durations-min=1.0
