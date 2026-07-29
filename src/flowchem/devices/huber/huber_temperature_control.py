@@ -54,6 +54,10 @@ class HuberTemperatureControl(TemperatureControl):
         """
         return await self.hw_device.target_reached()
 
+    async def is_idle(self) -> bool:
+        """Check whether the set temperature target has been reached."""
+        return await self.hw_device.target_reached()
+
     async def power_on(self):
         """
         Turn on the temperature control.

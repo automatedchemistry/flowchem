@@ -67,6 +67,10 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
         """Move valve to position."""
         return await self.hw_device.set_raw_position(position=position)
 
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return await self.hw_device.get_status() == "00"
+
 
 class Runze8PortDistributionValve(EightPortDistributionValve):
     """RunzeValve of type Eight_Port_Distribution."""
@@ -111,6 +115,10 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
     async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
         return await self.hw_device.set_raw_position(position=position)
+
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return await self.hw_device.get_status() == "00"
 
 
 class Runze10PortDistributionValve(TenPortDistributionValve):
@@ -157,6 +165,10 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
         """Move valve to position."""
         return await self.hw_device.set_raw_position(position=position)
 
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return await self.hw_device.get_status() == "00"
+
 
 class Runze12PortDistributionValve(TwelvePortDistributionValve):
     """RunzeValve of type Twelve_Port_Distribution."""
@@ -202,6 +214,10 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
         """Move valve to position."""
         return await self.hw_device.set_raw_position(position=position)
 
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return await self.hw_device.get_status() == "00"
+
 
 class Runze16PortDistributionValve(SixteenPortDistributionValve):
     """RunzeValve of type Sixteen_Port_Distribution"""
@@ -246,3 +262,7 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
     async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
         return await self.hw_device.set_raw_position(position=position)
+
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return await self.hw_device.get_status() == "00"

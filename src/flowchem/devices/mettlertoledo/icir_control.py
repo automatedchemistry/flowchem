@@ -84,6 +84,10 @@ class IcIRControl(IRControl):
         """
         return await self.hw_device.stop_experiment()
 
+    async def is_idle(self) -> bool:
+        """Check whether an IR scan is currently running."""
+        return await self.hw_device.probe_status() != "Running"
+
     async def is_reachable(self) -> ReachabilityStatus:
         """Return ONLINE if the iCIR OPC UA connection to the instrument is active."""
         connected = await self.hw_device.is_iCIR_connected()

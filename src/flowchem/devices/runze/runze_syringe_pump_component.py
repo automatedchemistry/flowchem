@@ -45,6 +45,10 @@ class RunzeSyringePumpComponent(SyringePump):
         """Is the plunger or the built-in valve currently moving?"""
         return await self.hw_device.is_moving()
 
+    async def is_idle(self) -> bool:
+        """Check whether the plunger has finished its current move."""
+        return await self.hw_device.get_status() == "00"
+
     async def stop(self) -> bool:
         """Strong stop: halts both the plunger and the built-in valve."""
         return await self.hw_device.stop()
