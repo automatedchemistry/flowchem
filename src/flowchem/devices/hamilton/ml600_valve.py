@@ -40,6 +40,10 @@ class ML600LeftValve(FourPortFivePositionValve):
             translated = round(int(raw_position) / 45)
         return str(translated)
 
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return not await self.hw_device.get_valve_status(self.identifier)
+
 
 class ML600RightValve(ThreePortFourPositionValve):
     """
@@ -86,3 +90,7 @@ class ML600RightValve(ThreePortFourPositionValve):
                 translated -= 2
 
         return str(translated)
+
+    async def is_idle(self) -> bool:
+        """Check whether the valve has finished switching."""
+        return not await self.hw_device.get_valve_status(self.identifier)

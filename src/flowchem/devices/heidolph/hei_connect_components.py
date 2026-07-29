@@ -97,6 +97,10 @@ class HeiConnectTemperatureControl(TemperatureControl):
     async def is_target_reached(self) -> bool:
         return await self.hw_device.is_temperature_target_reached()
 
+    async def is_idle(self) -> bool:
+        """Check whether the set temperature target has been reached."""
+        return await self.is_target_reached()
+
     async def get_heating_mode(self) -> HeatingMode:
         """Get the heating mode.
         precise - ptsensor

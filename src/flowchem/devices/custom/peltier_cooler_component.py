@@ -36,6 +36,10 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
         else:
             return False
 
+    async def is_idle(self) -> bool:
+        """Check whether the set temperature target has been reached."""
+        return await self.is_target_reached() is not False
+
     async def get_temperature_setpoint(self) -> float:
         """Return the current set temperature from the Peltier parameter list."""
         params = await self.hw_device.get_parameters()

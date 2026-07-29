@@ -58,6 +58,10 @@ class TMCM1110FractionCollector(FlowchemComponent):
         """Return whether the target position has been reached."""
         return await self.hw_device.is_target_reached()
 
+    async def is_idle(self) -> bool:
+        """Check whether the collector has finished moving to its target position."""
+        return await self.hw_device.is_target_reached()
+
     async def is_reachable(self) -> ReachabilityStatus:
         """Return ONLINE if the TMCM-1110 responds over serial."""
         try:

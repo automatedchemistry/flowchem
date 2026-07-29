@@ -67,6 +67,10 @@ class R4HeaterChannelControl(TemperatureControl):
         status = await self.hw_device.get_status(self.channel)
         return status.state == "S"
 
+    async def is_idle(self) -> bool:
+        """Check whether the set temperature target has been reached for this channel."""
+        return await self.is_target_reached()
+
     async def power_on(self):
         """
         Turn on the temperature control for this channel.
