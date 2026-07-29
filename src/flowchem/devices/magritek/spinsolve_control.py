@@ -56,6 +56,10 @@ class SpinsolveControl(NMRControl):
         except Exception:
             return ReachabilityStatus.OFFLINE
 
+    async def is_idle(self) -> bool:
+        """Check whether a protocol/acquisition is currently running."""
+        return not await self.hw_device.is_protocol_running()
+
     async def acquire_spectrum(
         self,
         background_tasks: BackgroundTasks,
