@@ -34,6 +34,14 @@ Position is tracked in steps from home (the plunger's reset optocoupler, at 0 mL
 `total_steps` (at `syringe_volume`). `infuse` moves the plunger toward home; `withdraw`
 moves it away from home, mirroring the vendor's "Injection"/"Suction" terminology.
 
+## Waiting for the pump to finish
+When you send an `infuse` or `withdraw` command to this pump, you don't get a response back
+until the plunger has *actually finished moving*. This is not a choice made in how the driver
+was written — it's simply how this pump's hardware behaves: it doesn't report anything back to
+the computer until the movement is complete. So if your script sends the command and then
+immediately moves on to the next step, you can be confident the pump is already done — there
+is no need to add an extra wait or check "is it still moving?" yourself.
+
 ## Valve positions
 The built-in valve position naming follows the general convention of flowchem: distribution
 valves have positions from '1' to 'n', where n is the total number of available ports.
