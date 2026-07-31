@@ -47,7 +47,9 @@ class KnauerInjectionValve(SixPortTwoPositionValve):
         INJECT = "I"
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
-        position_mapping = {0: "L", 1: "I"}
+        # Knauer reports LOAD/INJECT as L/I, but the physical port pairing for
+        # L corresponds to the second generic six-port valve state.
+        position_mapping = {0: "I", 1: "L"}
         if reverse:
             return str(
                 [
