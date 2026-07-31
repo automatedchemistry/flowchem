@@ -47,7 +47,7 @@ class Elite11PumpOnly(SyringePump):
         Returns:
             bool: True if the pump is not moving, False otherwise.
         """
-        return not await self.hw_device.is_moving()
+        return await self.hw_device.is_idle()
 
     async def stop(self):
         """Stop pump."""
