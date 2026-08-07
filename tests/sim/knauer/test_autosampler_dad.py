@@ -2,6 +2,7 @@
 
 import pytest
 
+from flowchem.components.meta_components.gantry import Gantry
 from flowchem.sim.devices.knauer.autosampler_sim import KnauerAutosamplerSim
 from flowchem.sim.devices.knauer.dad_sim import KnauerDADSim
 
@@ -123,6 +124,9 @@ class TestKnauerAutosamplerSim:
         assert autosampler._syringe_volume == 500
 
     # --- component API ---
+
+    async def test_gantry_is_a_gantry(self, gantry):
+        assert isinstance(gantry, Gantry)
 
     async def test_gantry_reset_errors(self, gantry):
         result = await gantry.reset_errors()

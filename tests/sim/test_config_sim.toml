@@ -63,6 +63,12 @@ type = "RunzeValve"
 port = "COM_SIM"
 num_ports = 6
 
+[device.sim-runze-pump]
+type = "RunzeSyringePump"
+port = "COM_SIM"
+syringe_volume = "5 mL"
+total_steps = 12000
+
 [device.sim-vici]
 type = "ViciValve"
 port = "COM_SIM"
