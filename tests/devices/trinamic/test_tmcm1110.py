@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from flowchem.components.meta_components.gantry import Gantry
 from flowchem.devices.trinamic.tmcl import TMCLCommandNumber, TMCLRequest
 from flowchem.devices.trinamic.tmcm1110 import (
     TMCM1110,
@@ -74,6 +75,7 @@ async def test_sim_initializes_fraction_collector_component():
 
     assert len(device.components) == 1
     assert device.components[0].name == "fraction-collector"
+    assert isinstance(device.components[0], Gantry)
 
 
 async def test_named_position_move_and_position_readback():

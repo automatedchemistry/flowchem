@@ -1,12 +1,12 @@
 """Base Gantry3D meta component."""
 
-from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.meta_components.gantry import Gantry
 from flowchem.components.reachability import ReachabilityStatus
 from flowchem.components.technical.length import LengthControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class Gantry3D(FlowchemComponent):
+class Gantry3D(Gantry):
     """
     A Gantry3D device that controls movement in 3 dimensions (X, Y, Z).
     Each axis can operate in discrete or continuous mode.

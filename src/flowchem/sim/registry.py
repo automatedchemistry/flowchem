@@ -54,6 +54,7 @@ _REGISTRY: dict[str, str] = {
     "R4Heater": "flowchem.sim.devices.vapourtec.r4_sim.R4HeaterSim",
     # Runze
     "RunzeValve": "flowchem.sim.devices.runze.runze_sim.RunzeValveSim",
+    "RunzeSyringePump": "flowchem.sim.devices.runze.runze_sim.RunzeSyringePumpSim",
     # Vici Valco
     "ViciValve": "flowchem.sim.devices.vicivalco.vici_sim.ViciValveSim",
     # Phidgets
