@@ -3,7 +3,7 @@
 from flowchem.components.flowchem_component import FlowchemComponent
 
 
-class Gantry(FlowchemComponent):
+class Gantry1D(FlowchemComponent):
     """Shared root for gantry-style movement components.
 
     Represents a single degree of freedom (one axis). Adds no behavior of
@@ -11,6 +11,6 @@ class Gantry(FlowchemComponent):
     (single-axis fraction collectors, multi-axis autosampler gantries via
     Gantry3D, future linear/XY stages, ...) share an MRO node, visible in
     ComponentInfo.corresponding_class and usable via
-    isinstance(component, Gantry), regardless of axis count or how
+    isinstance(component, Gantry1D), regardless of axis count or how
     position is represented by the concrete hardware.
     """
