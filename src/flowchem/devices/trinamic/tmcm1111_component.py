@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.meta_components.gantry1D import Gantry1D
 from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from .tmcm1111 import TMCM1111
 
 
-class TMCM1111FractionCollector(FlowchemComponent):
+class TMCM1111FractionCollector(Gantry1D):
     """Named-position interface for a single-axis TMCM-1111 fraction collector."""
 
     hw_device: TMCM1111
