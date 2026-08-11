@@ -4,4 +4,5 @@
 :maxdepth: 1
 
 mpikg_switch_box
+peltier_cooler
 ```
