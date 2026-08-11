@@ -16,6 +16,13 @@ address = 0                   # Peltier controller bus address (0-98)
 peltier_defaults = "default"  # Optional, see below
 ```
 
+```{note} Bus address
+`0` above is just a placeholder value, not a safe default. Each physical controller has its
+own configured bus address (set on the device itself), and commands sent with the wrong
+address will fail (e.g. with a `COMMAND ERR` reply) even though the serial connection itself
+is working. Make sure `address` matches the actual address of the connected unit.
+```
+
 `peltier_defaults` selects a preset profile of temperature range, PID and current-limit
 parameters that are pushed to the controller on initialization. Available profiles:
 
