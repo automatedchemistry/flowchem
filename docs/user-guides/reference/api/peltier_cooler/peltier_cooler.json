@@ -1,0 +1,436 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Flowchem - ",
+        "description": "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API.",
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.1.1"
+    },
+    "paths": {
+        "/my-peltier/": {
+            "get": {
+                "tags": [
+                    "my-peltier"
+                ],
+                "summary": "Get Device Info",
+                "operationId": "get_device_info_my_peltier__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/": {
+            "get": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Get Component Info",
+                "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
+                "operationId": "get_component_info_my_peltier_temperature_control__get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComponentInfo"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/is-reachable": {
+            "get": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Is Reachable",
+                "description": "Return ONLINE if the temperature controller responds to a temperature query.",
+                "operationId": "is_reachable_my_peltier_temperature_control_is_reachable_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReachabilityStatus"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/is-idle": {
+            "get": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Is Idle",
+                "description": "Check whether the set temperature target has been reached.",
+                "operationId": "is_idle_my_peltier_temperature_control_is_idle_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Is Idle My Peltier Temperature Control Is Idle Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/temperature": {
+            "put": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Set Temperature",
+                "description": "Set the target temperature to the given string in \"magnitude and unit\" format.",
+                "operationId": "set_temperature_my_peltier_temperature_control_temperature_put",
+                "parameters": [
+                    {
+                        "name": "temperature",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Temperature"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Get Temperature",
+                "description": "Return temperature in Celsius.",
+                "operationId": "get_temperature_my_peltier_temperature_control_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature My Peltier Temperature Control Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/power-on": {
+            "put": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Power On",
+                "description": "Turn on temperature control.",
+                "operationId": "power_on_my_peltier_temperature_control_power_on_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/power-off": {
+            "put": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off temperature control.",
+                "operationId": "power_off_my_peltier_temperature_control_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/target-reached": {
+            "get": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Is Target Reached",
+                "description": "Return True if the set temperature target has been reached.",
+                "operationId": "is_target_reached_my_peltier_temperature_control_target_reached_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "boolean"
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "title": "Response Is Target Reached My Peltier Temperature Control Target Reached Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-peltier/temperature_control/temperature-setpoint": {
+            "get": {
+                "tags": [
+                    "my-peltier",
+                    "my-peltier"
+                ],
+                "summary": "Get Temperature Setpoint",
+                "description": "Return the current set temperature from the Peltier parameter list.",
+                "operationId": "get_temperature_setpoint_my_peltier_temperature_control_temperature_setpoint_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Setpoint My Peltier Temperature Control Temperature Setpoint Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ComponentInfo": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name",
+                        "default": ""
+                    },
+                    "parent_device": {
+                        "type": "string",
+                        "title": "Parent Device",
+                        "default": ""
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Type",
+                        "default": ""
+                    },
+                    "corresponding_class": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Corresponding Class",
+                        "default": []
+                    },
+                    "owl_subclass_of": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Owl Subclass Of",
+                        "default": [
+                            "http://purl.obolibrary.org/obo/OBI_0000968"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "ComponentInfo",
+                "description": "Metadata associated with flowchem components."
+            },
+            "DeviceInfo": {
+                "properties": {
+                    "manufacturer": {
+                        "type": "string",
+                        "title": "Manufacturer",
+                        "default": ""
+                    },
+                    "model": {
+                        "type": "string",
+                        "title": "Model",
+                        "default": ""
+                    },
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "default": ""
+                    },
+                    "serial_number": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "integer"
+                            }
+                        ],
+                        "title": "Serial Number",
+                        "default": "unknown"
+                    },
+                    "components": {
+                        "additionalProperties": {
+                            "type": "string",
+                            "minLength": 1,
+                            "format": "uri"
+                        },
+                        "type": "object",
+                        "title": "Components",
+                        "default": {}
+                    },
+                    "backend": {
+                        "type": "string",
+                        "title": "Backend",
+                        "default": "flowchem v. 1.1.1"
+                    },
+                    "authors": {
+                        "items": {
+                            "type": "string",
+                            "format": "name-email"
+                        },
+                        "type": "array",
+                        "title": "Authors",
+                        "default": []
+                    },
+                    "additional_info": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Additional Info",
+                        "default": {}
+                    }
+                },
+                "type": "object",
+                "title": "DeviceInfo",
+                "description": "Metadata associated with hardware devices."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "ReachabilityStatus": {
+                "type": "string",
+                "enum": [
+                    "online",
+                    "offline",
+                    "unknown"
+                ],
+                "title": "ReachabilityStatus"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    },
+                    "input": {
+                        "title": "Input"
+                    },
+                    "ctx": {
+                        "type": "object",
+                        "title": "Context"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}

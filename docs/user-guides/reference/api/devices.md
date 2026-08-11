@@ -23,4 +23,5 @@ Select a device to open the relevant API reference:
 ./bronkhorst_EPC/api
 ./mpikg_box/api
 ./biochem_solenoid/api
+./peltier_cooler/api
 ```
