@@ -96,9 +96,10 @@ class PeltierCommand(PeltierCommandTemplate):
         """
         assert 0 <= self.target_peltier_address < 99
         # end character needs to be '\n'.
+        address = f"{self.target_peltier_address:02d}"
         if self.command_argument:
             return (
-                str(self.target_peltier_address)
+                address
                 + " "
                 + self.command_string
                 + " "
@@ -106,7 +107,7 @@ class PeltierCommand(PeltierCommandTemplate):
                 + "\n"
             )
         else:
-            return str(self.target_peltier_address) + " " + self.command_string + "\n"
+            return address + " " + self.command_string + "\n"
 
 
 class PeltierIO:
