@@ -99,12 +99,7 @@ class PeltierCommand(PeltierCommandTemplate):
         address = f"{self.target_peltier_address:02d}"
         if self.command_argument:
             return (
-                address
-                + " "
-                + self.command_string
-                + " "
-                + self.command_argument
-                + "\n"
+                address + " " + self.command_string + " " + self.command_argument + "\n"
             )
         else:
             return address + " " + self.command_string + "\n"

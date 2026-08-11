@@ -3,7 +3,7 @@
 ### `GET /my-peltier/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-peltier
 **Operation ID:** `get_device_info_my_peltier__get`
 
