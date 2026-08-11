@@ -25,6 +25,7 @@ If any required information is missing, use `AskUserQuestion` to collect everyth
    - `valve` — rotary multiport valve
    - `pressure_sensor`
    - `photo_sensor`
+   - `temperature_sensor` — read-only temperature measurement
    - `temperature` — set/get temperature with configurable limits
    - `stirring` — set/get stir speed
    - `mass_flow_controller`
@@ -51,6 +52,7 @@ Component suffix table:
 | `valve` | `Valve` | `_valve` |
 | `pressure_sensor` | `PressureSensor` | `_pressure_sensor` |
 | `photo_sensor` | `PhotoSensor` | `_photo_sensor` |
+| `temperature_sensor` | `TemperatureSensor` | `_temperature_sensor` |
 | `temperature` | `TemperatureControl` | `_temperature_control` |
 | `stirring` | `StirringControl` | `_stirring_control` |
 | `mass_flow_controller` | `MFC` | `_mfc` |
@@ -504,6 +506,11 @@ async def read_pressure(self, units: str = "bar") -> float: ...
 ```python
 async def acquire_signal(self): ...
 async def calibrate_zero(self): ...
+```
+
+**`temperature_sensor`** → `from flowchem.components.sensors.temperature_sensor import TemperatureSensor`
+```python
+async def get_temperature(self) -> float: ...
 ```
 
 **`temperature`** → `from flowchem.components.technical.temperature import TemperatureControl, TempRange`
