@@ -30,7 +30,10 @@ class R4Heater(FlowchemDevice):
     """R4 reactor heater control class."""
 
     DEFAULT_CONFIG = {
-        "timeout": 0.1,
+        # 0.1s was too tight against a real unit: the very first command sent
+        # after opening the port (e.g. GV during initialize()) can come back
+        # empty. 1.0s is more tolerant while still failing fast on a dead port.
+        "timeout": 1.0,
         "baudrate": 19200,
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
