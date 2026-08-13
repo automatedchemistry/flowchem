@@ -104,9 +104,9 @@ class R4Heater(FlowchemDevice):
         ]
         self.components.extend(reactor_positions)
 
-    async def _write(self, command: str):
+    async def _write(self, command: str, terminator: str = "\r\n"):
         """Write a command to the pump."""
-        cmd = command + "\r\n"
+        cmd = command + terminator
         await self._serial.write_async(cmd.encode("ascii"))
         logger.debug(f"Sent command: {command!r}")
 
@@ -152,13 +152,26 @@ class R4Heater(FlowchemDevice):
 
     async def get_status(self, channel) -> ChannelStatus:
         """Get status from channel."""
+        command = self.cmd.GET_STATUS.format(channel=channel)
+
+        # This unit replies ER101 ("incorrectly formatted") to a bare GTn+\r\n
+        # query unless it is preceded by a GTn+\r and a GTn+\n (both discarded).
+        # Confirmed empirically against this unit; the official manual states
+        # \r, \n, or \r\n should each work standalone, so this priming may be
+        # specific to this unit's customized firmware.
+        for terminator in ("\r", "\n"):
+            self._serial.reset_input_buffer()
+            await self._write(command, terminator=terminator)
+            await self._read_reply()
+
         # This command is a bit fragile for unknown reasons.
         failure = 0
         while True:
             try:
-                raw_status = await self.write_and_read_reply(
-                    self.cmd.GET_STATUS.format(channel=channel),
-                )
+                raw_status = await self.write_and_read_reply(command)
+                if raw_status.startswith("ER"):
+                    msg = f"R4 returned error {raw_status!r} for channel {channel}"
+                    raise InvalidConfigurationError(msg)
                 return R4Heater.ChannelStatus(raw_status[:1], raw_status[1:])
             except InvalidConfigurationError as ex:
                 failure += 1
