@@ -308,8 +308,8 @@ class PeltierDefaults:
     STATE_DEPENDANT_CURRENT_LIMITS = np.array(
         state_dependent_data, dtype=float
     ).transpose()
-    T_MAX = 50
-    T_MIN = -55
+    T_MAX: float = 50
+    T_MIN: float = -55
 
 
 class PeltierLowCoolingDefaults(PeltierDefaults):
