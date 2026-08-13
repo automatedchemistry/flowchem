@@ -82,6 +82,110 @@ available methods, which include:
 * `is_target_reached` / `is_idle`
 * `parameters` — combined configured (TOML) defaults and live hardware GPA readback
 
+## Hardware & protocol reference
+
+The controller boards driven by this device are the Schulz-Electronic/head electronic
+**TEC05-12/TEC05-24** and **TEC16-12/TEC16-24/TEC16-32** TEC-Controllers. The vendor's
+full operating manual, including the ASCII command set used by this driver, is included
+alongside this page: [TEC05-12_16-32.pdf](TEC05-12_16-32.pdf).
+
+### Serial protocol
+
+Commands are plain ASCII, newline-terminated, and prefixed with the two-digit bus
+`address` (e.g. `11 STV 2000\n`). Replies echo the address followed by `KEY=VALUE`
+(e.g. `11 TEMP_SET=20.00 C`). Numeric arguments/values for temperatures and PID
+factors are transmitted as the real value ×100 (i.e. two implied decimal places).
+Malformed commands, out-of-range parameters, or wrong-address replies produce
+`COMMAND ERR` / `FORMAT ERR` / `NUMBER ERR` respectively — see
+`PeltierIO.check_for_errors` in
+[peltier_cooler.py](../../../../../src/flowchem/devices/custom/peltier_cooler.py).
+
+### Command reference
+
+Mapping between the `PeltierCommands` used by this driver and the vendor's own
+command mnemonics (manual Anhang II, "TEC-Controller ASCII Befehlssatz"):
+
+| `PeltierCommands` | Vendor command | Description | Reply |
+|---|---|---|---|
+| `GET_TEMPERATURE` | `GT1` | Sensor 1 temperature reading | `TEMP1=x.xx C` |
+| `GET_SINK_TEMPERATURE` | `GT2` | Sensor 2 temperature reading (heat-sink side) | `TEMP2=x.xx C` |
+| `SET_TEMPERATURE` | `STV` | Setpoint temperature | `TEMP_SET=xxx.xx C` |
+| `SET_SLOPE` | `STS` | Setpoint ramp rate (0 = step change) | `TEMP_SLOPE=xx.xx C/s` |
+| `SWITCH_ON` | `SEN` | Enable the regulation loop | `STATUS=x` |
+| `SWITCH_OFF` | `SDI` | Disable the regulation loop | `STATUS=0` |
+| `COOLING_CURRENT_LIMIT` | `SCC` | Negative ("cooling") current limit | `COOL_C_LIMIT=xx.xx A` |
+| `HEATING_CURRENT_LIMIT` | `SHC` | Positive ("heating") current limit | `HEAT_C_LIMIT=xx.xx A` |
+| `SET_PROPORTIONAL_PID` | `SPF` | PID proportional factor (P) | `P_FACTOR=xx.xx` |
+| `SET_INTEGRAL_PID` | `SIF` | PID integral factor (I) | `I_FACTOR=xx.xx` |
+| `SET_DIFFERENTIAL_PID` | `SDF` | PID differential factor (D) — see note below | `D_FACTOR=xx.xx` |
+| `SET_T_MAX` | `SMA` | Upper temperature limit | `TEMP_MAX=xxx.xx C` |
+| `SET_T_MIN` | `SMI` | Lower temperature limit | `TEMP_MIN=xxx.xx C` |
+| `GET_POWER` | `GCU` | Actual current draw — see note below | `CURRENT=x.xx A` |
+| `GET_CURRENT` | `GPW` | Actual power draw — see note below | `POWER=x W` |
+| `GET_SETTINGS` | `GPA` | Full parameter dump (see table below) | `PARAMS=...` |
+
+```{note} Undocumented D-factor command
+`SDF`/`D_FACTOR` (the PID derivative term) does not appear in this manual revision's
+command tables at all, yet it works against real hardware and is present in the
+vendor's own (newer) configuration GUI. It's a firmware addition postdating this PDF —
+treat it as confirmed-by-observation rather than vendor-documented.
+```
+
+```{warning} `get_power()` / `get_current()` naming
+Per the vendor manual, `GCU` ("Ist-Strom") reports **current** and `GPW`
+("TEC-Leistung") reports **power** — the opposite of what `PeltierCooler.get_power()`
+(which sends `GCU`) and `.get_current()` (which sends `GPW`) suggest. Until this is
+fixed in code, treat the *values* returned by these two methods as swapped relative to
+their names: `get_power()` currently returns amps, `get_current()` currently returns
+watts.
+```
+
+### `GPA` field reference
+
+`GET_SETTINGS`/`GPA` returns a single comma-separated line dumping the controller's
+internal parameter table (exposed as `live.raw_gpa_reply` by the `parameters`
+component endpoint). The manual documents the following field order (1-indexed):
+
+| # | Field |
+|---|---|
+| 1 | Setpoint temperature |
+| 2–3 | *(undocumented in this manual revision)* |
+| 4 | Heating current limit |
+| 5 | Cooling current limit |
+| 6 | P factor |
+| 7 | I factor |
+| 8 | "Temperature OK" positive threshold |
+| 9 | "Temperature OK" negative threshold |
+| 10 | Minimum temperature (`T_MIN`) |
+| 11 | Maximum temperature (`T_MAX`) |
+| 12 | Auto-enable active |
+| 13 | Use analog setpoint input |
+| 14 | Sensor 1 cutoff temperature |
+| 15 | Max. temperature delta, sensors 1/2 |
+| 16 | Control sensor selection |
+| 17 | Sensor 2 cutoff temperature |
+| 18 | Sensor 3 cutoff temperature |
+| 19 | Fan control sensor |
+| 20 | Fan control temperature delta |
+| 21 | Fan control ambient temperature |
+| 22 | Fan control max power |
+| 23 | Sensor 1 coefficient |
+| 24 | Sensor 1 zero-point offset |
+| 25 | Sensor 2 coefficient |
+| 26 | Sensor 2 zero-point offset |
+| 27–29 | Aux I/O 1–3 |
+| 30–35 | Aux 1–3 lower/upper temperature limits |
+| 36 | Setpoint ramp rate |
+| 37 | Enable via digital input |
+| 38 | Buzzer active |
+| 39 | Fan tach pulses per revolution |
+
+```{note} Real replies may be longer than this table
+On the firmware tested this session, the real reply had ~51 fields rather than the 39
+listed above — extra, undocumented fields (including D-factor) are appended after
+field 39. Field order beyond #39 is not vendor-documented and was not decoded.
+```
+
 ## Further information:
 
 More detail can be found as a docstring in the
