@@ -531,7 +531,7 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
         Returns:
             int: The mapped position.
         """
-        position_mapping = {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"}
+        position_mapping = {0: "NEEDLE", 1: "WASH_PORT2", 2: "WASTE", 3: "WASH"}
         if reverse:
             return str(
                 [
@@ -552,8 +552,8 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
 
         Returns:
             position (str): The current position:
-            NEEDLE (position 0).
-            WASH (position 1).
+            NEEDLE (position 1).
+            WASH (position 4).
             WASH_PORT2 (position 2).
             WASTE (position 3).
         """
@@ -568,8 +568,8 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
 
         Args:
             position (str): The desired position:
-            NEEDLE (position 0).
-            WASH (position 1).
+            NEEDLE (position 1).
+            WASH (position 4).
             WASH_PORT2 (position 2).
             WASTE (position 3).
         """
