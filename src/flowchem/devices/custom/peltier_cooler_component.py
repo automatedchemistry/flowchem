@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pint
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
@@ -15,6 +15,36 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
     """Peltier Cooler ."""
 
     hw_device: PeltierCooler  # for typing's sake
+
+    def __init__(
+        self, name: str, hw_device: PeltierCooler, temp_limits: TempRange
+    ) -> None:
+        super().__init__(name, hw_device, temp_limits)
+        self.add_api_route("/parameters", self.parameters, methods=["GET"])
+
+    async def parameters(self) -> dict[str, Any]:
+        """Return configured (TOML) defaults and a live hardware readback of Peltier parameters."""
+        defaults = self.hw_device.peltier_defaults
+        raw = await self.hw_device.get_parameters()
+        return {
+            "configured": {
+                "heating_pid": defaults.HEATING_PID,
+                "cooling_pid": defaults.COOLING_PID,
+                "base_temp": defaults.BASE_TEMP,
+                "t_max": defaults.T_MAX,
+                "t_min": defaults.T_MIN,
+                "state_dependent_data": defaults.state_dependent_data,
+            },
+            "live": {
+                # Only the first field of the controller's GPA reply is documented
+                # by existing usage (see is_target_reached/get_temperature_setpoint).
+                # The remaining fields are an undocumented vendor-specific dump, so
+                # the full raw reply is included as-is rather than guessing at
+                # field semantics that could misrepresent real values.
+                "temperature_setpoint": float(raw.split(",")[0]),
+                "raw_gpa_reply": raw,
+            },
+        }
 
     async def set_temperature(self, temperature: str):
         """Set the target temperature to the given string in "magnitude and unit" format."""

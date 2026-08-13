@@ -151,6 +151,12 @@ class PeltierCoolerSim(PeltierCooler):
         address: int = 0,
         name: str = "",
         peltier_defaults: str | None = None,
+        heating_pid: list[float] | None = None,
+        cooling_pid: list[float] | None = None,
+        base_temp: float | None = None,
+        state_dependent_data: list[list[float]] | None = None,
+        t_max: float | None = None,
+        t_min: float | None = None,
         **serial_kwargs,
     ) -> "PeltierCoolerSim":
         sim_io = SimulatedPeltierIO(address=address)
@@ -159,6 +165,12 @@ class PeltierCoolerSim(PeltierCooler):
             address=address,
             name=name or "sim-peltier",
             peltier_defaults=peltier_defaults,
+            heating_pid=heating_pid,
+            cooling_pid=cooling_pid,
+            base_temp=base_temp,
+            state_dependent_data=state_dependent_data,
+            t_max=t_max,
+            t_min=t_min,
         )
         instance.sim_io = sim_io
         return instance
