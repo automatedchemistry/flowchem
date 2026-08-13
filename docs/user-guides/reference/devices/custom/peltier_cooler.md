@@ -14,6 +14,19 @@ type = "PeltierCooler"        # This is the device identifier
 port = "COM17"                # Serial port name (e.g., 'COM3') for Serial communication
 address = 0                   # Peltier controller bus address (0-98)
 peltier_defaults = "default"  # Optional, see below
+
+# Optional overrides applied on top of the selected preset above.
+# Any subset may be given; omitted values fall back to the preset's value.
+heating_pid = [0.64, 0.53, 0.13]   # [P, I, D] used above base_temp
+cooling_pid = [2.83, 2.36, 0.59]   # [P, I, D] used at/below base_temp
+base_temp = -7.6                   # °C threshold switching between heating/cooling PID
+t_max = 50                         # °C, upper temperature limit
+t_min = -55                        # °C, lower temperature limit
+state_dependent_data = [           # current-limit curve, must have exactly 3 rows:
+    [-55, 50],                     #   temperature breakpoints (°C)
+    [14, 14],                      #   cooling current limit at each breakpoint (A)
+    [10, 10],                      #   heating current limit at each breakpoint (A)
+]
 ```
 
 ```{note} Bus address
@@ -32,6 +45,18 @@ parameters that are pushed to the controller on initialization. Available profil
 | `"low_cooling"` | -66 to 30 °C |
 | `"tube_reactor"` | -55 to 25 °C |
 | `"tube_reactor_chiller_2"` | -55 to 25 °C |
+
+Each of `heating_pid`, `cooling_pid`, `base_temp`, `t_max`, `t_min` and
+`state_dependent_data` may optionally be set directly in the config file to override
+the corresponding value from the selected `peltier_defaults` preset. This is useful
+when a preset is a good starting point but the specific application (e.g. a different
+reactor volume or heat sink) needs a custom current-limit curve or temperature range.
+For example, `peltier_defaults = "tube_reactor"` with only `t_max = 30` set will use
+all of the `tube_reactor` preset's values except for `T_MAX`.
+
+`state_dependent_data` must have exactly 3 rows (temperature breakpoints, cooling
+current limits, heating current limits), each the same length; a mismatched row count
+raises a configuration error at startup rather than failing later during operation.
 
 Communication by Serial Port
 ```{note} Serial connection parameters
@@ -55,6 +80,7 @@ available methods, which include:
 * `get_temperature_setpoint`
 * `power_on` / `power_off` — start/stop the regulation loop
 * `is_target_reached` / `is_idle`
+* `parameters` — combined configured (TOML) defaults and live hardware GPA readback
 
 ## Further information:
 
