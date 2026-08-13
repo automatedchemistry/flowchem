@@ -134,12 +134,16 @@ class R4Heater(FlowchemDevice):
         """Get firmware version."""
         return await self.write_and_read_reply(self.cmd.VERSION)
 
-    async def set_temperature(self, channel, temperature: pint.Quantity):
-        """Set temperature to channel."""
+    async def set_temperature(
+        self, channel, temperature: pint.Quantity, rate: float | None = None,
+    ):
+        """Set temperature to channel, with an optional ramp rate in °C/min."""
         cmd = self.cmd.SET_TEMPERATURE.format(
             channel=channel,
             temperature_in_C=round(temperature.m_as("°C")),
         )
+        if rate is not None:
+            cmd += f" {round(rate)}"
         await self.write_and_read_reply(cmd)
         # Set temperature implies channel on
         await self.power_on(channel)
@@ -186,13 +190,15 @@ class R4Heater(FlowchemDevice):
         state = await self.get_status(channel)
         return None if state.temperature == "281.2" else state.temperature
 
-    async def power_on(self, channel):
-        """Turn on channel."""
-        await self.write_and_read_reply(self.cmd.POWER_ON.format(channel=channel))
+    async def power_on(self, channel: int | None = None):
+        """Turn on channel, or all channels if none given."""
+        chan = "" if channel is None else channel
+        await self.write_and_read_reply(self.cmd.POWER_ON.format(channel=chan))
 
-    async def power_off(self, channel):
-        """Turn off channel."""
-        await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=channel))
+    async def power_off(self, channel: int | None = None):
+        """Turn off channel, or all channels if none given."""
+        chan = "" if channel is None else channel
+        await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=chan))
 
 
 if __name__ == "__main__":

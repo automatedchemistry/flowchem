@@ -35,18 +35,19 @@ class R4HeaterChannelControl(TemperatureControl):
         super().__init__(name, hw_device, temp_limits)
         self.channel = channel
 
-    async def set_temperature(self, temp: str):
+    async def set_temperature(self, temp: str, rate: float | None = None):
         """
         Set the target temperature for this channel using a "magnitude and unit" format string.
 
         Args:
             temp (str): The desired temperature as a string (e.g., '50 °C', '75.5 °C').
+            rate (float | None): Optional ramp rate in °C/min.
 
         Returns:
             Awaitable: Result of the set temperature operation from the hardware device.
         """
         set_t = cast(pint.Quantity, await super().set_temperature(temp))
-        return await self.hw_device.set_temperature(self.channel, set_t)
+        return await self.hw_device.set_temperature(self.channel, set_t, rate)
 
     async def get_temperature(self) -> float:  # type: ignore
         """
