@@ -30,7 +30,10 @@ class R4Heater(FlowchemDevice):
     """R4 reactor heater control class."""
 
     DEFAULT_CONFIG = {
-        "timeout": 0.1,
+        # 0.1s was too tight against a real unit: the very first command sent
+        # after opening the port (e.g. GV during initialize()) can come back
+        # empty. 1.0s is more tolerant while still failing fast on a dead port.
+        "timeout": 1.0,
         "baudrate": 19200,
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
@@ -101,9 +104,9 @@ class R4Heater(FlowchemDevice):
         ]
         self.components.extend(reactor_positions)
 
-    async def _write(self, command: str):
+    async def _write(self, command: str, terminator: str = "\r\n"):
         """Write a command to the pump."""
-        cmd = command + "\r\n"
+        cmd = command + terminator
         await self._serial.write_async(cmd.encode("ascii"))
         logger.debug(f"Sent command: {command!r}")
 
@@ -131,12 +134,16 @@ class R4Heater(FlowchemDevice):
         """Get firmware version."""
         return await self.write_and_read_reply(self.cmd.VERSION)
 
-    async def set_temperature(self, channel, temperature: pint.Quantity):
-        """Set temperature to channel."""
+    async def set_temperature(
+        self, channel, temperature: pint.Quantity, rate: float | None = None,
+    ):
+        """Set temperature to channel, with an optional ramp rate in °C/min."""
         cmd = self.cmd.SET_TEMPERATURE.format(
             channel=channel,
             temperature_in_C=round(temperature.m_as("°C")),
         )
+        if rate is not None:
+            cmd += f" {round(rate)}"
         await self.write_and_read_reply(cmd)
         # Set temperature implies channel on
         await self.power_on(channel)
@@ -149,13 +156,26 @@ class R4Heater(FlowchemDevice):
 
     async def get_status(self, channel) -> ChannelStatus:
         """Get status from channel."""
+        command = self.cmd.GET_STATUS.format(channel=channel)
+
+        # This unit replies ER101 ("incorrectly formatted") to a bare GTn+\r\n
+        # query unless it is preceded by a GTn+\r and a GTn+\n (both discarded).
+        # Confirmed empirically against this unit; the official manual states
+        # \r, \n, or \r\n should each work standalone, so this priming may be
+        # specific to this unit's customized firmware.
+        for terminator in ("\r", "\n"):
+            self._serial.reset_input_buffer()
+            await self._write(command, terminator=terminator)
+            await self._read_reply()
+
         # This command is a bit fragile for unknown reasons.
         failure = 0
         while True:
             try:
-                raw_status = await self.write_and_read_reply(
-                    self.cmd.GET_STATUS.format(channel=channel),
-                )
+                raw_status = await self.write_and_read_reply(command)
+                if raw_status.startswith("ER"):
+                    msg = f"R4 returned error {raw_status!r} for channel {channel}"
+                    raise InvalidConfigurationError(msg)
                 return R4Heater.ChannelStatus(raw_status[:1], raw_status[1:])
             except InvalidConfigurationError as ex:
                 failure += 1
@@ -170,13 +190,15 @@ class R4Heater(FlowchemDevice):
         state = await self.get_status(channel)
         return None if state.temperature == "281.2" else state.temperature
 
-    async def power_on(self, channel):
-        """Turn on channel."""
-        await self.write_and_read_reply(self.cmd.POWER_ON.format(channel=channel))
+    async def power_on(self, channel: int | None = None):
+        """Turn on channel, or all channels if none given."""
+        chan = "" if channel is None else channel
+        await self.write_and_read_reply(self.cmd.POWER_ON.format(channel=chan))
 
-    async def power_off(self, channel):
-        """Turn off channel."""
-        await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=channel))
+    async def power_off(self, channel: int | None = None):
+        """Turn off channel, or all channels if none given."""
+        chan = "" if channel is None else channel
+        await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=chan))
 
 
 if __name__ == "__main__":
