@@ -5,6 +5,8 @@
 
 cvc3000
 
+ebpr
+
 r4_heater
 
 huber_chiller

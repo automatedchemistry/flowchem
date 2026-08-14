@@ -18,7 +18,7 @@ class EBPRPressureControl(PressureControl):
 
     hw_device: EBPR
 
-    async def set_pressure(self, pressure: str) -> pint.Quantity:
+    async def set_pressure(self, pressure: str):
         """Set the target pressure (default unit mbar if none given)."""
         set_p = await super().set_pressure(pressure)
         await self.hw_device.set_pressure(set_p.m_as("mbar"))

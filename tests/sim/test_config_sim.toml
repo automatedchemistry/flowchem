@@ -151,6 +151,10 @@ normally_open = false
 type = "R4Heater"
 port = "COM_SIM"
 
+[device.sim-ebpr]
+type = "EBPR"
+port = "COM_SIM"
+
 [device.sim-flame]
 type = "FlameOptical"
 serial_number = "SIM-FLAME-001"

@@ -403,6 +403,11 @@ class AutosamplerPump(SyringePump):
         """Can the pump reverse its normal flow direction?"""
         return True
 
+    @staticmethod
+    def is_flowrate_capable() -> bool:
+        """The built-in syringe has no queryable flow rate (fixed firmware rate)."""
+        return False
+
     async def is_pumping(self) -> bool:
         """ "Checks if Syringe or syringe valve is running"""
         status = await self.hw_device.get_status()
