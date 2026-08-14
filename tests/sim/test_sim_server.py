@@ -193,8 +193,17 @@ def operation_params(
 
     for parameter in spec.get("parameters", []):
         name = parameter["name"]
-        default = parameter.get("schema", {}).get("default")
-        if name in local_values:
+        schema = parameter.get("schema", {})
+        default = schema.get("default")
+        schema_types = {
+            schema.get("type"),
+            *(s.get("type") for s in schema.get("anyOf", [])),
+        }
+        if name == "rate" and schema_types & {"number", "integer"}:
+            # Most "rate" params are quantity strings (e.g. "1 ml/min"), but a
+            # few (e.g. R4Heater's ramp rate) are plain numbers in °C/min.
+            params[name] = 1
+        elif name in local_values:
             params[name] = local_values[name]
         elif parameter.get("required", False) or default is not None:
             params[name] = default

@@ -50,6 +50,7 @@ _REGISTRY: dict[str, str] = {
     "MFC": "flowchem.sim.devices.bronkhorst.bronkhorst_sim.MFCSim",
     "EPC": "flowchem.sim.devices.bronkhorst.bronkhorst_sim.EPCSim",
     # Vapourtec
+    "EBPR": "flowchem.sim.devices.vapourtec.ebpr_sim.EBPRSim",
     "R2": "flowchem.sim.devices.vapourtec.r2_sim.R2Sim",
     "R4Heater": "flowchem.sim.devices.vapourtec.r4_sim.R4HeaterSim",
     # Runze

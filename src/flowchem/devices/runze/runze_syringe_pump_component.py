@@ -36,6 +36,11 @@ class RunzeSyringePumpComponent(SyringePump):
     def is_withdrawing_capable() -> bool:
         return True
 
+    @staticmethod
+    def is_flowrate_capable() -> bool:
+        """No calibrated rate->speed mapping exists for this pump yet."""
+        return False
+
     async def get_current_volume(self) -> float:
         """Return the current syringe volume in ml."""
         volume = await self.hw_device.get_current_volume()

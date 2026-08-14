@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pint
+
 from flowchem import ureg
 from flowchem.components.technical.pressure import PressureControl
 
@@ -16,11 +18,11 @@ class EBPRPressureControl(PressureControl):
 
     hw_device: EBPR
 
-    async def set_pressure(self, pressure: str) -> bool:
+    async def set_pressure(self, pressure: str):
         """Set the target pressure (default unit mbar if none given)."""
         set_p = await super().set_pressure(pressure)
         await self.hw_device.set_pressure(set_p.m_as("mbar"))
-        return True
+        return set_p
 
     async def get_pressure(self) -> float:
         """Get the current pressure in bar."""
@@ -29,8 +31,8 @@ class EBPRPressureControl(PressureControl):
     async def is_target_reached(self) -> bool:
         """Check if the current pressure is within the eBPR's documented resolution of the set point."""
         status = await self.hw_device.get_status()
-        current = ureg.Quantity(f"{status.pressure} bar")
-        target = ureg.Quantity(f"{status.setpoint} mbar")
+        current: pint.Quantity = ureg.Quantity(f"{status.pressure} bar")
+        target: pint.Quantity = ureg.Quantity(f"{status.setpoint} mbar")
         # +/- 0.1 bar is the documented pressure resolution (eBPR manual, low-pressure spec).
         return abs(current - target) < ureg.Quantity("100 mbar")
 
