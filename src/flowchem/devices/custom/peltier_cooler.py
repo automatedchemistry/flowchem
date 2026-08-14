@@ -308,8 +308,8 @@ class PeltierDefaults:
     STATE_DEPENDANT_CURRENT_LIMITS = np.array(
         state_dependent_data, dtype=float
     ).transpose()
-    T_MAX = 50
-    T_MIN = -55
+    T_MAX: float = 50
+    T_MIN: float = -55
 
 
 class PeltierLowCoolingDefaults(PeltierDefaults):
@@ -369,6 +369,12 @@ class PeltierCooler(FlowchemDevice):
         name: str = "",
         address: int = 0,
         peltier_defaults: str | None = None,
+        heating_pid: List[float] | None = None,
+        cooling_pid: List[float] | None = None,
+        base_temp: float | None = None,
+        state_dependent_data: List[List[float]] | None = None,
+        t_max: float | None = None,
+        t_min: float | None = None,
     ) -> None:
         super().__init__(name)
         self.peltier_io = peltier_io
@@ -382,6 +388,36 @@ class PeltierCooler(FlowchemDevice):
                 self.peltier_defaults = PeltierTubeReactor()
             case "tube_reactor_chiller_2":
                 self.peltier_defaults = PeltierTubeReactor_Chiller2()
+            case _:
+                raise InvalidConfigurationError(
+                    f"Unknown peltier_defaults preset '{peltier_defaults}' for device "
+                    f"'{name}'. Valid presets: 'default', 'low_cooling', 'tube_reactor', "
+                    f"'tube_reactor_chiller_2'."
+                )
+
+        # Optional per-device overrides on top of the selected preset. Any subset may
+        # be given in the config file; values left unset keep the preset's value.
+        if heating_pid is not None:
+            self.peltier_defaults.HEATING_PID = heating_pid
+        if cooling_pid is not None:
+            self.peltier_defaults.COOLING_PID = cooling_pid
+        if base_temp is not None:
+            self.peltier_defaults.BASE_TEMP = base_temp
+        if t_max is not None:
+            self.peltier_defaults.T_MAX = t_max
+        if t_min is not None:
+            self.peltier_defaults.T_MIN = t_min
+        if state_dependent_data is not None:
+            if len(state_dependent_data) != 3:
+                raise InvalidConfigurationError(
+                    f"state_dependent_data for peltier '{name}' must have exactly 3 "
+                    f"rows (temperature setpoints, cooling current limits, heating "
+                    f"current limits), got {len(state_dependent_data)}."
+                )
+            self.peltier_defaults.state_dependent_data = state_dependent_data
+            self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS = np.array(
+                state_dependent_data, dtype=float
+            ).transpose()
 
         # ToDo check info
         self.device_info = DeviceInfo(
@@ -397,6 +433,12 @@ class PeltierCooler(FlowchemDevice):
         address: int,
         name: str = "",
         peltier_defaults: str | None = None,
+        heating_pid: List[float] | None = None,
+        cooling_pid: List[float] | None = None,
+        base_temp: float | None = None,
+        state_dependent_data: List[List[float]] | None = None,
+        t_max: float | None = None,
+        t_min: float | None = None,
         **serial_kwargs,
     ):
 
@@ -407,6 +449,12 @@ class PeltierCooler(FlowchemDevice):
             address=address,
             name=name,
             peltier_defaults=peltier_defaults,
+            heating_pid=heating_pid,
+            cooling_pid=cooling_pid,
+            base_temp=base_temp,
+            state_dependent_data=state_dependent_data,
+            t_max=t_max,
+            t_min=t_min,
         )
 
     async def initialize(self):
