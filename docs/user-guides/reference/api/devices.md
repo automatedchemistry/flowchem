@@ -8,6 +8,7 @@ Select a device to open the relevant API reference:
 ./azura_compact/api
 ./clarity/api
 ./cvc3000/api
+./ebpr/api
 ./elite11/api
 ./huber_chiller/api
 ./icir/api
