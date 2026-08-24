@@ -179,7 +179,12 @@ class AutosamplerGantry3D(gantry3D):
 
     async def tray_temperature(self, temperature: int | float | str | None = None) -> bool:
         """
-        Set tray temperature and enable tray temperature control.
+        Enable tray temperature control and set the tray temperature.
+
+        Control is turned ON *before* the setpoint is written: the autosampler NAKs a setpoint
+        programmed into a thermostat that is still switched off (the reply parser turns that into
+        CommandOrValueError, surfacing as a 500). The previous order - setpoint first, enable second
+        - therefore failed on any platform that had explicitly turned tray cooling off beforehand.
 
         Args:
             temperature: tray temperature setpoint.
@@ -204,19 +209,24 @@ class AutosamplerGantry3D(gantry3D):
         else:
             setpoint = int(temperature)
 
-        success = await self.hw_device.set_tray_temperature(setpoint=setpoint)
-        if not success:
+        control_success = await self.hw_device.set_tray_temperature_control(onoff="on")
+        if not control_success:
+            logger.warning(
+                f"Tray temperature control could not be turned on; not writing the {setpoint} °C "
+                f"setpoint (the autosampler rejects a setpoint while control is off)."
+            )
             return False
 
-        control_success = await self.hw_device.set_tray_temperature_control(onoff="on")
-        if control_success:
+        success = await self.hw_device.set_tray_temperature(setpoint=setpoint)
+        if success:
             logger.info(
-                f"Tray temperature set successfully to {setpoint} °C and control turned on"
+                f"Tray temperature control turned on and setpoint set successfully to {setpoint} °C"
             )
             return True
         else:
             logger.warning(
-                f"Tray temperature was set to {setpoint} °C, but control could not be turned on"
+                f"Tray temperature control was turned on, but the {setpoint} °C setpoint was "
+                f"rejected (check it is within the range this tray accepts)."
             )
             return False
 
