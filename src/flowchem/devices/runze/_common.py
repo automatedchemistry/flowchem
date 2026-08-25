@@ -323,7 +323,11 @@ async def send_and_await_completion(
         return status, parameters
 
     message = STATUS_MESSAGES.get(status, "Unknown status code")
-    logger.error(f"{message} (Status code: {status})")
     if raise_errors:
+        logger.error(f"{message} (Status code: {status})")
         raise DeviceError(f"{message} - Check command syntax or device status!")
+    # raise_errors=False means the caller expects/tolerates this outcome (e.g.
+    # detect_valve_type probing candidate port counts one by one) -- logging
+    # at ERROR here would misreport routine, by-design rejections as failures.
+    logger.debug(f"{message} (Status code: {status})")
     return status, parameters
