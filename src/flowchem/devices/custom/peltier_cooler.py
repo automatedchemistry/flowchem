@@ -333,7 +333,7 @@ class PeltierLowCoolingDefaults(PeltierDefaults):
 
 
 class PeltierTubeReactor(PeltierDefaults):
-    HEATING_PID = [2, 0.03, 0]
+    HEATING_PID = [6, 0.06, 0]  # before test: 21.09.26 [2, 0.03, 0]
     COOLING_PID = HEATING_PID
     BASE_TEMP = -10
     state_dependent_data: List[List[float]] = [
