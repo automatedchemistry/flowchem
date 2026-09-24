@@ -106,6 +106,12 @@ class TestKnauerAutosamplerSim:
         assert result is True
         assert autosampler._sim_tray == ("TRAY_48_VIAL", 3)
 
+    @pytest.mark.parametrize("position", ["HOME", "END", "EXCHANGE"])
+    async def test_move_syringe(self, autosampler, position):
+        result = await autosampler._move_syringe(position)
+        assert result is True
+        assert autosampler._sim_syringe_position == position
+
     async def test_aspirate_accumulates(self, autosampler):
         await autosampler.aspirate(0.1)
         await autosampler.aspirate(0.05)
@@ -162,6 +168,15 @@ class TestKnauerAutosamplerSim:
 
     async def test_pump_is_withdrawing_capable(self, as_pump):
         assert as_pump.is_withdrawing_capable() is True
+
+    @pytest.mark.parametrize("position", ["HOME", "END", "EXCHANGE"])
+    async def test_pump_set_to_position(self, as_pump, position):
+        result = await as_pump.set_to_position(position)
+        assert result is True
+
+    async def test_pump_is_pumping_during_home_move(self, autosampler, as_pump):
+        autosampler._sim_status = "MOVING_SYRINGE_TO_HOME_POSITION"
+        assert await as_pump.is_pumping() is True
 
     async def test_injection_valve_component_get(self, injection_valve):
         pos = await injection_valve.get_monitor_position()

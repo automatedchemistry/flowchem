@@ -785,6 +785,16 @@ class KnauerAutosampler(FlowchemDevice):
         command_string = await self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)  # type: ignore
         return await self._set(command_string)
 
+    async def _move_syringe(self, position: str):
+        """Move the built-in syringe to an absolute position (HOME/END/EXCHANGE).
+
+        Unlike aspirate()/dispense() (relative move-by-amount via wire 5138/5139),
+        this issues MoveSyringeCommand (wire 5140), which drives the plunger to a
+        fixed SyringePositions target regardless of the volume last moved.
+        """
+        command_string = await self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)  # type: ignore
+        return await self._set(command_string)
+
     async def get_errors(self):
         command_string = await self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         reply = str(await self._query(command_string))

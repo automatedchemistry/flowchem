@@ -30,6 +30,7 @@ class KnauerAutosamplerSim(FlowchemDevice):
     _sim_tray             : tuple  (tray, row) last tray move
     _sim_aspirated_ul     : float  cumulative aspirated volume µL
     _sim_dispensed_ul     : float  cumulative dispensed volume µL
+    _sim_syringe_position : str    last commanded absolute syringe position ("HOME"|"END"|"EXCHANGE")
     _sim_syringe_volume   : int    syringe volume in µL
     _sim_tray_temp_sp     : int    tray temperature setpoint °C
     """
@@ -65,6 +66,7 @@ class KnauerAutosamplerSim(FlowchemDevice):
         self._sim_tray: tuple = ("", 0)
         self._sim_aspirated_ul: float = 0.0
         self._sim_dispensed_ul: float = 0.0
+        self._sim_syringe_position: str = "HOME"
         self._sim_tray_temp_sp: int = 20
         logger.info(f"[SIM] KnauerAutosampler '{self.name}' initialized.")
 
@@ -164,6 +166,11 @@ class KnauerAutosamplerSim(FlowchemDevice):
     async def _move_tray(self, tray_type: str, sample_position: str | int) -> bool:
         self._sim_tray = (tray_type, sample_position)
         logger.debug(f"[SIM] Tray moved → tray={tray_type}, pos={sample_position}")
+        return True
+
+    async def _move_syringe(self, position: str) -> bool:
+        self._sim_syringe_position = position.upper()
+        logger.debug(f"[SIM] Syringe moved → {position}")
         return True
 
     async def aspirate(self, volume: float, flow_rate: float | None = None) -> bool:

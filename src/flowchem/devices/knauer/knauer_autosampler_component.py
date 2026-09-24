@@ -355,6 +355,11 @@ class AutosamplerPump(SyringePump):
 
     hw_device: KnauerAutosampler
 
+    def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
+        """Initialize component."""
+        super().__init__(name, hw_device)
+        self.add_api_route("/set_to_position", self.set_to_position, methods=["PUT"])
+
     async def infuse(
         self, rate: Optional[str] = None, volume: Optional[str] = None
     ) -> bool:
@@ -398,6 +403,27 @@ class AutosamplerPump(SyringePump):
         else:
             return False
 
+    async def set_to_position(self, position: str) -> bool:
+        """
+        Move the built-in syringe to an absolute position: HOME, END, or EXCHANGE.
+
+        NOT the same as infuse(volume=0)/withdraw(): those are relative
+        move-by-amount, so e.g. a 0 mL dispense is a no-op. set_to_position()
+        issues the AS's dedicated absolute-position command instead, driving
+        the syringe to a fixed physical position regardless of the volume
+        last moved.
+          HOME     = plunger fully in (position 0).
+          END      = plunger fully out (max / full withdraw).
+          EXCHANGE = service position for swapping the syringe cartridge.
+        Returns once acknowledged, not once the physical move completes —
+        poll is_pumping() to wait for the move to finish.
+        """
+        success = await self.hw_device._move_syringe(position)
+        if success:
+            logger.info(f"Syringe pump successfully moved to {position} position")
+            return True
+        return False
+
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
         """Can the pump reverse its normal flow direction?"""
@@ -408,18 +434,31 @@ class AutosamplerPump(SyringePump):
         """The built-in syringe has no queryable flow rate (fixed firmware rate)."""
         return False
 
+    _BUSY_STATUSES = frozenset(
+        {
+            "SYRINGE_OR_SYRINGE_VALVE_RUNNING",
+            "MOVING_SYRINGE_TO_HOME_POSITION",
+            "MOVING_SYRINGE_TO_END_POSITION",
+            "MOVING_SYRINGE_TO_EXCHANGE_POSITION",
+        }
+    )
+
     async def is_pumping(self) -> bool:
-        """ "Checks if Syringe or syringe valve is running"""
+        """Checks if the syringe or syringe valve is busy: running an
+        aspirate/dispense, or moving to an absolute HOME/END/EXCHANGE position."""
         status = await self.hw_device.get_status()
-        if status == "SYRINGE_OR_SYRINGE_VALVE_RUNNING":
-            return True
-        else:
-            return False
+        return status in self._BUSY_STATUSES
 
     async def is_idle(self) -> bool:
-        """Check whether the built-in syringe/syringe valve has finished moving."""
+        """Check whether the built-in syringe/syringe valve has finished moving.
+
+        Must agree with is_pumping()/_BUSY_STATUSES: set_to_position(HOME/END/
+        EXCHANGE) reports MOVING_SYRINGE_TO_*_POSITION while in motion, not
+        SYRINGE_OR_SYRINGE_VALVE_RUNNING - checking only the latter here would
+        report idle while the syringe is still moving to position.
+        """
         status = await self.hw_device.get_status()
-        return status != "SYRINGE_OR_SYRINGE_VALVE_RUNNING"
+        return status not in self._BUSY_STATUSES
 
     async def stop(self) -> bool:
         """Stop the simulated pump operation."""
