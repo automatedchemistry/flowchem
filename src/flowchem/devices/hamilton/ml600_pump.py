@@ -263,6 +263,10 @@ class ML600Pump(SyringePump):
         logger.debug("wait until pump idle")
         return await self.hw_device.wait_until_idle(pump=self.pump_code)
 
+    async def is_idle(self) -> bool:
+        """Check whether the syringe has finished its current move."""
+        return await self.hw_device.is_idle(self.pump_code)
+
     async def set_to_volume_dual_syringes(
         self, target_volume: str, rate_left: str, rate_right: str, connection: str = ""
     ):

@@ -222,3 +222,54 @@ class TestPeltierCoolerSim:
         await temp_ctrl.set_temperature("25 degC")
         reached = await temp_ctrl.is_target_reached()
         assert isinstance(reached, bool)
+
+    async def test_component_parameters(self, temp_ctrl):
+        result = await temp_ctrl.parameters()
+        assert result["configured"]["t_max"] == 50
+        assert result["configured"]["t_min"] == -55
+        assert result["configured"]["base_temp"] == -7.6
+        assert result["configured"]["heating_pid"] == [0.64, 0.53, 0.13]
+        assert result["configured"]["cooling_pid"] == [2.83, 2.36, 0.59]
+        assert "state_dependent_data" in result["configured"]
+        assert "live" in result
+        assert isinstance(result["live"]["temperature_setpoint"], float)
+        assert isinstance(result["live"]["raw_gpa_reply"], str)
+
+
+class TestPeltierCoolerConfigOverrides:
+
+    async def test_overrides_applied_on_top_of_preset(self):
+        device = PeltierCoolerSim.from_config(
+            port="SIM",
+            address=0,
+            name="test-peltier-override",
+            peltier_defaults="tube_reactor",
+            t_max=30,
+            heating_pid=[1, 0, 0],
+        )
+        assert device.peltier_defaults.T_MAX == 30
+        assert device.peltier_defaults.HEATING_PID == [1, 0, 0]
+        # Untouched preset values are kept as-is.
+        assert device.peltier_defaults.T_MIN == -55
+
+    async def test_invalid_state_dependent_data_raises(self):
+        from flowchem.utils.exceptions import InvalidConfigurationError
+
+        with pytest.raises(InvalidConfigurationError):
+            PeltierCoolerSim.from_config(
+                port="SIM",
+                address=0,
+                name="test-peltier-bad-config",
+                state_dependent_data=[[-55, 50], [14, 14]],
+            )
+
+    async def test_unknown_peltier_defaults_raises(self):
+        from flowchem.utils.exceptions import InvalidConfigurationError
+
+        with pytest.raises(InvalidConfigurationError):
+            PeltierCoolerSim.from_config(
+                port="SIM",
+                address=0,
+                name="test-peltier-bad-preset",
+                peltier_defaults="not_a_real_preset",
+            )

@@ -135,7 +135,10 @@ class R4Heater(FlowchemDevice):
         return await self.write_and_read_reply(self.cmd.VERSION)
 
     async def set_temperature(
-        self, channel, temperature: pint.Quantity, rate: float | None = None,
+        self,
+        channel,
+        temperature: pint.Quantity,
+        rate: float | None = None,
     ):
         """Set temperature to channel, with an optional ramp rate in °C/min."""
         cmd = self.cmd.SET_TEMPERATURE.format(

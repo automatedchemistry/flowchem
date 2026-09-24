@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.meta_components.gantry1D import Gantry1D
 from flowchem.components.reachability import ReachabilityStatus
 
 if TYPE_CHECKING:
     from .tmcm1111 import TMCM1111
 
 
-class TMCM1111FractionCollector(FlowchemComponent):
+class TMCM1111FractionCollector(Gantry1D):
     """Named-position interface for a single-axis TMCM-1111 fraction collector."""
 
     hw_device: TMCM1111
@@ -56,6 +56,10 @@ class TMCM1111FractionCollector(FlowchemComponent):
 
     async def target_reached(self) -> bool:
         """Return whether the target position has been reached."""
+        return await self.hw_device.is_target_reached()
+
+    async def is_idle(self) -> bool:
+        """Check whether the collector has finished moving to its target position."""
         return await self.hw_device.is_target_reached()
 
     async def is_reachable(self) -> ReachabilityStatus:

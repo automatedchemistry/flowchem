@@ -31,3 +31,9 @@ async def test_sim_component_endpoint(sim_tc01):
     sensor = sim_tc01.components[0]
     sim_tc01.sim_task.temperature = 100.0
     assert await sensor.get_temperature() == 100.0
+
+
+async def test_sim_generic_read_matches_get_temperature(sim_tc01):
+    sensor = sim_tc01.components[0]
+    sim_tc01.sim_task.temperature = 12.3
+    assert await sensor.read() == await sensor.get_temperature()

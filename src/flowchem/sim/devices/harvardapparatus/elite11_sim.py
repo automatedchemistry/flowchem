@@ -191,3 +191,7 @@ class Elite11Sim(Elite11):
         )
         instance.sim_io = sim_io
         return instance
+
+    async def is_idle(self) -> bool:
+        """Simulated moves take no physical time; always report idle."""
+        return True

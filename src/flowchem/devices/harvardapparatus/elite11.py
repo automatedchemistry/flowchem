@@ -323,6 +323,10 @@ class Elite11(FlowchemDevice):
         prompt = PumpStatus(status[2:3])
         return prompt in (PumpStatus.INFUSING, PumpStatus.WITHDRAWING)
 
+    async def is_idle(self) -> bool:
+        """Return True once the pump has finished its current move."""
+        return not await self.is_moving()
+
     async def infuse(self):
         """Run pump in infuse mode."""
         await self._send_command_and_read_reply("irun")

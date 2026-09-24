@@ -143,3 +143,4 @@ dmypy.json
 .pytest-cache*
 
 .flowchem-sim/
+__script/

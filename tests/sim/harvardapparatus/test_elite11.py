@@ -116,6 +116,10 @@ class TestElite11Sim:
         moving = await elite11.is_moving()
         assert moving is False
 
+    async def test_is_idle_returns_true_even_while_infusing(self, elite11):
+        await elite11.infuse()
+        assert await elite11.is_idle() is True
+
     async def test_set_syringe_diameter(self, elite11):
         from flowchem import ureg
 
@@ -139,6 +143,11 @@ class TestElite11Sim:
         await pump.stop()
         moving = await pump.is_pumping()
         assert moving is False
+
+    async def test_pump_component_is_idle_while_pumping(self, pump):
+        await pump.infuse(rate="1 ml/min")
+        assert await pump.is_pumping() is True
+        assert await pump.is_idle() is True
 
     async def test_withdrawing_capable(self, pump):
         assert pump.is_withdrawing_capable() is True

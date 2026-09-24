@@ -116,8 +116,14 @@ class R4HeaterSim(FlowchemDevice):
             return self._sim_version
         return "OK"
 
-    async def set_temperature(self, channel: int, temperature):
-        """Set temperature for one channel (accepts pint.Quantity or float °C)."""
+    async def set_temperature(
+        self, channel: int, temperature, rate: float | None = None
+    ):
+        """Set temperature for one channel (accepts pint.Quantity or float °C).
+
+        Ramp rate is accepted for interface parity with the real device but
+        ignored here: the sim converges to the target instantly.
+        """
         try:
             t_c = temperature.m_as("°C")
         except AttributeError:

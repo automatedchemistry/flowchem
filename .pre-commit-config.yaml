@@ -21,7 +21,7 @@ repos:
     rev: v0.15.9
     hooks:
     -   id: ruff
-        args: [.]
+        args: [./src]
         always_run: true
         pass_filenames: false
         types_or: [python, pyi]

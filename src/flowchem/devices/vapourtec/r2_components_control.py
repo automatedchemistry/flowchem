@@ -91,6 +91,10 @@ class R4Reactor(TemperatureControl):
         else:
             return False
 
+    async def is_idle(self) -> bool:
+        """Check whether the set temperature target has been reached (or none is set)."""
+        return await self.is_target_reached() is not False
+
     async def power_on(self):
         """Turn on temperature control."""
         return await self.hw_device.power_on()

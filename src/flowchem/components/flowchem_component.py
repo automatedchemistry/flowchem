@@ -75,6 +75,7 @@ class FlowchemComponent:
         )
 
         self.add_api_route("/is-reachable", self.is_reachable, methods=["GET"])
+        self.add_api_route("/is-idle", self.is_idle, methods=["GET"])
 
     @property
     def router(self):
@@ -130,3 +131,11 @@ class FlowchemComponent:
         report the device as offline.
         """
         return ReachabilityStatus.UNKNOWN
+
+    async def is_idle(self) -> bool:
+        """Check whether any in-progress physical action has finished.
+
+        Subclasses should override this with a real hardware busy/idle probe where
+        available. Returns True by default when completion can't be verified.
+        """
+        return True

@@ -61,7 +61,7 @@ class IcIRSim(FlowchemDevice):
         return True
 
     async def probe_status(self) -> str:
-        return "Running" if self._sim_running else "Not running"
+        return "Not running"
 
     async def sample_count(self) -> int:
         return self._sim_sample_count

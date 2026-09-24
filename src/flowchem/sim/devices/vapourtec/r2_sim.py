@@ -193,6 +193,10 @@ class R2Sim(FlowchemDevice):
     async def get_current_temperature(self, channel: int) -> float:
         return self._sim_temp.get(channel, 25.0)
 
+    async def get_target_temperature(self, channel: int) -> float:
+        """No real target register in sim; mirror current temp so it's always 'reached'."""
+        return self._sim_temp.get(channel, 25.0)
+
     async def get_current_pressure(self, pump_code: int = 2):
         from flowchem import ureg
 

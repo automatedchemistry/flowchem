@@ -80,6 +80,7 @@ class Spinsolve(FlowchemDevice):
         self.sample, self.solvent = sample_name, solvent
         self.protocols: dict[str, dict] = {}
         self.user_data = {"control_software": "flowchem"}
+        self._protocol_running = False
 
         # XML schema for reply validation. Reply validation is completely optional!
         if xml_schema is None:

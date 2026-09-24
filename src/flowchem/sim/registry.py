@@ -50,10 +50,12 @@ _REGISTRY: dict[str, str] = {
     "MFC": "flowchem.sim.devices.bronkhorst.bronkhorst_sim.MFCSim",
     "EPC": "flowchem.sim.devices.bronkhorst.bronkhorst_sim.EPCSim",
     # Vapourtec
+    "EBPR": "flowchem.sim.devices.vapourtec.ebpr_sim.EBPRSim",
     "R2": "flowchem.sim.devices.vapourtec.r2_sim.R2Sim",
     "R4Heater": "flowchem.sim.devices.vapourtec.r4_sim.R4HeaterSim",
     # Runze
     "RunzeValve": "flowchem.sim.devices.runze.runze_sim.RunzeValveSim",
+    "RunzeSyringePump": "flowchem.sim.devices.runze.runze_sim.RunzeSyringePumpSim",
     # Vici Valco
     "ViciValve": "flowchem.sim.devices.vicivalco.vici_sim.ViciValveSim",
     # Phidgets
@@ -68,6 +70,7 @@ _REGISTRY: dict[str, str] = {
     "NIUSBTC01": "flowchem.sim.devices.ni.ni_usbtc01_sim.NIUSBTC01Sim",
     "NIDAQAnalogIO": "flowchem.sim.devices.ni.nidaq_analog_io_sim.NIDAQAnalogIOSim",
     # Trinamic / Analog Devices
+    "TMCM1110": "flowchem.sim.devices.trinamic.tmcm1110_sim.TMCM1110Sim",
     "TMCM1111": "flowchem.sim.devices.trinamic.tmcm1111_sim.TMCM1111Sim",
     # Magritek
     "Spinsolve": "flowchem.sim.devices.magritek.spinsolve_sim.SpinsolveSim",

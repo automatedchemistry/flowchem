@@ -191,6 +191,10 @@ class AutosamplerGantry3D(Gantry3D):
         else:
             return False
 
+    async def is_idle(self) -> bool:
+        """Check whether the 3D gantry/needle has finished moving."""
+        return not await self.is_needle_running()
+
     async def tray_temperature(
         self, temperature: int | float | str | None = None
     ) -> bool:
@@ -425,6 +429,11 @@ class AutosamplerPump(SyringePump):
         """Can the pump reverse its normal flow direction?"""
         return True
 
+    @staticmethod
+    def is_flowrate_capable() -> bool:
+        """The built-in syringe has no queryable flow rate (fixed firmware rate)."""
+        return False
+
     _BUSY_STATUSES = frozenset(
         {
             "SYRINGE_OR_SYRINGE_VALVE_RUNNING",
@@ -439,6 +448,17 @@ class AutosamplerPump(SyringePump):
         aspirate/dispense, or moving to an absolute HOME/END/EXCHANGE position."""
         status = await self.hw_device.get_status()
         return status in self._BUSY_STATUSES
+
+    async def is_idle(self) -> bool:
+        """Check whether the built-in syringe/syringe valve has finished moving.
+
+        Must agree with is_pumping()/_BUSY_STATUSES: set_to_position(HOME/END/
+        EXCHANGE) reports MOVING_SYRINGE_TO_*_POSITION while in motion, not
+        SYRINGE_OR_SYRINGE_VALVE_RUNNING - checking only the latter here would
+        report idle while the syringe is still moving to position.
+        """
+        status = await self.hw_device.get_status()
+        return status not in self._BUSY_STATUSES
 
     async def stop(self) -> bool:
         """Stop the simulated pump operation."""
@@ -600,3 +620,12 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
         success = await self.hw_device.syringe_valve_position(port=position)
         if success:
             logger.info(f"Syringe valve moved successfully to position: {position}")
+
+    async def is_idle(self) -> bool:
+        """Check whether the syringe valve has finished switching.
+
+        No status distinct from the syringe pump exists on this hardware -
+        the same combined status bit covers both.
+        """
+        status = await self.hw_device.get_status()
+        return status != "SYRINGE_OR_SYRINGE_VALVE_RUNNING"

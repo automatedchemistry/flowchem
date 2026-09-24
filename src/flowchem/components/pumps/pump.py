@@ -12,7 +12,8 @@ class Pump(FlowchemComponent):
         self.add_api_route("/infuse", self.infuse, methods=["PUT"])
         self.add_api_route("/stop", self.stop, methods=["PUT"])
         self.add_api_route("/is-pumping", self.is_pumping, methods=["GET"])
-        self.add_api_route("/flowrate", self.get_flowrate, methods=["GET"])
+        if self.is_flowrate_capable():
+            self.add_api_route("/flowrate", self.get_flowrate, methods=["GET"])
         if self.is_withdrawing_capable():
             self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
         self.component_info.type = "Pump"
@@ -43,6 +44,16 @@ class Pump(FlowchemComponent):
         Returns False by default. Override in subclasses that support withdrawal.
         """
         return False
+
+    @staticmethod
+    def is_flowrate_capable() -> bool:
+        """Can the pump report its current flow rate?
+
+        Returns True by default. Override in subclasses whose hardware has no
+        continuous-flow-rate concept (e.g. discrete syringe pumps without a
+        calibrated rate mapping).
+        """
+        return True
 
     async def withdraw(self, rate: str = "", volume: str = "") -> bool:
         """Pump in the opposite direction of infuse."""
