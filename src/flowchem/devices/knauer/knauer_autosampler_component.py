@@ -41,6 +41,11 @@ class AutosamplerGantry3D(gantry3D):
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
+        # Read-only: the decoded AS error / state. Without these the platform only sees a bare
+        # "500 Internal Server Error" when a command fails and cannot say WHY (e.g. ERROR_317,
+        # "stripper did not detect plate", i.e. no vial at that position).
+        self.add_api_route("/errors", self.get_errors, methods=["GET"])
+        self.add_api_route("/status", self.get_status, methods=["GET"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
         self.add_api_route("/tray_temperature", self.get_tray_temperature, methods=["GET"])
@@ -158,6 +163,30 @@ class AutosamplerGantry3D(gantry3D):
             return True
         else:
             return False
+
+    async def get_errors(self) -> str:
+        """Decoded error the AS currently reports ("No Error." when there is none).
+
+        Never raises: this is the call made to explain ANOTHER failure, so it must not add a
+        failure of its own. An undocumented code (the ErrorCodes enum has gaps) is returned raw,
+        same policy as get_status below.
+        """
+        try:
+            return await self.hw_device.get_errors()
+        except KeyError as exc:
+            logger.warning(f"AS returned an error code not in ErrorCodes: {exc}")
+            return f"unknown AS error code {exc}"
+        except Exception as exc:
+            logger.warning(f"Could not read the AS error state: {exc!r}")
+            return f"AS error state unreadable ({exc.__class__.__name__})"
+
+    async def get_status(self) -> str:
+        """The AS state (e.g. NEEDLE_RUNNING), as reported by the device. Never raises."""
+        try:
+            return str(await self.hw_device.get_status())
+        except Exception as exc:
+            logger.warning(f"Could not read the AS status: {exc!r}")
+            return f"AS status unreadable ({exc.__class__.__name__})"
 
     async def reset_errors(self) -> bool:
         """Resets AS error"""
