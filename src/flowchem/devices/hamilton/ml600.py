@@ -407,14 +407,15 @@ class ML600(FlowchemDevice):
         return self._steps_per_ml[pump or "B"]
 
     def inspect_valve_argument(self, config: dict):
-        if config.get("left_valve") and config.get("left_valve") not in ValveType:
+        valid_valves = [v.value for v in ValveType]
+        if config.get("left_valve") and config["left_valve"] not in valid_valves:
             logger.error(f"Invalid valve configuration in left valve of {self.name}!")
-            logger.error(f"Supported valve types are: {[v.value for v in ValveType]}.")
+            logger.error(f"Supported valve types are: {valid_valves}.")
             logger.error("Assuming default configuration!")
             config.pop("left_valve")
-        if config.get("right_valve") and config.get("right_valve") not in ValveType:
+        if config.get("right_valve") and config["right_valve"] not in valid_valves:
             logger.error(f"Invalid valve configuration in right valve of {self.name}!")
-            logger.error(f"Supported valve types are: {[v.value for v in ValveType]}.")
+            logger.error(f"Supported valve types are: {valid_valves}.")
             logger.error("Assuming default configuration!")
             config.pop("right_valve")
         self.config = ML600.DEFAULT_CONFIG | config
