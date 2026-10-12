@@ -36,11 +36,12 @@ moves it away from home, mirroring the vendor's "Injection"/"Suction" terminolog
 
 ## Waiting for the pump to finish
 When you send an `infuse` or `withdraw` command to this pump, you don't get a response back
-until the plunger has *actually finished moving*. This is not a choice made in how the driver
-was written — it's simply how this pump's hardware behaves: it doesn't report anything back to
-the computer until the movement is complete. So if your script sends the command and then
-immediately moves on to the next step, you can be confident the pump is already done — there
-is no need to add an extra wait or check "is it still moving?" yourself.
+until the plunger has *actually finished moving*. Units differ in how they report this: some
+stay silent until the movement is complete, others immediately answer "task being executed"
+and keep moving. The driver handles both — in the second case it keeps asking the pump for its
+status until it reports idle. So if your script sends the command and then immediately moves
+on to the next step, you can be confident the pump is already done — there is no need to add
+an extra wait or check "is it still moving?" yourself.
 
 ## Valve positions
 The built-in valve position naming follows the general convention of flowchem: distribution

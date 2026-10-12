@@ -313,6 +313,26 @@ async def send_and_await_completion(
     this helper make the final raise/reject decision.
     """
     status, parameters = await send_fn()
+    return await await_completion(
+        status, parameters, poll_status_fn, raise_errors, poll_interval, max_wait
+    )
+
+
+async def await_completion(
+    status: str,
+    parameters: str,
+    poll_status_fn: Callable[[], Awaitable[str]],
+    raise_errors: bool = True,
+    poll_interval: float = 0.2,
+    max_wait: float = 60.0,
+) -> tuple[str, str]:
+    """Second half of `send_and_await_completion`, for a reply already in hand.
+
+    Polls `poll_status_fn` (0x4a) while `status` is `fe`/`04`, then raises or
+    rejects exactly like `send_and_await_completion`. Split out for callers
+    that must first decide for themselves whether a command's initial reply
+    means "accepted, still running" -- see `RunzeSyringePump._send_move_and_wait`.
+    """
     elapsed = 0.0
     while status in ("fe", "04") and elapsed < max_wait:
         await asyncio.sleep(poll_interval)
