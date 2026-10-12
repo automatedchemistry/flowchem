@@ -44,9 +44,7 @@ jobs:
         fi
 
     - name: Build a binary wheel and a source tarball
-      run: |
-        python3 -m build
-        echo "version=$(python setup.py --version)" >> $GITHUB_ENV
+      run: python3 -m build
     - name: Store the distribution packages
       uses: actions/upload-artifact@v4
       with:
@@ -118,7 +116,7 @@ jobs:
       - name: Publish release 📦 to GitHub
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ needs.build.outputs.version }}
+          name: Release ${{ github.ref_name }}
           files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
