@@ -16,6 +16,7 @@ from flowchem.devices.runze._common import (
     RunzeCommand,
     RunzeSerialIO,
     RunzeValveHeads,
+    await_completion,
     detect_valve_type,
     get_shared_runze_io,
     send_and_await_completion,
@@ -155,13 +156,18 @@ class RunzeSyringePump(FlowchemDevice):
     # -- Move commands (0x42/0x43): completion detection --
     #
     # Unlike 0x44/0x45 (see `send_and_await_completion`), the manual doesn't
-    # document an early "busy/accepted" acknowledgment for these two -- and on
-    # real hardware, they reply only once the physical move is fully done (a
-    # 12000-step full-stroke aspirate got zero reply within 5 s, the same window
-    # that was already too short for a much smaller ~1920-step move). So the
-    # read timeout is sized proportionally to the requested step count rather
-    # than a fixed window, instead of assuming an early ack we have no evidence
-    # exists on this hardware.
+    # document an early "busy/accepted" acknowledgment for these two, and real
+    # units differ:
+    # - some reply only once the physical move is fully done (a 12000-step
+    #   full-stroke aspirate got zero reply within 5 s, the same window that
+    #   was already too short for a much smaller ~1920-step move) -- so the
+    #   read timeout is sized proportionally to the requested step count
+    #   rather than a fixed window;
+    # - others reply `fe` ("task being executed") within ~20 ms and keep
+    #   moving -- completion is then confirmed by polling 0x4a until `00`,
+    #   the same as 0x44/0x45. Only `fe` is taken as "accepted": an immediate
+    #   `04` (motor busy) may mean the move was refused, and treating that as
+    #   success would silently skip a liquid transfer.
     #
     # MOVE_FULL_STROKE_TIMEOUT is a provisional estimate, not a vendor-specified
     # value. A first guess of 120s was confirmed too short on real hardware (a
@@ -191,7 +197,7 @@ class RunzeSyringePump(FlowchemDevice):
         # reply is still outstanding (see `_move_lock` in __init__).
         async with self._move_lock:
             try:
-                status, _ = await self.pump_io.write_and_read_reply_async(
+                status, parameters = await self.pump_io.write_and_read_reply_async(
                     move_command, raise_errors=False, read_timeout=read_timeout
                 )
             except InvalidConfigurationError:
@@ -203,6 +209,14 @@ class RunzeSyringePump(FlowchemDevice):
                 if raise_errors:
                     raise
                 return False
+            if status == "fe":
+                status, _ = await await_completion(
+                    status,
+                    parameters,
+                    poll_status_fn=self.get_status,
+                    raise_errors=False,
+                    max_wait=read_timeout,
+                )
 
         if status == "00":
             return True

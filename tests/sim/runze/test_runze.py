@@ -220,3 +220,77 @@ class TestRunzeSyringePumpSim:
         assert result is True
         pos = await syringe_pump.get_raw_position()
         assert pos == "3"
+
+
+class _EarlyAckPumpIO(SimulatedRunzeSyringePumpIO):
+    """SY-01 units that answer 0x42/0x43 with `first_reply` right away (`fe` on
+    real hardware) and report busy (`04`) on 0x4a for `busy_polls` polls."""
+
+    def __init__(self, first_reply: str = "fe", busy_polls: int = 3, **kwargs):
+        super().__init__(**kwargs)
+        self.first_reply = first_reply
+        self.busy_polls = busy_polls
+        self.status_polls = 0
+        self._busy_left = 0
+
+    async def write_and_read_reply_async(
+        self, command, raise_errors=True, read_timeout=None
+    ):
+        fc = command.function_code.lower()
+        if fc in ("42", "43"):
+            await super().write_and_read_reply_async(command, raise_errors)
+            self._busy_left = self.busy_polls
+            return self.first_reply, "00"
+        if fc == "4a":
+            self.status_polls += 1
+            if self._busy_left:
+                self._busy_left -= 1
+                return "04", "00"
+        return await super().write_and_read_reply_async(
+            command, raise_errors, read_timeout
+        )
+
+
+async def _early_ack_pump(**io_kwargs) -> RunzeSyringePumpSim:
+    io = _EarlyAckPumpIO(num_ports=6, total_steps=12000, **io_kwargs)
+    device = RunzeSyringePumpSim(
+        pump_io=io, name="early-ack", syringe_volume="5 mL", total_steps=12000
+    )
+    device.sim_io = io
+    await device.initialize()
+    return device
+
+
+class TestRunzeSyringePumpEarlyAck:
+
+    async def test_withdraw_waits_for_idle(self):
+        pump = await _early_ack_pump(busy_polls=3)
+        component = next(c for c in pump.components if c.name == "pump")
+
+        assert await component.withdraw(rate="5 ml/min", volume="2000 ul") is True
+        assert pump.sim_io.status_polls == 4  # 3x busy, then idle
+        assert await component.get_current_volume() == pytest.approx(2.0)
+
+    async def test_infuse_all_waits_for_idle(self):
+        pump = await _early_ack_pump(busy_polls=2)
+        component = next(c for c in pump.components if c.name == "pump")
+        await pump.aspirate_steps(4800)
+
+        assert await component.infuse_all() is True
+        assert await component.get_current_volume() == pytest.approx(0.0)
+
+    async def test_immediate_busy_reply_is_still_an_error(self):
+        from flowchem.utils.exceptions import DeviceError
+
+        pump = await _early_ack_pump(first_reply="04")
+        with pytest.raises(DeviceError):
+            await pump.aspirate_steps(4800)
+        assert pump.sim_io.status_polls == 0
+
+    async def test_never_idle_raises_after_move_timeout(self):
+        from flowchem.utils.exceptions import DeviceError
+
+        pump = await _early_ack_pump(busy_polls=10_000)
+        pump.MOVE_MIN_TIMEOUT = 0.5
+        with pytest.raises(DeviceError, match="Motor busy"):
+            await pump.aspirate_steps(100)

@@ -3,7 +3,7 @@
 ### `GET /my-ebpr/`
 
 **Summary:** Get Device Info
-**Description:** 
+**Description:**
 **Tags:** my-ebpr
 **Operation ID:** `get_device_info_my_ebpr__get`
 

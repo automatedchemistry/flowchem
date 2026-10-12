@@ -217,7 +217,7 @@ class ML600Pump(SyringePump):
             )
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
-            target_vol = current_volume + ureg.Quantity(volume)
+            target_vol = cast(pint.Quantity, current_volume + ureg.Quantity(volume))
             if target_vol > syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
