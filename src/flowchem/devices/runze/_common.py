@@ -37,6 +37,9 @@ STATUS_MESSAGES = {
 # Reply frame length in bytes for both standard and factory commands (the
 # manual documents factory-command replies as 8 bytes too, same as standard).
 REPLY_FRAME_BYTES = 8
+# Consecutive unanswered 0x4a polls tolerated by `await_completion` before
+# giving up -- each one already costs a full serial read timeout.
+MAX_MISSED_POLLS = 3
 
 
 @dataclass
@@ -334,10 +337,28 @@ async def await_completion(
     means "accepted, still running" -- see `RunzeSyringePump._send_move_and_wait`.
     """
     elapsed = 0.0
+    missed_polls = 0
     while status in ("fe", "04") and elapsed < max_wait:
         await asyncio.sleep(poll_interval)
         elapsed += poll_interval
-        status = await poll_status_fn()
+        try:
+            status = await poll_status_fn()
+        except InvalidConfigurationError:
+            # Real hardware (pump + 6 valves on one RS-485 line) occasionally
+            # drops a single 0x4a reply mid-move: that one lost reply used to
+            # abort a withdraw the pump then went on to finish, leaving the
+            # syringe holding liquid the caller thought was never drawn.
+            # 0x4a is read-only, so just poll again -- only a device that
+            # stays silent for several polls in a row is treated as gone.
+            missed_polls += 1
+            if missed_polls >= MAX_MISSED_POLLS:
+                raise
+            logger.warning(
+                f"No reply to status poll ({missed_polls}/{MAX_MISSED_POLLS}), "
+                f"retrying."
+            )
+            continue
+        missed_polls = 0
 
     if status == "00":
         return status, parameters

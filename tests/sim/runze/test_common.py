@@ -5,7 +5,51 @@ Fixtures here are worked byte examples taken directly from the vendor's
 need real hardware to verify against.
 """
 
-from flowchem.devices.runze._common import RunzeCommand, RunzeSerialIO
+import pytest
+
+from flowchem.devices.runze._common import (
+    MAX_MISSED_POLLS,
+    RunzeCommand,
+    RunzeSerialIO,
+    await_completion,
+)
+from flowchem.utils.exceptions import InvalidConfigurationError
+
+
+def _scripted_poll(replies):
+    """Return a 0x4a poll stub that plays back `replies` in order; a `None`
+    entry simulates a dropped reply (no bytes within the serial timeout)."""
+    remaining = list(replies)
+
+    async def poll():
+        reply = remaining.pop(0)
+        if reply is None:
+            raise InvalidConfigurationError("No response received from device!")
+        return reply
+
+    return poll
+
+
+class TestAwaitCompletion:
+    async def test_single_dropped_poll_reply_does_not_abort_move(self):
+        # Real-hardware failure: one lost 0x4a reply mid-withdraw raised, even
+        # though the pump went on to finish the move.
+        poll = _scripted_poll(["04", None, "04", "00"])
+        status, _ = await await_completion("fe", "0000", poll, poll_interval=0)
+        assert status == "00"
+
+    async def test_device_that_stays_silent_still_raises(self):
+        poll = _scripted_poll(["04"] + [None] * MAX_MISSED_POLLS)
+        with pytest.raises(InvalidConfigurationError):
+            await await_completion("fe", "0000", poll, poll_interval=0)
+
+    async def test_missed_poll_counter_resets_after_a_reply(self):
+        # Non-consecutive drops are tolerated however many there are in total.
+        replies = [None, "04"] * MAX_MISSED_POLLS + ["00"]
+        status, _ = await await_completion(
+            "fe", "0000", _scripted_poll(replies), poll_interval=0
+        )
+        assert status == "00"
 
 
 class TestParseResponse:
