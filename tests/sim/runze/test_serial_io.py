@@ -70,14 +70,41 @@ class _ScriptedSerial:
         return chunk[:size]
 
 
+class _ReconfiguringSerial(_ScriptedSerial):
+    """Model a COM adapter losing pending TX when its settings change."""
+
+    def __init__(self, *args, **kwargs):
+        self._write_pending = False
+        super().__init__(*args, **kwargs)
+
+    @property
+    def timeout(self):
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
+        self._timeout = value
+        if self._write_pending:
+            self.chunks.clear()
+
+    def write(self, data):
+        written = super().write(data)
+        self._write_pending = True
+        return written
+
+    def read(self, size):
+        self._write_pending = False
+        return super().read(size)
+
+
 @pytest.fixture
 def io_factory(monkeypatch):
     instances = []
     clock = _Clock()
     monkeypatch.setattr(_common, "time", SimpleNamespace(monotonic=clock))
 
-    def make(chunks, **kwargs):
-        serial_connection = _ScriptedSerial(chunks, clock, **kwargs)
+    def make(chunks, *, serial_class=_ScriptedSerial, **kwargs):
+        serial_connection = serial_class(chunks, clock, **kwargs)
         io = RunzeSerialIO(serial_connection)
         instances.append(io)
         return io, serial_connection, clock
@@ -85,6 +112,23 @@ def io_factory(monkeypatch):
     yield make
     for io in instances:
         io._io_executor.shutdown(wait=True)
+
+
+@pytest.mark.parametrize(
+    ("timeout", "read_timeout"), [(3.0, None), (3.0, 10.0), (3.0, 0), (None, None)]
+)
+async def test_serial_reconfiguration_does_not_interrupt_pending_command(
+    io_factory, timeout, read_timeout
+):
+    io, serial_connection, _ = io_factory(
+        [_reply(parameter=512)], serial_class=_ReconfiguringSerial, timeout=timeout
+    )
+
+    assert await io.write_and_read_reply_async(
+        RunzeCommand(1, "66"), read_timeout=read_timeout
+    ) == ("00", "0200")
+    assert len(serial_connection.writes) == 1
+    assert serial_connection.timeout == timeout
 
 
 async def test_fragmented_reply_is_assembled_without_resending(io_factory):
@@ -157,6 +201,19 @@ async def test_exchange_setup_time_counts_against_read_deadline(io_factory):
 
     assert serial_connection.read_timeouts == pytest.approx([0.2])
     assert clock.now == pytest.approx(1.0)
+    assert serial_connection.timeout == 3.0
+
+
+async def test_expired_setup_deadline_does_not_send_command(io_factory):
+    io, serial_connection, _ = io_factory([], start_delay=2.0)
+
+    with pytest.raises(RunzeCommunicationError):
+        await io.write_and_read_reply_async(
+            RunzeCommand(1, "43", 240), read_timeout=1.0
+        )
+
+    assert serial_connection.writes == []
+    assert serial_connection.read_timeouts == []
     assert serial_connection.timeout == 3.0
 
 

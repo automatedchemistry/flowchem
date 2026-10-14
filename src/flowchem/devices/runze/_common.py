@@ -181,7 +181,6 @@ class RunzeSerialIO:
         first_read = True
         try:
             self._serial.reset_input_buffer()
-            self._serial.write(command_bytes)
             while True:
                 # A frame can be fragmented across reads, preceded by garbage,
                 # or be a late reply from another slave on the shared bus.
@@ -223,6 +222,11 @@ class RunzeSerialIO:
                     self._serial.timeout = max(0.0, remaining)
                 else:
                     self._serial.timeout = None
+                if first_read:
+                    # On Windows, setting timeout reconfigures the COM port.
+                    # Do it before TX: reconfiguration immediately after a
+                    # write can interrupt the command on FTDI adapters.
+                    self._serial.write(command_bytes)
                 first_read = False
                 reply = self._serial.read(max(1, REPLY_FRAME_BYTES - len(buffer)))
                 if not reply:
