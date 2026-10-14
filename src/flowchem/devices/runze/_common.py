@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Awaitable, Callable
@@ -40,6 +41,10 @@ REPLY_FRAME_BYTES = 8
 # Consecutive unanswered 0x4a polls tolerated by `await_completion` before
 # giving up -- each one already costs a full serial read timeout.
 MAX_MISSED_POLLS = 3
+
+
+class RunzeCommunicationError(InvalidConfigurationError):
+    """No complete, valid reply was received for a Runze exchange."""
 
 
 @dataclass
@@ -96,9 +101,7 @@ class RunzeCommand:
                 & 0xFFFF
             )
             compiled_command = (
-                f"{base_command}"
-                f"{checksum & 0xFF:02X}"
-                f"{(checksum >> 8) & 0xFF:02X}"
+                f"{base_command}{checksum & 0xFF:02X}{(checksum >> 8) & 0xFF:02X}"
             )
 
         return compiled_command
@@ -159,21 +162,83 @@ class RunzeSerialIO:
     def _write_and_read_sync(
         self, command_bytes: bytes, read_timeout: float | None
     ) -> bytes:
-        """Reset the input buffer, write, and read exactly one reply frame --
-        entirely synchronous, meant to run on `_io_executor`'s single thread
-        so a given exchange never splits its write and read across two OS
-        threads (see the note in `__init__`).
+        """Find a valid reply for this slave within one exchange deadline.
+
+        Everything runs on `_io_executor`'s single thread, including frame
+        recovery, so another slave's exchange cannot interrupt this one.
         """
-        self._serial.reset_input_buffer()
         original_timeout = self._serial.timeout
-        if read_timeout is not None:
-            self._serial.timeout = read_timeout
+        exchange_timeout = original_timeout if read_timeout is None else read_timeout
+        deadline = (
+            None if exchange_timeout is None else time.monotonic() + exchange_timeout
+        )
+        expected_address = command_bytes[1]
+        context = (
+            f"Runze address {expected_address}, command 0x{command_bytes[2]:02x}, "
+            f"port {getattr(self._serial, 'port', '<unknown>')}"
+        )
+        buffer = bytearray()
+        first_read = True
         try:
-            self._serial.write(command_bytes)
-            return self._serial.read(REPLY_FRAME_BYTES)
+            self._serial.reset_input_buffer()
+            while True:
+                # A frame can be fragmented across reads, preceded by garbage,
+                # or be a late reply from another slave on the shared bus.
+                while buffer:
+                    header = buffer.find(b"\xcc")
+                    if header != 0:
+                        discarded = len(buffer) if header < 0 else header
+                        logger.warning(
+                            f"{context}: discarding {discarded} bytes before a reply header: {buffer[:discarded].hex()}"
+                        )
+                        del buffer[:discarded]
+                    if len(buffer) < REPLY_FRAME_BYTES:
+                        break
+                    frame = bytes(buffer[:REPLY_FRAME_BYTES])
+                    try:
+                        self._validate_reply_frame(frame)
+                    except RunzeCommunicationError as error:
+                        logger.warning(f"{context}: discarding invalid reply: {error}")
+                        # Search again one byte later: a new frame may start
+                        # inside a corrupted candidate's eight-byte window.
+                        del buffer[0]
+                        continue
+                    if frame[1] != expected_address:
+                        logger.warning(
+                            f"{context}: discarding reply for address {frame[1]}: {frame.hex()}"
+                        )
+                        del buffer[:REPLY_FRAME_BYTES]
+                        continue
+                    return frame
+
+                if deadline is not None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0 and not first_read:
+                        break
+                    # timeout=0 retains one nonblocking read attempt. Every
+                    # other finite exchange shares the original time budget.
+                    if remaining <= 0 and exchange_timeout != 0:
+                        break
+                    self._serial.timeout = max(0.0, remaining)
+                else:
+                    self._serial.timeout = None
+                if first_read:
+                    # On Windows, setting timeout reconfigures the COM port.
+                    # Do it before TX: reconfiguration immediately after a
+                    # write can interrupt the command on FTDI adapters.
+                    self._serial.write(command_bytes)
+                first_read = False
+                reply = self._serial.read(max(1, REPLY_FRAME_BYTES - len(buffer)))
+                if not reply:
+                    break
+                buffer.extend(reply)
+
+            suffix = f" Partial reply: {buffer.hex()}." if buffer else ""
+            raise RunzeCommunicationError(
+                f"No valid reply received from {context}; completion is unknown.{suffix}"
+            )
         finally:
-            if read_timeout is not None:
-                self._serial.timeout = original_timeout
+            self._serial.timeout = original_timeout
 
     async def write_and_read_reply_async(
         self,
@@ -193,16 +258,37 @@ class RunzeSerialIO:
         reply_bytes = await loop.run_in_executor(
             self._io_executor, self._write_and_read_sync, command_bytes, read_timeout
         )
-        response = reply_bytes.hex()
-        if not response:
-            raise InvalidConfigurationError(
-                f"No response received from device! "
-                f"Maybe wrong device address? (Set to {command.address})"
-            )
-        return self.parse_response(response=response, raise_errors=raise_errors)
+        return self.parse_response(
+            response=reply_bytes.hex(),
+            raise_errors=raise_errors,
+            expected_address=command.address,
+        )
 
     @staticmethod
-    def parse_response(response: str, raise_errors: bool = True) -> tuple[str, str]:
+    def _validate_reply_frame(
+        frame: bytes, expected_address: int | None = None
+    ) -> None:
+        """Validate framing and checksum before interpreting a reply's status."""
+        if len(frame) != REPLY_FRAME_BYTES:
+            raise RunzeCommunicationError(
+                f"Expected {REPLY_FRAME_BYTES} reply bytes, received {len(frame)}: {frame.hex()}"
+            )
+        if frame[0] != 0xCC or frame[5] != 0xDD:
+            raise RunzeCommunicationError(f"Invalid reply header/end: {frame.hex()}")
+        expected_checksum = sum(frame[:6]) & 0xFFFF
+        if int.from_bytes(frame[6:8], "little") != expected_checksum:
+            raise RunzeCommunicationError(f"Invalid reply checksum: {frame.hex()}")
+        if expected_address is not None and frame[1] != expected_address:
+            raise RunzeCommunicationError(
+                f"Reply address {frame[1]} does not match address {expected_address}: {frame.hex()}"
+            )
+
+    @staticmethod
+    def parse_response(
+        response: str,
+        raise_errors: bool = True,
+        expected_address: int | None = None,
+    ) -> tuple[str, str]:
         """Split a received frame in its components: status, parameter.
 
         The parameter field (`B3,B4` in the manual) is a 2-byte
@@ -210,16 +296,17 @@ class RunzeSerialIO:
         the low byte was read, silently truncating any value >= 256, which
         corrupts position reads almost immediately into any real pump move).
         """
-        status = response[4:6]
-        param_low, param_high = response[6:8], response[8:10]
-        parameters = param_high + param_low
-
-        etx = response[10:12]
-        if etx and etx.lower() != "dd":
-            logger.warning(
-                f"Reply frame end byte was '{etx}', expected 'dd' -- "
-                f"the response may be misaligned: {response}"
-            )
+        try:
+            frame = bytes.fromhex(response)
+        except ValueError as error:
+            raise RunzeCommunicationError(
+                f"Invalid hexadecimal reply: {response}"
+            ) from error
+        RunzeSerialIO._validate_reply_frame(frame, expected_address)
+        # Reply byte 2 is a status, not an echo of the command code. The
+        # protocol has no transaction identifier for matching same-slave replies.
+        status = f"{frame[2]:02x}"
+        parameters = f"{int.from_bytes(frame[3:5], 'little'):04x}"
 
         status_string = STATUS_MESSAGES.get(status, "Unknown status code")
         # Check if the status indicates an error
@@ -299,6 +386,7 @@ async def send_and_await_completion(
     raise_errors: bool = True,
     poll_interval: float = 0.2,
     max_wait: float = 60.0,
+    max_missed_polls: int | None = MAX_MISSED_POLLS,
 ) -> tuple[str, str]:
     """Send a command and, if needed, poll until the device reports it done.
 
@@ -314,10 +402,25 @@ async def send_and_await_completion(
     this helper needs to see `fe`/`04` to know to keep polling, so callers
     must invoke their underlying command with `raise_errors=False` and let
     this helper make the final raise/reject decision.
+
+    `max_missed_polls=None` retries unavailable status replies until `max_wait`
+    expires; otherwise consecutive misses are also bounded by that count.
     """
-    status, parameters = await send_fn()
+    try:
+        status, parameters = await send_fn()
+    except RunzeCommunicationError as error:
+        logger.warning(f"Command reply unavailable; completion is unknown: {error}")
+        if raise_errors:
+            raise
+        return "ff", "0000"
     return await await_completion(
-        status, parameters, poll_status_fn, raise_errors, poll_interval, max_wait
+        status,
+        parameters,
+        poll_status_fn,
+        raise_errors,
+        poll_interval,
+        max_wait,
+        max_missed_polls,
     )
 
 
@@ -328,6 +431,7 @@ async def await_completion(
     raise_errors: bool = True,
     poll_interval: float = 0.2,
     max_wait: float = 60.0,
+    max_missed_polls: int | None = MAX_MISSED_POLLS,
 ) -> tuple[str, str]:
     """Second half of `send_and_await_completion`, for a reply already in hand.
 
@@ -335,32 +439,55 @@ async def await_completion(
     rejects exactly like `send_and_await_completion`. Split out for callers
     that must first decide for themselves whether a command's initial reply
     means "accepted, still running" -- see `RunzeSyringePump._send_move_and_wait`.
+
+    The deadline includes status exchanges and serial-bus waits. An already
+    running poll may finish after it and still confirm completion; a new poll
+    is never started after expiry.
     """
-    elapsed = 0.0
+    deadline = time.monotonic() + max_wait
     missed_polls = 0
-    while status in ("fe", "04") and elapsed < max_wait:
-        await asyncio.sleep(poll_interval)
-        elapsed += poll_interval
+    last_communication_error: RunzeCommunicationError | None = None
+    while status in ("fe", "04"):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        await asyncio.sleep(min(poll_interval, remaining))
+        if time.monotonic() >= deadline:
+            break
         try:
             status = await poll_status_fn()
-        except InvalidConfigurationError:
-            # Real hardware (pump + 6 valves on one RS-485 line) occasionally
-            # drops a single 0x4a reply mid-move: that one lost reply used to
-            # abort a withdraw the pump then went on to finish, leaving the
-            # syringe holding liquid the caller thought was never drawn.
-            # 0x4a is read-only, so just poll again -- only a device that
-            # stays silent for several polls in a row is treated as gone.
+        except RunzeCommunicationError as error:
+            # Only read-only status queries are retried. Never resend a
+            # movement whose missing reply leaves its execution uncertain.
             missed_polls += 1
-            if missed_polls >= MAX_MISSED_POLLS:
-                raise
-            logger.warning(
-                f"No reply to status poll ({missed_polls}/{MAX_MISSED_POLLS}), "
-                f"retrying."
+            last_communication_error = error
+            count = (
+                str(missed_polls)
+                if max_missed_polls is None
+                else f"{missed_polls}/{max_missed_polls}"
             )
+            logger.warning(
+                f"Status reply unavailable ({count}); completion is unknown: {error}"
+            )
+            if max_missed_polls is not None and missed_polls >= max_missed_polls:
+                if raise_errors:
+                    raise
+                return status, parameters
             continue
         missed_polls = 0
+        last_communication_error = None
 
     if status == "00":
+        return status, parameters
+
+    if last_communication_error is not None:
+        message = (
+            f"Completion could not be confirmed within {max_wait:g}s; "
+            f"last motor status was {status}: {last_communication_error}"
+        )
+        logger.warning(message)
+        if raise_errors:
+            raise RunzeCommunicationError(message) from last_communication_error
         return status, parameters
 
     message = STATUS_MESSAGES.get(status, "Unknown status code")

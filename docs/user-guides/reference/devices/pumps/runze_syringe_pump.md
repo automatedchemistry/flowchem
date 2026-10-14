@@ -43,6 +43,21 @@ status until it reports idle. So if your script sends the command and then immed
 on to the next step, you can be confident the pump is already done — there is no need to add
 an extra wait or check "is it still moving?" yourself.
 
+Temporary missing or damaged status replies produce warnings while the driver keeps
+checking for completion. The same recovery applies to the built-in valve. These operations
+retry status queries until their completion timeout, including time spent waiting on serial
+communication. Direct status queries, such as `is-idle`, make up to three attempts. If
+completion cannot be confirmed before the timeout, the operation fails rather than reporting
+success. Recovery never resends a movement command, which could otherwise repeat a transfer.
+
+On a shared RS-485 connection, the driver validates each reply's frame markers, length,
+checksum, and device address. It discards damaged frames and replies from other addresses
+with a warning and continues waiting within the original serial timeout. An exchange already
+in progress can finish after the completion deadline, so the total wait can exceed the
+deadline by one serial exchange or shared-bus wait. Flowchem must be the only sender on the
+bus. The protocol does not include a command echo or transaction identifier in replies, so
+a delayed reply from the same address cannot be conclusively identified as stale.
+
 ## Valve positions
 The built-in valve position naming follows the general convention of flowchem: distribution
 valves have positions from '1' to 'n', where n is the total number of available ports.

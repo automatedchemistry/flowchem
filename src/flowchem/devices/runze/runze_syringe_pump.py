@@ -14,6 +14,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.runze._common import (
     STATUS_MESSAGES,
     RunzeCommand,
+    RunzeCommunicationError,
     RunzeSerialIO,
     RunzeValveHeads,
     await_completion,
@@ -148,9 +149,14 @@ class RunzeSyringePump(FlowchemDevice):
             parameter=parameter,
             is_factory_command=is_factory_command,
         )
-        status, parameters = await self.pump_io.write_and_read_reply_async(
-            pump_command, raise_errors
-        )
+        try:
+            status, parameters = await self.pump_io.write_and_read_reply_async(
+                pump_command, raise_errors
+            )
+        except RunzeCommunicationError as exc:
+            raise RunzeCommunicationError(
+                f"{self.name} (address {self.address}), command 0x{command}: {exc}"
+            ) from exc
         return status, parameters
 
     # -- Move commands (0x42/0x43): completion detection --
@@ -175,10 +181,13 @@ class RunzeSyringePump(FlowchemDevice):
     # above that pending real timing data from an actual full-stroke move.
     MOVE_FULL_STROKE_TIMEOUT = 60.0
     MOVE_MIN_TIMEOUT = 10.0
+    STATUS_QUERY_ATTEMPTS = 3
+    STATUS_POLL_INTERVAL = 0.2
 
     def _raise_or_reject(self, status: str, raise_errors: bool) -> bool:
         message = STATUS_MESSAGES.get(status, "Unknown status code")
-        logger.error(f"{message} (Status code: {status})")
+        log = logger.error if raise_errors else logger.warning
+        log(f"{self.name}: {message} (Status code: {status})")
         if raise_errors:
             raise DeviceError(f"{message} - Check command syntax or device status!")
         return False
@@ -200,23 +209,26 @@ class RunzeSyringePump(FlowchemDevice):
                 status, parameters = await self.pump_io.write_and_read_reply_async(
                     move_command, raise_errors=False, read_timeout=read_timeout
                 )
-            except InvalidConfigurationError:
-                logger.error(
-                    f"No response to move command 0x{command} within "
-                    f"{read_timeout:.0f}s -- may need an even longer timeout, "
-                    f"or may still be finishing a previous move."
+                if status == "fe":
+                    status, _ = await await_completion(
+                        status,
+                        parameters,
+                        poll_status_fn=self._get_status_once,
+                        raise_errors=raise_errors,
+                        poll_interval=self.STATUS_POLL_INTERVAL,
+                        max_wait=read_timeout,
+                        max_missed_polls=None,
+                    )
+            except RunzeCommunicationError as exc:
+                log = logger.error if raise_errors else logger.warning
+                log(
+                    f"{self.name} (address {self.address}): completion of move "
+                    f"0x{command} could not be confirmed: {exc}. "
+                    "The movement command will not be resent."
                 )
                 if raise_errors:
                     raise
                 return False
-            if status == "fe":
-                status, _ = await await_completion(
-                    status,
-                    parameters,
-                    poll_status_fn=self.get_status,
-                    raise_errors=False,
-                    max_wait=read_timeout,
-                )
 
         if status == "00":
             return True
@@ -250,8 +262,10 @@ class RunzeSyringePump(FlowchemDevice):
             send_fn=lambda: self._send_command_and_read_reply(
                 command="44", parameter=int(position), raise_errors=False
             ),
-            poll_status_fn=self.get_status,
+            poll_status_fn=self._get_status_once,
             raise_errors=raise_errors,
+            poll_interval=self.STATUS_POLL_INTERVAL,
+            max_missed_polls=None,
         )
         if status == "00":
             logger.info(f"Valve position set to: {parameters}")
@@ -291,9 +305,11 @@ class RunzeSyringePump(FlowchemDevice):
             send_fn=lambda: self._send_command_and_read_reply(
                 command="45", raise_errors=False
             ),
-            poll_status_fn=self.get_status,
+            poll_status_fn=self._get_status_once,
             raise_errors=raise_errors,
+            poll_interval=self.STATUS_POLL_INTERVAL,
             max_wait=self.MOVE_FULL_STROKE_TIMEOUT,
+            max_missed_polls=None,
         )
         if status != "00":
             return False
@@ -304,9 +320,19 @@ class RunzeSyringePump(FlowchemDevice):
         reference (0x67) -- required for `read_position` (0x66) to be
         accurate afterward, per the manual.
         """
-        status, _ = await self._send_command_and_read_reply(
-            command="67", raise_errors=raise_errors
-        )
+        try:
+            status, _ = await self._send_command_and_read_reply(
+                command="67", raise_errors=raise_errors
+            )
+        except RunzeCommunicationError as exc:
+            log = logger.error if raise_errors else logger.warning
+            log(
+                f"{self.name} (address {self.address}): position sync 0x67 "
+                f"could not be confirmed: {exc}"
+            )
+            if raise_errors:
+                raise
+            return False
         return status == "00"
 
     async def stop(self) -> bool:
@@ -349,12 +375,31 @@ class RunzeSyringePump(FlowchemDevice):
             raise DeviceError(f"Could not read piston position, status '{status}'.")
         return int(parameters, 16)
 
-    async def get_status(self) -> str:
-        """Query motor status (0x4a): '00' idle, '04' busy, 'fe' task just accepted."""
+    async def _get_status_once(self) -> str:
+        """Query status once; completion polling owns its own retry budget."""
         status, _ = await self._send_command_and_read_reply(
             command="4a", raise_errors=False
         )
         return status
+
+    async def get_status(self) -> str:
+        """Query motor status, retrying lost replies up to three total attempts.
+
+        '00' means idle, '04' busy, and 'fe' task just accepted. A missing
+        reply never implies idle, and reported device faults are not retried.
+        """
+        for attempt in range(1, self.STATUS_QUERY_ATTEMPTS + 1):
+            try:
+                return await self._get_status_once()
+            except RunzeCommunicationError as exc:
+                logger.warning(
+                    f"No valid status reply ({attempt}/{self.STATUS_QUERY_ATTEMPTS}): "
+                    f"{exc}"
+                )
+                if attempt == self.STATUS_QUERY_ATTEMPTS:
+                    raise
+                await asyncio.sleep(self.STATUS_POLL_INTERVAL)
+        raise AssertionError("Status query attempt count must be positive.")
 
     async def is_moving(self) -> bool:
         """Return True unless the pump reports idle."""
