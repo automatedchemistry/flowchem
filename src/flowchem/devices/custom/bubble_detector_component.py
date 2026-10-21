@@ -31,6 +31,7 @@ class BubbleDetectorControl(FlowchemComponent):
         self.hw_device: BubbleDetector
 
         self.add_api_route("/all", self.get_all, methods=["GET"])
+        self.add_api_route("/values", self.read_now, methods=["GET"])
         self.add_api_route("/clear-events", self.clear_events, methods=["PUT"])
         self.add_api_route("/info", self.get_info, methods=["GET"])
         self.add_api_route("/interval", self.get_interval, methods=["GET"])
@@ -46,6 +47,10 @@ class BubbleDetectorControl(FlowchemComponent):
     async def get_all(self) -> dict:
         """State, value and latched events of every active sensor, plus the age of the last frame."""
         return await _call(self.hw_device.get_all())
+
+    async def read_now(self) -> dict:
+        """State and raw ADC value of every active sensor, read from the device now (not the last frame)."""
+        return await _call(self.hw_device.read_now())
 
     async def clear_events(self) -> bool:
         """Reset the latched bubble/empty counters of every sensor."""

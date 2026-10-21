@@ -359,6 +359,19 @@ class BubbleDetector(FlowchemDevice):
         values = _sensor_lines(await self._command("get values", MAX_SENSORS))
         self._apply_readings(states[: self.n_sensors], values[: self.n_sensors])
 
+    async def read_now(self) -> dict:
+        """Ask the device for states and values NOW (not the last pushed frame) - for calibration."""
+        await self.poll_states()
+        with self._status_lock:
+            return {
+                f"sensor-{i + 1}": {
+                    "state": c.state,
+                    "state_name": STATE_NAMES.get(c.state, "unknown"),
+                    "value": c.value,
+                }
+                for i, c in enumerate(self.channels)
+            }
+
     async def _fresh(self):
         if self.is_stale():
             logger.warning("Bubble detector: no recent frame, polling states")
