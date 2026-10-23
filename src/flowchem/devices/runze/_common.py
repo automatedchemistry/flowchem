@@ -432,6 +432,7 @@ async def await_completion(
     poll_interval: float = 0.2,
     max_wait: float = 60.0,
     max_missed_polls: int | None = MAX_MISSED_POLLS,
+    extend_deadline: Callable[[], Awaitable[float]] | None = None,
 ) -> tuple[str, str]:
     """Second half of `send_and_await_completion`, for a reply already in hand.
 
@@ -443,6 +444,11 @@ async def await_completion(
     The deadline includes status exchanges and serial-bus waits. An already
     running poll may finish after it and still confirm completion; a new poll
     is never started after expiry.
+
+    `extend_deadline`, if given, is awaited whenever the deadline passes while
+    the last status reply was a clean `fe`/`04`; it returns how many more
+    seconds to wait, or 0 to give up. An unconfirmed status (communication
+    failure) never earns more time.
     """
     deadline = time.monotonic() + max_wait
     missed_polls = 0
@@ -450,10 +456,15 @@ async def await_completion(
     while status in ("fe", "04"):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
+            if extend_deadline is not None and last_communication_error is None:
+                extra = await extend_deadline()
+                if extra > 0:
+                    deadline = time.monotonic() + extra
+                    continue
             break
         await asyncio.sleep(min(poll_interval, remaining))
         if time.monotonic() >= deadline:
-            break
+            continue
         try:
             status = await poll_status_fn()
         except RunzeCommunicationError as error:

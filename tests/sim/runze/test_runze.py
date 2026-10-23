@@ -292,5 +292,8 @@ class TestRunzeSyringePumpEarlyAck:
 
         pump = await _early_ack_pump(busy_polls=10_000)
         pump.MOVE_MIN_TIMEOUT = 0.5
+        # The simulated plunger doesn't move while "busy", so the progress
+        # check after the time budget ends the wait.
+        pump.MOVE_PROGRESS_CHECK = 0.2
         with pytest.raises(DeviceError, match="Motor busy"):
             await pump.aspirate_steps(100)

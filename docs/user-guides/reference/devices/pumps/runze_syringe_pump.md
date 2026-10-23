@@ -43,6 +43,13 @@ status until it reports idle. So if your script sends the command and then immed
 on to the next step, you can be confident the pump is already done — there is no need to add
 an extra wait or check "is it still moving?" yourself.
 
+The driver allows each move a share of 60 s per full stroke (at least 10 s). A pump of the
+second kind that is slower than that is not failed while its plunger is still moving: the
+driver reads the plunger position every 5 s and keeps waiting as long as it changes, for up to
+10 minutes, logging a warning that the move took longer than estimated. A pump that keeps
+reporting busy while its plunger has stopped fails one check later, and the error log gives
+the position where it stopped.
+
 Temporary missing or damaged status replies produce warnings while the driver keeps
 checking for completion. The same recovery applies to the built-in valve. These operations
 retry status queries until their completion timeout, including time spent waiting on serial
