@@ -296,3 +296,87 @@ def test_failed_idle_http_query_keeps_other_routes_and_later_queries_available(
         assert response.status_code == 200
         assert response.json() is True
         assert io.commands == ["4a"] * 4
+
+
+class _SlowPumpIO(SimulatedRunzeSyringePumpIO):
+    """Acknowledges moves with `fe`, then advances the plunger `steps_per_poll`
+    steps per 0x4a poll, reporting `04` until the target is reached. With
+    `stall_at`, the plunger stops there while the pump keeps reporting busy."""
+
+    def __init__(self, steps_per_poll, *, stall_at=None, position_readable=True):
+        super().__init__(num_ports=6, total_steps=12000)
+        self.steps_per_poll = steps_per_poll
+        self.stall_at = stall_at
+        self.position_readable = position_readable
+        self.target = None
+        self.commands = []
+
+    async def write_and_read_reply_async(
+        self, command, raise_errors=True, read_timeout=None
+    ):
+        function = command.function_code.lower()
+        self.commands.append(function)
+        position = self._sim_plunger_position
+        if function in ("42", "43"):
+            sign = 1 if function == "43" else -1
+            self.target = position + sign * command.parameter
+            return "fe", "0000"
+        if function == "4a" and self.target is not None:
+            if position == self.target:
+                self.target = None
+                return "00", "0000"
+            if position != self.stall_at:
+                step = min(self.steps_per_poll, abs(self.target - position))
+                self._sim_plunger_position += step if self.target > position else -step
+            return "04", "0000"
+        if function == "66" and not self.position_readable:
+            raise RunzeCommunicationError("No reply on simulated position query")
+        return await super().write_and_read_reply_async(
+            command, raise_errors=raise_errors, read_timeout=read_timeout
+        )
+
+
+async def test_slow_move_is_awaited_while_the_plunger_keeps_moving(clock, warnings):
+    # 20 steps per 0.2 s poll: 4800 steps take ~48 s, twice the 24 s budget.
+    io = _SlowPumpIO(steps_per_poll=20)
+    pump = _pump(io)
+
+    assert await pump.aspirate_steps(4800) is True
+
+    assert io._sim_plunger_position == 4800
+    assert io.commands.count("43") == 1
+    assert io.commands.count("66") >= 2
+    assert 47 < clock.now < 60
+    assert any("taking longer than the 24s estimated" in w for w in warnings)
+
+
+async def test_busy_pump_whose_plunger_stopped_fails_after_one_check(clock):
+    io = _SlowPumpIO(steps_per_poll=20, stall_at=1000)
+    pump = _pump(io)
+
+    with pytest.raises(DeviceError, match="Motor busy"):
+        await pump.aspirate_steps(4800)
+
+    assert io.commands.count("66") == 2
+    assert clock.now == pytest.approx(24 + pump.MOVE_PROGRESS_CHECK, abs=0.5)
+
+
+async def test_busy_pump_with_unreadable_position_fails_at_the_budget(clock):
+    io = _SlowPumpIO(steps_per_poll=20, position_readable=False)
+    pump = _pump(io)
+
+    with pytest.raises(DeviceError, match="Motor busy"):
+        await pump.aspirate_steps(4800)
+
+    assert io.commands.count("66") == 1
+    assert clock.now == pytest.approx(24, abs=0.5)
+
+
+async def test_moving_plunger_is_awaited_at_most_move_max_wait(clock):
+    io = _SlowPumpIO(steps_per_poll=1)  # 12000 steps would take 2400 s
+    pump = _pump(io)
+
+    assert await pump.aspirate_steps(12000, raise_errors=False) is False
+
+    assert io.commands.count("43") == 1
+    assert clock.now == pytest.approx(pump.MOVE_MAX_WAIT, abs=1)

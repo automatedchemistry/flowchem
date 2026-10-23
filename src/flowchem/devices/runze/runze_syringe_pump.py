@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Awaitable, Callable
 
 from loguru import logger
 import pint
@@ -175,12 +176,17 @@ class RunzeSyringePump(FlowchemDevice):
     #   `04` (motor busy) may mean the move was refused, and treating that as
     #   success would silently skip a liquid transfer.
     #
-    # MOVE_FULL_STROKE_TIMEOUT is a provisional estimate, not a vendor-specified
-    # value. A first guess of 120s was confirmed too short on real hardware (a
-    # genuine full-stroke aspirate got no reply within that window) -- set well
-    # above that pending real timing data from an actual full-stroke move.
+    # MOVE_FULL_STROKE_TIMEOUT is an estimate, not a vendor-specified value: a
+    # unit at factory speed (0x27 reports 200) measured ~1260 steps/s, i.e. a
+    # full stroke in under 10 s. Units that reply `fe` and turn out slower
+    # than this aren't failed while their plunger is still moving: once the
+    # estimate runs out, the plunger position (0x66 answers mid-move) is
+    # re-checked every MOVE_PROGRESS_CHECK seconds and the wait continues while
+    # it keeps changing, for at most MOVE_MAX_WAIT seconds in total.
     MOVE_FULL_STROKE_TIMEOUT = 60.0
     MOVE_MIN_TIMEOUT = 10.0
+    MOVE_PROGRESS_CHECK = 5.0
+    MOVE_MAX_WAIT = 600.0
     STATUS_QUERY_ATTEMPTS = 3
     STATUS_POLL_INTERVAL = 0.2
 
@@ -218,6 +224,9 @@ class RunzeSyringePump(FlowchemDevice):
                         poll_interval=self.STATUS_POLL_INTERVAL,
                         max_wait=read_timeout,
                         max_missed_polls=None,
+                        extend_deadline=self._plunger_progress_check(
+                            command, read_timeout, raise_errors
+                        ),
                     )
             except RunzeCommunicationError as exc:
                 log = logger.error if raise_errors else logger.warning
@@ -233,6 +242,61 @@ class RunzeSyringePump(FlowchemDevice):
         if status == "00":
             return True
         return self._raise_or_reject(status, raise_errors)
+
+    def _plunger_progress_check(
+        self, command: str, estimate: float, raise_errors: bool
+    ) -> Callable[[], Awaitable[float]]:
+        """Build `await_completion`'s `extend_deadline` for one plunger move.
+
+        Called each time the move outlasts its time budget while the pump
+        still reports busy. The first call records the plunger position and
+        grants MOVE_PROGRESS_CHECK seconds; later calls keep granting that
+        while the position keeps changing. A plunger that stopped moving, an
+        unreadable position, or reaching MOVE_MAX_WAIT ends the wait.
+        """
+        waited = estimate
+        last_position: int | None = None
+        log = logger.error if raise_errors else logger.warning
+
+        async def extend_deadline() -> float:
+            nonlocal waited, last_position
+            try:
+                position = await self.read_position()
+            except (RunzeCommunicationError, DeviceError) as exc:
+                log(
+                    f"{self.name}: move 0x{command} still busy after ~{waited:.0f}s "
+                    f"and the plunger position could not be read: {exc}"
+                )
+                return 0.0
+            if position == last_position:
+                log(
+                    f"{self.name}: move 0x{command} still busy after ~{waited:.0f}s, "
+                    f"but the plunger has not moved in the last "
+                    f"{self.MOVE_PROGRESS_CHECK:g}s (position {position} steps)."
+                )
+                return 0.0
+            if waited >= self.MOVE_MAX_WAIT:
+                log(
+                    f"{self.name}: move 0x{command} still running after ~{waited:.0f}s "
+                    f"(plunger at {position} steps); giving up."
+                )
+                return 0.0
+            if last_position is None:
+                logger.warning(
+                    f"{self.name}: move 0x{command} is taking longer than the "
+                    f"{estimate:.0f}s estimated and the pump still reports busy "
+                    f"(plunger at {position} steps); waiting while it keeps moving."
+                )
+            else:
+                logger.info(
+                    f"{self.name}: move 0x{command} still running after ~{waited:.0f}s "
+                    f"(plunger {last_position} -> {position} steps)."
+                )
+            last_position = position
+            waited += self.MOVE_PROGRESS_CHECK
+            return self.MOVE_PROGRESS_CHECK
+
+        return extend_deadline
 
     # -- Built-in valve pass-through (shares the pump's address; set_raw_position
     # is identical to RunzeValve's, get_raw_position is not -- see its docstring) --
