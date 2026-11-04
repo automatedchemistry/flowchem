@@ -14,6 +14,7 @@ from flowchem.devices.huber.huber_temperature_control import HuberTemperatureCon
 from flowchem.devices.huber.pb_command import PBCommand
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 class HuberChiller(FlowchemDevice):
@@ -49,13 +50,15 @@ class HuberChiller(FlowchemDevice):
     def from_config(cls, port, name=None, **serial_kwargs):
         """Create instance from config dict. Used by server to initialize obj from config.
 
-        Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
+        Only required parameter is 'port'. Optional serial settings: see only_serial_settings().
         """
         # Merge default settings, including serial, with provided ones.
         configuration = HuberChiller.DEFAULT_CONFIG | serial_kwargs
 
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except (OSError, aioserial.SerialException) as serial_exception:
             raise InvalidConfigurationError(
                 f"Cannot connect to the HuberChiller on the port <{port}>"

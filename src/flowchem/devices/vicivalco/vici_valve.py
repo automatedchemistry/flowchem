@@ -13,6 +13,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 @dataclass
@@ -61,7 +62,9 @@ class ViciValcoValveIO:
         configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except aioserial.SerialException as serial_exception:
             raise InvalidConfigurationError(
                 f"Could not open serial port {port} with configuration {configuration}"

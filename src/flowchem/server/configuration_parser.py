@@ -94,12 +94,17 @@ def parse_device(dev_settings: dict, device_object_mapper: dict) -> FlowchemDevi
 
     The device type (i.e. domain) is searched in the known classes (and known plugins, even if uninstalled).
     The device is instantiated via its `from_config` method or `init` if from_config is missing.
+    Settings it cannot accept are ignored with a warning, and the optional `id` is stored in its device_info.
     The device object is returned.
 
     Exception handling to provide more specific and diagnostic messages upon errors in the configuration file.
     """
     device_name, device_config = dev_settings
     ensure_device_name_is_valid(device_name)
+
+    # Work on a copy: `type` and `id` are removed below, but /startup_config has to keep showing them.
+    device_config = dict(device_config)
+    device_id = device_config.pop("id", None)
 
     # Get device class
     try:
@@ -125,12 +130,15 @@ def parse_device(dev_settings: dict, device_object_mapper: dict) -> FlowchemDevi
         raise InvalidConfigurationError(msg) from error
 
     # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
+    has_from_config = hasattr(obj_type, "from_config")
+    called = obj_type.from_config if has_from_config else obj_type.__init__
+    device_config = drop_unsupported_settings(
+        device_name, device_config, inspect.getfullargspec(called)
+    )
     try:
-        if hasattr(obj_type, "from_config"):
-            called = obj_type.from_config
+        if has_from_config:
             device = obj_type.from_config(**device_config, name=device_name)
         else:
-            called = obj_type.__init__
             device = obj_type(**device_config, name=device_name)
     except TypeError as error:
         logger.error(f"Wrong settings for device '{device_name}'!")
@@ -143,22 +151,37 @@ def parse_device(dev_settings: dict, device_object_mapper: dict) -> FlowchemDevi
 
         raise ConnectionError(msg) from error
 
+    # Set here, not in the device: most of them replace `device_info` in their __init__.
+    if device_id is not None:
+        device.device_info.id = str(device_id)
+
     logger.debug(f"Created '{device.name}' instance: {device.__class__.__name__}")
     return device
 
 
+def drop_unsupported_settings(
+    device_name: str, settings: dict, arg_spec: inspect.FullArgSpec
+) -> dict:
+    """Return `settings` without the keys that would make the device fail, warning about them.
+
+    A signature with **kwargs receives everything, as what to do with it is up to the device,
+    e.g. simulated devices read `num_ports` from there.
+    `name` is always removed: it comes from the [device.<name>] section header.
+    """
+    accepted = (
+        settings.keys() if arg_spec.varkw else {*arg_spec.args, *arg_spec.kwonlyargs}
+    )
+    ignored = [key for key in settings if key == "name" or key not in accepted]
+    if ignored:
+        logger.warning(
+            f"Device '{device_name}': ignoring unrecognized settings {ignored}"
+        )
+    return {key: value for key, value in settings.items() if key not in ignored}
+
+
 def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec) -> None:
     """Give helpful debugging text on configuration errors."""
-    # First check if we have provided an argument that is not supported.
-    # Clearly no **kwargs should be defined in the signature otherwise all kwargs are ok
-    if arg_spec.varkw is None:
-        invalid_parameters = list(set(called_with.keys()).difference(arg_spec.args))
-        if invalid_parameters:
-            logger.error(
-                f"The following parameters were not recognized: {invalid_parameters}",
-            )
-
-    # Then check if a mandatory arguments was not satisfied. [1 to skip cls/self, -n to remove args w/ default]
+    # Check if a mandatory arguments was not satisfied. [1 to skip cls/self, -n to remove args w/ default]
     num_default = 0 if arg_spec.defaults is None else len(arg_spec.defaults)
     mandatory_args = arg_spec.args[1:-num_default]
     missing_parameters = list(set(mandatory_args).difference(called_with.keys()))

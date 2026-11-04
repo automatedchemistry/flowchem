@@ -16,6 +16,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.r4_heater_channel_control import R4HeaterChannelControl
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 try:
     # noinspection PyUnresolvedReferences
@@ -74,7 +75,7 @@ class R4Heater(FlowchemDevice):
         # Merge default settings, including serial, with provided ones.
         configuration = R4Heater.DEFAULT_CONFIG | config
         try:
-            self._serial = aioserial.AioSerial(**configuration)
+            self._serial = aioserial.AioSerial(**only_serial_settings(configuration))
         except aioserial.SerialException as ex:
             msg = f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
             raise InvalidConfigurationError(

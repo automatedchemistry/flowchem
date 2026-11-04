@@ -12,6 +12,7 @@ from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000Pressure
 from flowchem.devices.vacuubrand.constants import ProcessStatus
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 class CVC3000(FlowchemDevice):
@@ -93,7 +94,7 @@ class CVC3000(FlowchemDevice):
 
         Used by server to initialize obj from config.
 
-        Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
+        Only required parameter is 'port'. Optional serial settings: see only_serial_settings().
 
         Parameters:
         -----------
@@ -118,7 +119,9 @@ class CVC3000(FlowchemDevice):
         configuration = CVC3000.DEFAULT_CONFIG | serial_kwargs
 
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except (OSError, aioserial.SerialException) as serial_exception:
             raise InvalidConfigurationError(
                 f"Cannot connect to the CVC3000 on the port <{port}>"

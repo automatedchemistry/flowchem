@@ -18,6 +18,7 @@ import aioserial
 from loguru import logger
 
 from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
+from flowchem.utils.serial_settings import only_serial_settings
 
 TMCL_FRAME_SIZE = 9
 
@@ -146,7 +147,9 @@ class TMCLSerialIO:
         configuration = dict(TMCLSerialIO.DEFAULT_CONFIG, **kwargs)
         self.lock = asyncio.Lock()
         try:
-            self._serial = aioserial.AioSerial(port, **configuration)
+            self._serial = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except aioserial.SerialException as serial_exception:
             logger.error(f"Cannot connect to the TMCM controller on port <{port}>.")
             raise InvalidConfigurationError(

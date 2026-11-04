@@ -21,6 +21,7 @@ from flowchem.devices.heidolph.hei_connect_components import (
 )
 from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 Status = Literal[
     "manual",
@@ -209,7 +210,9 @@ class HeiConnect(HeiConnectBase):
         """Create instance from config dict. Used by server to initialize obj from config."""
         configuration = cls.DEFAULT_CONFIG | serial_kwargs
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except (OSError, aioserial.SerialException) as serial_exception:
             raise InvalidConfigurationError(
                 f"Cannot connect to the Heidolph MR Hei-Connect on the port <{port}>"

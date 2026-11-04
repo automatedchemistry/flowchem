@@ -19,6 +19,7 @@ knowledge.
 ```toml
 [device.user_chosen_name]
 type = "DeviceClass"
+id = "unit_identifier"
 communication_parameter = "value"
 additional_parameter1 = "value1"
 additional_parameter2 = "value2"
@@ -26,6 +27,7 @@ additional_parameter2 = "value2"
 
 - **Device Block**: Starts with `[device.user_chosen_name]`. The name (e.g., socl2, hexyldecanoic) can be freely chosen by the user.
 - **Type**: Specifies the device class (e.g., "Elite11", "AzuraCompact").
+- **Id** (optional): Your own identifier for the physical unit, described below.
 - **Communication Parameter**: How to connect to the device (e.g., port, IP address, URL).
 - **Additional Parameters**: Any extra settings specific to the device type.
 
@@ -46,6 +48,44 @@ baudrate = 115200                # Additional configuration
 - It's an "Elite11" type device.
 - It's connected via COM4 port.
 - It has specific syringe and communication settings.
+
+## Tracking the physical unit
+
+The optional `id` records which physical unit is behind a device name. The model alone can't tell you that when one
+unit is swapped for another of the same model. Flowchem stores it in the device metadata, so here `GET /socl2/` returns
+`"id": "PUMP-042"`:
+
+```toml
+[device.socl2]
+type = "Elite11"
+id = "PUMP-042"
+port = "COM4"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
+```
+
+Flowchem doesn't check that ids are unique, and a number is stored as text.
+
+## Settings a device doesn't use
+
+A setting the device doesn't use is ignored, and real drivers log a warning naming it when the server starts. This lets
+one file work with both `flowchem` and `flowchem-sim`. Here `num_ports` configures the simulated valve, and the real
+driver ignores it:
+
+```toml
+[device.valve1]
+type = "RunzeValve"
+port = "COM5"
+num_ports = 6
+```
+
+Ignored settings can still be read at `GET /startup_config`, which returns the whole configuration file.
+
+```{warning}
+A misspelled optional setting doesn't stop the server either: the device starts with the default value instead. For
+example, `normally_opn = false` leaves a solenoid valve configured as normally open. Check the startup log for warnings
+about unrecognized settings. A missing mandatory setting still stops the server.
+```
 
 ## Creating the File
 
