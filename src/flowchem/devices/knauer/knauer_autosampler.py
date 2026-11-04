@@ -46,6 +46,7 @@ from flowchem import ureg
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import jakob, samuel_saraiva, miguel
+from flowchem.utils.serial_settings import only_serial_settings
 from flowchem.devices.knauer.knauer_autosampler_component import (
     AutosamplerGantry3D,
     AutosamplerPump,
@@ -171,7 +172,9 @@ class ASEthernetDevice:
     COMMAND_RETRIES = 5
     COMMAND_RETRY_DELAY = 0.3  # seconds between command re-issues
 
-    def __init__(self, ip_address, buffersize=None, tcp_port=None):
+    def __init__(self, ip_address, buffersize=None, tcp_port=None, **kwargs):
+        if kwargs:
+            logger.warning(f"Ignoring unrecognized settings: {sorted(kwargs)}")
         self.ip_address = str(ip_address)
         self.port = tcp_port if tcp_port else ASEthernetDevice.TCP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
@@ -313,7 +316,9 @@ class ASSerialDevice:
             raise ValueError("A valid port must be specified for Serial communication.")
         configuration = dict(ASSerialDevice.DEFAULT_SERIAL_CONFIG, **kwargs)
         try:
-            self._serial = aioserial.AioSerial(port, **configuration)
+            self._serial = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except aioserial.SerialException as serial_exception:
             logger.error(f"Cannot connect to the Autosampler on the port <{port}>")
             raise ValueError(

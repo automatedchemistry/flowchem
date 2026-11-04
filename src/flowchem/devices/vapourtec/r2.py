@@ -28,6 +28,7 @@ from flowchem.devices.vapourtec.r2_components_control import (
 )
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 try:
     # noinspection PyUnresolvedReferences
@@ -111,7 +112,7 @@ class R2(FlowchemDevice):
         # Merge default settings, including serial, with provided ones.
         configuration = R2.DEFAULT_CONFIG | config
         try:
-            self._serial = aioserial.AioSerial(**configuration)
+            self._serial = aioserial.AioSerial(**only_serial_settings(configuration))
         except aioserial.SerialException as ex:
             raise InvalidConfigurationError(
                 f"Cannot connect to the R2 on the port <{config.get('port')}>"

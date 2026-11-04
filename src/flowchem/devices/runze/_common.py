@@ -21,6 +21,7 @@ import serial
 from loguru import logger
 
 from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
+from flowchem.utils.serial_settings import only_serial_settings
 
 # Response status codes shared by every Runze device (valve or pump); see the
 # vendor's Smart SY-01/SV-06 manuals' "Response Status" table.
@@ -151,7 +152,7 @@ class RunzeSerialIO:
         configuration = RunzeSerialIO.DEFAULT_CONFIG | config
 
         try:
-            serial_object = serial.Serial(**configuration)
+            serial_object = serial.Serial(**only_serial_settings(configuration))
         except serial.SerialException as serial_exception:
             raise InvalidConfigurationError(
                 f"Cannot connect to the device on the port <{configuration.get('port')}>"

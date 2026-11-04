@@ -20,6 +20,7 @@ from flowchem.devices.custom.peltier_cooler_component import (
 )
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import jakob, miguel
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 class PeltierException(Exception):
@@ -134,7 +135,9 @@ class PeltierIO:
         configuration = dict(PeltierIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except aioserial.SerialException as serial_exception:
             raise InvalidConfigurationError(
                 f"Could not open serial port {port} with configuration {configuration}"

@@ -15,6 +15,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
 from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 class MansonPowerSupply(FlowchemDevice):
@@ -39,7 +40,9 @@ class MansonPowerSupply(FlowchemDevice):
         Only required parameter is 'port'.
         """
         try:
-            serial_object = aioserial.AioSerial(port, **serial_kwargs)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(serial_kwargs)
+            )
         except aioserial.SerialException as error:
             raise InvalidConfigurationError(
                 f"Cannot connect to the MansonPowerSupply on the port <{port}>"

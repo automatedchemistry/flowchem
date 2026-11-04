@@ -2,7 +2,20 @@ import sys
 from pathlib import Path
 
 import pytest
+from loguru import logger
 from xprocess import ProcessStarter
+
+
+@pytest.fixture
+def logged_warnings():
+    """Collect the messages logged at WARNING level through loguru."""
+    messages = []
+    sink = logger.add(
+        lambda message: messages.append(message.record["message"]),
+        filter=lambda record: record["level"].name == "WARNING",
+    )
+    yield messages
+    logger.remove(sink)
 
 
 @pytest.fixture(scope="module")

@@ -6,6 +6,7 @@ import aioserial
 from loguru import logger
 
 from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 class PumpStatus(Enum):
@@ -39,7 +40,9 @@ class HarvardApparatusPumpIO:
         self.lock = asyncio.Lock()
 
         try:
-            self._serial = aioserial.AioSerial(port, **configuration)
+            self._serial = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except aioserial.SerialException as serial_exception:
             logger.error(
                 f"Cannot connect to the Pump on the port <{port}> issue:{serial_exception}"

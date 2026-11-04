@@ -10,6 +10,7 @@ class DeviceInfo(BaseModel):
     model: str = ""
     version: str = ""
     serial_number: str | int = "unknown"
+    id: str | None = None  # Set in the config file, tracks which physical unit this is
     components: dict[str, AnyHttpUrl] = {}
     backend: str = f"flowchem v. {__version__}"
     authors: list[NameEmail] = []

@@ -104,6 +104,7 @@ from flowchem.devices.custom.mpikg_switch_box_component import (
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
+from flowchem.utils.serial_settings import only_serial_settings
 
 from dataclasses import dataclass, field
 from loguru import logger
@@ -258,7 +259,9 @@ class SwitchBoxIO:
         configuration = dict(SwitchBoxIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.AioSerial(
+                port, **only_serial_settings(configuration)
+            )
         except aioserial.SerialException as serial_exception:
             raise InvalidConfiguration(
                 f"Could not open serial port {port} with configuration {configuration}"

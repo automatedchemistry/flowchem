@@ -69,6 +69,11 @@ class ExtendableEar(FlowchemDevice):
         self._length = ureg(length)
 ```
 
+Settings in the configuration file that `__init__` doesn't accept are ignored with a warning, so there is no need to add
+`**kwargs` for that. The optional `id` setting never reaches your class: flowchem stores it in `device_info`.
+If your device does take `**kwargs` and forwards them to a serial port, pass them through `only_serial_settings` from
+`flowchem.utils.serial_settings`, because pyserial raises an error on any setting it doesn't know.
+
 If some input/output operation is needed to initiate communication with the device, and the relevant code involves
 async calls, the `initialize()` coroutine can be used that is automatically called by flowchem after device
 initialization.

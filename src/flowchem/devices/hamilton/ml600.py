@@ -20,6 +20,7 @@ from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 from flowchem.utils.people import dario, jakob, wei_hsin, miguel
+from flowchem.utils.serial_settings import only_serial_settings
 
 
 class ML600Commands(Enum):
@@ -168,7 +169,7 @@ class HamiltonPumpIO:
         """Create HamiltonPumpIO from config."""
         configuration = HamiltonPumpIO.DEFAULT_CONFIG | config
         try:
-            serial_object = aioserial.AioSerial(**configuration)
+            serial_object = aioserial.AioSerial(**only_serial_settings(configuration))
         except aioserial.SerialException as serial_exception:
             raise InvalidConfigurationError(
                 f"Cannot connect to the pump on the port <{configuration.get('port')}>"

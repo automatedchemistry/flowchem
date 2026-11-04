@@ -5,6 +5,8 @@ from collections import namedtuple
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from flowchem.components.device_info import DeviceInfo
 
 if TYPE_CHECKING:
@@ -20,8 +22,15 @@ class FlowchemDevice(ABC):
     during config parsing.
     """
 
-    def __init__(self, name) -> None:
-        """All device have a name, which is the key in the config dict thus unique."""
+    def __init__(self, name, **kwargs) -> None:
+        """All device have a name, which is the key in the config dict thus unique.
+
+        Subclasses forwarding their **kwargs here only leave settings nothing used, which are ignored.
+        """
+        if kwargs:
+            logger.warning(
+                f"Device '{name}': ignoring unrecognized settings {sorted(kwargs)}"
+            )
         self.name = name
         self.device_info = DeviceInfo()
         self.components: list["FlowchemComponent"] = []

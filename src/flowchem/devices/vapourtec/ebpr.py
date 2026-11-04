@@ -11,6 +11,7 @@ from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.ebpr_component_control import EBPRPressureControl
 from flowchem.utils.exceptions import InvalidConfigurationError
+from flowchem.utils.serial_settings import only_serial_settings
 
 try:
     # noinspection PyUnresolvedReferences
@@ -50,7 +51,7 @@ class EBPR(FlowchemDevice):
         # Merge default settings, including serial, with provided ones.
         configuration = EBPR.DEFAULT_CONFIG | config
         try:
-            self._serial = aioserial.AioSerial(**configuration)
+            self._serial = aioserial.AioSerial(**only_serial_settings(configuration))
         except aioserial.SerialException as ex:
             msg = f"Cannot connect to the eBPR on the port <{config.get('port')}>"
             raise InvalidConfigurationError(msg) from ex
