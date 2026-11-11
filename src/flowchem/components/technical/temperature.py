@@ -36,8 +36,9 @@ class TemperatureControl(FlowchemComponent):
         self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
         self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
-        self.add_api_route("/temperature_setpoint", self.get_temperature_setpoint, methods=["GET"])
-
+        self.add_api_route(
+            "/temperature_setpoint", self.get_temperature_setpoint, methods=["GET"]
+        )
 
         self._limits = temp_limits
 

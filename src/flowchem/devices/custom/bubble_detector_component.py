@@ -41,7 +41,9 @@ class BubbleDetectorControl(FlowchemComponent):
         self.add_api_route("/display-time", self.get_display_time, methods=["GET"])
         self.add_api_route("/display-time", self.set_display_time, methods=["PUT"])
         self.add_api_route("/calibration", self.get_calibration, methods=["GET"])
-        self.add_api_route("/bubble-thresholds", self.get_bubble_thresholds, methods=["GET"])
+        self.add_api_route(
+            "/bubble-thresholds", self.get_bubble_thresholds, methods=["GET"]
+        )
         self.add_api_route("/reset", self.reset, methods=["PUT"])
 
     async def get_all(self) -> dict:
@@ -111,12 +113,24 @@ class BubbleDetectorChannel(BubbleSensor):
         self.add_api_route("/state", self.get_state, methods=["GET"])
         self.add_api_route("/events", self.get_events, methods=["GET"])
         self.add_api_route("/clear-events", self.clear_events, methods=["PUT"])
-        self.add_api_route("/fluid-calibration", self.get_fluid_calibration, methods=["GET"])
-        self.add_api_route("/fluid-calibration", self.set_fluid_calibration, methods=["PUT"])
-        self.add_api_route("/empty-calibration", self.get_empty_calibration, methods=["GET"])
-        self.add_api_route("/empty-calibration", self.set_empty_calibration, methods=["PUT"])
-        self.add_api_route("/bubble-threshold", self.get_bubble_threshold, methods=["GET"])
-        self.add_api_route("/bubble-threshold", self.set_bubble_threshold, methods=["PUT"])
+        self.add_api_route(
+            "/fluid-calibration", self.get_fluid_calibration, methods=["GET"]
+        )
+        self.add_api_route(
+            "/fluid-calibration", self.set_fluid_calibration, methods=["PUT"]
+        )
+        self.add_api_route(
+            "/empty-calibration", self.get_empty_calibration, methods=["GET"]
+        )
+        self.add_api_route(
+            "/empty-calibration", self.set_empty_calibration, methods=["PUT"]
+        )
+        self.add_api_route(
+            "/bubble-threshold", self.get_bubble_threshold, methods=["GET"]
+        )
+        self.add_api_route(
+            "/bubble-threshold", self.set_bubble_threshold, methods=["PUT"]
+        )
 
     async def get_status(self) -> dict:
         """Everything known about this sensor: state, value, age and latched events."""
@@ -142,7 +156,13 @@ class BubbleDetectorChannel(BubbleSensor):
     async def get_events(self) -> dict:
         """Bubbles and empty-tube events counted since the last clear."""
         status = await self.get_status()
-        keys = ("bubble_count", "empty_count", "last_bubble_at", "last_empty_at", "events_cleared_at")
+        keys = (
+            "bubble_count",
+            "empty_count",
+            "last_bubble_at",
+            "last_empty_at",
+            "events_cleared_at",
+        )
         return {k: status[k] for k in keys}
 
     async def clear_events(self) -> bool:
