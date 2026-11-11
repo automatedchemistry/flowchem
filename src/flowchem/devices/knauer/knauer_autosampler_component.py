@@ -41,6 +41,11 @@ class AutosamplerGantry3D(Gantry3D):
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
+        # Read-only: the decoded AS error / state. Without these the platform only sees a bare
+        # "500 Internal Server Error" when a command fails and cannot say WHY (e.g. ERROR_317,
+        # "stripper did not detect plate", i.e. no vial at that position).
+        self.add_api_route("/errors", self.get_errors, methods=["GET"])
+        self.add_api_route("/status", self.get_status, methods=["GET"])
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
         self.add_api_route(
             "/needle_position", self.set_needle_position, methods=["PUT"]
@@ -173,6 +178,30 @@ class AutosamplerGantry3D(Gantry3D):
         else:
             return False
 
+    async def get_errors(self) -> str:
+        """Decoded error the AS currently reports ("No Error." when there is none).
+
+        Never raises: this is the call made to explain ANOTHER failure, so it must not add a
+        failure of its own. An undocumented code (the ErrorCodes enum has gaps) is returned raw,
+        same policy as get_status below.
+        """
+        try:
+            return await self.hw_device.get_errors()
+        except KeyError as exc:
+            logger.warning(f"AS returned an error code not in ErrorCodes: {exc}")
+            return f"unknown AS error code {exc}"
+        except Exception as exc:
+            logger.warning(f"Could not read the AS error state: {exc!r}")
+            return f"AS error state unreadable ({exc.__class__.__name__})"
+
+    async def get_status(self) -> str:
+        """The AS state (e.g. NEEDLE_RUNNING), as reported by the device. Never raises."""
+        try:
+            return str(await self.hw_device.get_status())
+        except Exception as exc:
+            logger.warning(f"Could not read the AS status: {exc!r}")
+            return f"AS status unreadable ({exc.__class__.__name__})"
+
     async def reset_errors(self) -> bool:
         """Resets AS error"""
         errors = await self.hw_device.get_errors()
@@ -199,7 +228,12 @@ class AutosamplerGantry3D(Gantry3D):
         self, temperature: int | float | str | None = None
     ) -> bool:
         """
-        Set tray temperature and enable tray temperature control.
+        Enable tray temperature control and set the tray temperature.
+
+        Control is turned ON *before* the setpoint is written: the autosampler NAKs a setpoint
+        programmed into a thermostat that is still switched off (the reply parser turns that into
+        CommandOrValueError, surfacing as a 500). The previous order - setpoint first, enable second
+        - therefore failed on any platform that had explicitly turned tray cooling off beforehand.
 
         Args:
             temperature: tray temperature setpoint.
@@ -224,19 +258,24 @@ class AutosamplerGantry3D(Gantry3D):
         else:
             setpoint = int(temperature)
 
-        success = await self.hw_device.set_tray_temperature(setpoint=setpoint)
-        if not success:
+        control_success = await self.hw_device.set_tray_temperature_control(onoff="on")
+        if not control_success:
+            logger.warning(
+                f"Tray temperature control could not be turned on; not writing the {setpoint} °C "
+                f"setpoint (the autosampler rejects a setpoint while control is off)."
+            )
             return False
 
-        control_success = await self.hw_device.set_tray_temperature_control(onoff="on")
-        if control_success:
+        success = await self.hw_device.set_tray_temperature(setpoint=setpoint)
+        if success:
             logger.info(
-                f"Tray temperature set successfully to {setpoint} °C and control turned on"
+                f"Tray temperature control turned on and setpoint set successfully to {setpoint} °C"
             )
             return True
         else:
             logger.warning(
-                f"Tray temperature was set to {setpoint} °C, but control could not be turned on"
+                f"Tray temperature control was turned on, but the {setpoint} °C setpoint was "
+                f"rejected (check it is within the range this tray accepts)."
             )
             return False
 

@@ -44,7 +44,7 @@ def set_data_folder(location) -> etree._Element:
     # Add folder specific tag
     data_folder_node = data_folder.find(".//DataFolder")
     if data_folder_node:
-        full_tree = etree.SubElement(data_folder, "TimeStampTree")
+        full_tree: etree._Element = etree.SubElement(data_folder, "TimeStampTree")
         full_tree.text = (
             location.as_posix() if isinstance(location, WindowsPath) else location
         )

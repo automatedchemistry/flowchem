@@ -83,6 +83,7 @@ class PhidgetBubbleSensorSim(FlowchemDevice):
     _sim_voltage      : float   current voltage reading (V)
     _sim_power        : bool    measurement active (power supply on)
     _sim_data_interval: int     data interval ms
+    bubble_threshold  : float   signal (% of 5 V) below which a bubble is reported
     """
 
     def __init__(
@@ -92,12 +93,14 @@ class PhidgetBubbleSensorSim(FlowchemDevice):
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         data_interval: int = 250,
+        bubble_threshold: float = 50.0,
         name: str = "",
     ):
         super().__init__(name=name)
         self._sim_voltage: float = 0.0
         self._sim_power: bool = False
         self._sim_data_interval: int = data_interval
+        self.bubble_threshold = bubble_threshold
         self.device_info = DeviceInfo(
             manufacturer="Phidget",
             model="SimulatedBubbleSensor",
@@ -113,6 +116,7 @@ class PhidgetBubbleSensorSim(FlowchemDevice):
             vint_hub_port=int(config.pop("vint_hub_port", -1)),
             vint_channel=int(config.pop("vint_channel", -1)),
             data_interval=int(config.pop("data_interval", 250)),
+            bubble_threshold=float(config.pop("bubble_threshold", 50.0)),
         )
 
     async def initialize(self):

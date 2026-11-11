@@ -3,6 +3,14 @@
 PhidgetBubbleSensor_power control the power of the bubble sensor
 PhidgetBubbleSensor measure the signal of the bubble sensor
 
+### Example configuration::
+
+    [device.bubble-sensor]
+    type = "PhidgetBubbleSensor"
+    vint_serial_number = 627768
+    vint_hub_port = 0
+    vint_channel = 0
+    bubble_threshold = 50  # % of 5 V: a bubble is reported while the signal is below it
 """
 
 import time
@@ -126,6 +134,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         data_interval: int = 250,  # ms
+        bubble_threshold: float = 50.0,  # % of 5 V, a bubble is reported below it
         name: str = "",
     ) -> None:
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
@@ -134,6 +143,8 @@ class PhidgetBubbleSensor(FlowchemDevice):
             raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
+
+        self.bubble_threshold = bubble_threshold
 
         # Sensor range
         # sensor_min, sensor_max = intensity_range

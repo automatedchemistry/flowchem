@@ -137,3 +137,28 @@ class TestPhidgetBubbleSensorSim:
 
     async def test_manufacturer(self, bubble):
         assert bubble.device_info.manufacturer == "Phidget"
+
+    async def test_component_is_bubble_sensor(self, bubble_component):
+        # The class list is what the orchestrator matches figures against
+        assert "BubbleSensor" in bubble_component.component_info.corresponding_class
+
+    async def test_bubble_detected_route_registered_once(self, bubble_component):
+        paths = [route.path for route in bubble_component.router.routes]
+        assert sum(path.endswith("/bubble-detected") for path in paths) == 1
+
+    async def test_bubble_detected_below_threshold(self, bubble_component, bubble):
+        bubble._sim_voltage = 1.0  # 20 %, below the default threshold of 50 %
+        assert await bubble_component.bubble_detected() is True
+
+    async def test_no_bubble_above_threshold(self, bubble_component, bubble):
+        bubble._sim_voltage = 4.0  # 80 %
+        assert await bubble_component.bubble_detected() is False
+
+    async def test_bubble_threshold_from_config(self):
+        device = PhidgetBubbleSensorSim.from_config(
+            name="test-bubble-30", bubble_threshold=30
+        )
+        await device.initialize()
+        assert device.bubble_threshold == 30.0
+        device._sim_voltage = 2.0  # 40 %, above 30 %
+        assert await device.components[0].bubble_detected() is False
