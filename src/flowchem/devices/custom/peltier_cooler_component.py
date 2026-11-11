@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
+
+import pint
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
 
 if TYPE_CHECKING:
@@ -14,13 +16,39 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
 
     hw_device: PeltierCooler  # for typing's sake
 
-    def __init__(self, name: str, hw_device: PeltierCooler, temp_limits: TempRange) -> None:
+    def __init__(
+        self, name: str, hw_device: PeltierCooler, temp_limits: TempRange
+    ) -> None:
         super().__init__(name, hw_device, temp_limits)
-        self.add_api_route("/parameters", self.get_controller_parameters, methods=["GET"])
+        self.add_api_route("/parameters", self.parameters, methods=["GET"])
+
+    async def parameters(self) -> dict[str, Any]:
+        """Return configured (TOML) defaults and a live hardware readback of Peltier parameters."""
+        defaults = self.hw_device.peltier_defaults
+        raw = await self.hw_device.get_parameters()
+        return {
+            "configured": {
+                "heating_pid": defaults.HEATING_PID,
+                "cooling_pid": defaults.COOLING_PID,
+                "base_temp": defaults.BASE_TEMP,
+                "t_max": defaults.T_MAX,
+                "t_min": defaults.T_MIN,
+                "state_dependent_data": defaults.state_dependent_data,
+            },
+            "live": {
+                # Only the first field of the controller's GPA reply is documented
+                # by existing usage (see is_target_reached/get_temperature_setpoint).
+                # The remaining fields are an undocumented vendor-specific dump, so
+                # the full raw reply is included as-is rather than guessing at
+                # field semantics that could misrepresent real values.
+                "temperature_setpoint": float(raw.split(",")[0]),
+                "raw_gpa_reply": raw,
+            },
+        }
 
     async def set_temperature(self, temperature: str):
         """Set the target temperature to the given string in "magnitude and unit" format."""
-        set_t = await super().set_temperature(temperature)
+        set_t = cast(pint.Quantity, await super().set_temperature(temperature))
         return await self.hw_device.set_temperature(set_t)
 
     async def get_temperature(self) -> float:  # type: ignore
@@ -43,41 +71,6 @@ class PeltierCoolerTemperatureControl(TemperatureControl):
         params = await self.hw_device.get_parameters()
         values = params.split(",")
         return float(values[0])
-
-    async def get_controller_parameters(self) -> dict:
-        """Return the driver's configured defaults next to what the controller reports (GPA).
-
-        driver_file tells which copy of peltier_cooler.py the server imported.
-        GPA fields decoded here (checked against chiller_pid_test logs): 0 setpoint,
-        3 heating current limit, 4 cooling current limit, 5 P, 6 I, 9 T_min, 10 T_max.
-        D is not decoded - its position in the GPA reply is unverified.
-        """
-        from . import peltier_cooler
-
-        defaults = self.hw_device.peltier_defaults
-        raw = await self.hw_device.get_parameters()
-        values = raw.split(",")
-        return {
-            "driver_file": peltier_cooler.__file__,
-            "defaults": {
-                "class": type(defaults).__name__,
-                "cooling_pid": list(defaults.COOLING_PID),
-                "heating_pid": list(defaults.HEATING_PID),
-                "base_temp_C": defaults.BASE_TEMP,
-                # rows: temperature, cooling limit (A), heating limit (A)
-                "current_limits": defaults.STATE_DEPENDANT_CURRENT_LIMITS.T.tolist(),
-            },
-            "controller": {
-                "setpoint_C": float(values[0]),
-                "heating_limit_A": float(values[3]),
-                "cooling_limit_A": float(values[4]),
-                "P": float(values[5]),
-                "I": float(values[6]),
-                "T_min_C": float(values[9]),
-                "T_max_C": float(values[10]),
-                "raw": raw,
-            },
-        }
 
     async def power_on(self):
         """Turn on temperature control."""

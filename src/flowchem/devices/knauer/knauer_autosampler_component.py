@@ -40,12 +40,12 @@ class AutosamplerGantry3D(gantry3D):
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         """Initialize component."""
         super().__init__(name, hw_device, axes_config=self.tray_config)
-        self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
         # Read-only: the decoded AS error / state. Without these the platform only sees a bare
         # "500 Internal Server Error" when a command fails and cannot say WHY (e.g. ERROR_317,
         # "stripper did not detect plate", i.e. no vial at that position).
         self.add_api_route("/errors", self.get_errors, methods=["GET"])
         self.add_api_route("/status", self.get_status, methods=["GET"])
+        self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
         self.add_api_route("/tray_temperature", self.get_tray_temperature, methods=["GET"])
