@@ -8,17 +8,16 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 if TYPE_CHECKING:
     from .bubble_sensor import PhidgetBubbleSensor, PhidgetPowerSource5V
 
-from flowchem.components.sensors.sensor import Sensor
+from flowchem.components.sensors.bubble_sensor import BubbleSensor
 
 
-class PhidgetBubbleSensorComponent(Sensor):
+class PhidgetBubbleSensorComponent(BubbleSensor):
     hw_device: PhidgetBubbleSensor  # just for typing
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
         # self.add_api_route("/set-data-Interval", self.set_dataInterval, methods=["PUT"])
         self.add_api_route("/read-voltage", self.read_voltage, methods=["GET"])
-        self.add_api_route("/acquire-signal", self.acquire_signal, methods=["GET"])
 
     async def power_on(self) -> bool:
         self.hw_device.power_on()
@@ -39,6 +38,13 @@ class PhidgetBubbleSensorComponent(Sensor):
     async def read(self) -> float:
         """Read the generic bubble-sensor signal endpoint."""
         return await self.acquire_signal()
+
+    async def bubble_detected(self) -> bool:
+        """True while the signal (% of 5 V) is below the bubble_threshold of the device config.
+
+        An empty tube reads as a bubble too.
+        """
+        return self.hw_device.read_intensity() < self.hw_device.bubble_threshold
 
     async def set_dataInterval(self, datainterval: int) -> bool:
         """Set data interval at the range 20-60000 ms (default unit: ms)."""

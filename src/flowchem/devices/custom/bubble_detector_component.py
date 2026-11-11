@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from fastapi import HTTPException
 
 from flowchem.components.flowchem_component import FlowchemComponent
-from flowchem.components.sensors.photo_sensor import PhotoSensor
+from flowchem.components.sensors.bubble_sensor import BubbleSensor
 
 if TYPE_CHECKING:
     from .bubble_detector import BubbleDetector
@@ -99,7 +99,7 @@ class BubbleDetectorControl(FlowchemComponent):
         return await _call(self.hw_device.reset())
 
 
-class BubbleDetectorChannel(PhotoSensor):
+class BubbleDetectorChannel(BubbleSensor):
     """One optical sensor of the bubble detector."""
 
     def __init__(self, name: str, hw_device: BubbleDetector, channel: int) -> None:
@@ -109,7 +109,6 @@ class BubbleDetectorChannel(PhotoSensor):
 
         self.add_api_route("/status", self.get_status, methods=["GET"])
         self.add_api_route("/state", self.get_state, methods=["GET"])
-        self.add_api_route("/bubble-detected", self.bubble_detected, methods=["GET"])
         self.add_api_route("/events", self.get_events, methods=["GET"])
         self.add_api_route("/clear-events", self.clear_events, methods=["PUT"])
         self.add_api_route("/fluid-calibration", self.get_fluid_calibration, methods=["GET"])
@@ -137,7 +136,7 @@ class BubbleDetectorChannel(PhotoSensor):
         return {"state": status["state"], "state_name": status["state_name"]}
 
     async def bubble_detected(self) -> bool:
-        """True while the sensor currently sees a bubble."""
+        """True while the sensor currently sees a bubble (an empty tube gives False, see /state)."""
         return (await self.get_status())["bubble_detected"]
 
     async def get_events(self) -> dict:
