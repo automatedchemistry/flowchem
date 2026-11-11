@@ -64,7 +64,12 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.people import miguel
 
 MAX_SENSORS = 6
-STATE_NAMES = {0: "inactive", 1: "empty", 2: "bubble", 3: "liquid"}
+STATE_NAMES: dict[int | None, str] = {
+    0: "inactive",
+    1: "empty",
+    2: "bubble",
+    3: "liquid",
+}
 STATE_BUBBLE = 2
 STATE_EMPTY = 1
 
@@ -126,7 +131,9 @@ class ChannelStatus:
             "state_name": STATE_NAMES.get(self.state, "unknown"),
             "bubble_detected": self.state == STATE_BUBBLE,
             "value": self.value,
-            "age_s": None if self.updated_at is None else round(now - self.updated_at, 2),
+            "age_s": (
+                None if self.updated_at is None else round(now - self.updated_at, 2)
+            ),
             "bubble_count": self.bubble_count,
             "empty_count": self.empty_count,
             "last_bubble_at": self.last_bubble_at,
@@ -192,7 +199,9 @@ class BubbleDetector(FlowchemDevice):
         try:
             self._serial = self._open_serial()
         except serial.SerialException as e:
-            raise ConnectionError(f"Cannot open bubble detector on {self.port}: {e}") from e
+            raise ConnectionError(
+                f"Cannot open bubble detector on {self.port}: {e}"
+            ) from e
         self.connected = True
 
         self._reader_thread = threading.Thread(
@@ -210,7 +219,9 @@ class BubbleDetector(FlowchemDevice):
             # One retry: the first command can collide with the end of a boot
             await asyncio.sleep(1)
             self.device_info.version = await self._query_line("get ver")
-        self.device_info.serial_number = _after_colon(await self._query_line("get sernum"))
+        self.device_info.serial_number = _after_colon(
+            await self._query_line("get sernum")
+        )
         self.n_sensors = await self.get_active_sensors()
         self.interval_ms = await self.get_interval()
         self.channels = [ChannelStatus() for _ in range(self.n_sensors)]
@@ -230,6 +241,8 @@ class BubbleDetector(FlowchemDevice):
 
     def _reader_loop(self):
         """Background thread: route data frames to the status, everything else to the reply queue."""
+        # Created by initialize() before this thread is started
+        assert self._loop is not None and self._replies is not None
         while True:
             try:
                 if self._serial is None or not self._serial.is_open:
@@ -237,7 +250,9 @@ class BubbleDetector(FlowchemDevice):
                 raw = self._serial.readline()
             except (serial.SerialException, OSError) as e:
                 self.connected = False
-                logger.error(f"Bubble detector on {self.port}: serial error '{e}', reconnecting...")
+                logger.error(
+                    f"Bubble detector on {self.port}: serial error '{e}', reconnecting..."
+                )
                 self._reconnect()
                 continue
             if not raw:
@@ -268,7 +283,7 @@ class BubbleDetector(FlowchemDevice):
 
     def _handle_frame(self, line: str):
         # Interleaved output looks like "STATES:3STATES:3,3,3 | VALUES:...": keep the last frame start
-        candidate = line[line.rfind("STATES:"):]
+        candidate = line[line.rfind("STATES:") :]
         match = FRAME_RE.match(candidate)
         if not match:
             logger.debug(f"Bubble detector: discarded malformed frame '{line}'")
@@ -290,23 +305,36 @@ class BubbleDetector(FlowchemDevice):
                 previous = channel.state
                 channel.update(state, value, t)
                 if state == STATE_BUBBLE and previous != STATE_BUBBLE:
-                    logger.info(f"Bubble detector: bubble on sensor {self.channels.index(channel) + 1}")
+                    logger.info(
+                        f"Bubble detector: bubble on sensor {self.channels.index(channel) + 1}"
+                    )
             self.last_update_at = t
 
     # ------------------------------------------------------------------ commands
 
     def _drain_replies(self):
+        assert self._replies is not None
         while not self._replies.empty():
             self._replies.get_nowait()
 
     async def _command(self, command: str, n_lines: int = 1) -> list[str]:
         """Send one command and collect its reply lines."""
         if not self.connected:
-            raise BubbleDetectorError(f"Bubble detector on {self.port} is not connected")
+            raise BubbleDetectorError(
+                f"Bubble detector on {self.port} is not connected"
+            )
+        assert (
+            self._serial is not None
+            and self._replies is not None
+            and self._loop is not None
+            and self._command_lock is not None
+        )
         async with self._command_lock:
             self._drain_replies()
             try:
-                await asyncio.to_thread(self._serial.write, f"{command}\r".encode("ascii"))
+                await asyncio.to_thread(
+                    self._serial.write, f"{command}\r".encode("ascii")
+                )
             except serial.SerialException as e:
                 raise BubbleDetectorError(f"Write of '{command}' failed: {e}") from e
             lines: list[str] = []
@@ -342,7 +370,9 @@ class BubbleDetector(FlowchemDevice):
     @staticmethod
     def _check_channel(channel: int):
         if not 1 <= channel <= MAX_SENSORS:
-            raise BubbleDetectorError(f"Sensor index must be 1-{MAX_SENSORS}, got {channel}")
+            raise BubbleDetectorError(
+                f"Sensor index must be 1-{MAX_SENSORS}, got {channel}"
+            )
 
     # ------------------------------------------------------------------ readings
 
@@ -387,9 +417,11 @@ class BubbleDetector(FlowchemDevice):
         with self._status_lock:
             return {
                 "connected": self.connected,
-                "last_frame_age_s": None
-                if self.last_frame_at is None
-                else round(time.time() - self.last_frame_at, 2),
+                "last_frame_age_s": (
+                    None
+                    if self.last_frame_at is None
+                    else round(time.time() - self.last_frame_at, 2)
+                ),
                 "interval_ms": self.interval_ms,
                 "bubble_detected": any(c.state == STATE_BUBBLE for c in self.channels),
                 "sensors": {
@@ -419,7 +451,9 @@ class BubbleDetector(FlowchemDevice):
     async def set_interval(self, interval_ms: int) -> int:
         if interval_ms < 100:
             raise BubbleDetectorError("Send interval must be at least 100 ms")
-        self.interval_ms = await self._set_int(f"set interval:{interval_ms}", interval_ms)
+        self.interval_ms = await self._set_int(
+            f"set interval:{interval_ms}", interval_ms
+        )
         return self.interval_ms
 
     async def get_active_sensors(self) -> int:
@@ -481,6 +515,12 @@ class BubbleDetector(FlowchemDevice):
 
     async def reset(self) -> bool:
         """Soft-reset the device and wait for its banner. Latched events are kept."""
+        assert (
+            self._serial is not None
+            and self._replies is not None
+            and self._loop is not None
+            and self._command_lock is not None
+        )
         async with self._command_lock:
             self._drain_replies()
             await asyncio.to_thread(self._serial.write, b"reset\r")
