@@ -16,6 +16,11 @@ type = "KnauerValve"
 ip_address = "127.0.0.1"
 valve_type = "6"
 
+[device.sim-knauer-injection]
+type = "KnauerValve"
+ip_address = "127.0.0.1"
+valve_type = "LI"
+
 [device.sim-knauer-autosampler]
 type = "KnauerAutosampler"
 ip_address = "127.0.0.1"

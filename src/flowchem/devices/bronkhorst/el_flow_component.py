@@ -110,8 +110,8 @@ class EPCComponent(PressureSensor):
         float
             The current pressure in the specified units.
         """
-        p = await self.hw_device.get_pressure()
-        return p * ureg(units)  # <Quantity(4.56, 'bar')>
+        p = await self.hw_device.get_pressure()  # in bar
+        return ureg.Quantity(p, "bar").m_as(units)
 
 
 class MFCComponent(MassFlowController):

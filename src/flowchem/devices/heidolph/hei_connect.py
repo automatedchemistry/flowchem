@@ -283,7 +283,10 @@ class SimulatedHeiConnect(HeiConnectBase):
             return "CC_OFF"
 
         if command_name == "OUT_SP_1" and value is not None:
+            # The measured temperatures follow the setpoint instantly
             self._temperature_setpoint = float(value)
+            self._temperature_hotplate = self._temperature_setpoint
+            self._temperature_sample = self._temperature_setpoint
             return f"OUT_SP_1 {self._temperature_setpoint:g}"
         if command_name == "OUT_SP_3" and value is not None:
             self._speed_setpoint = float(value)
@@ -316,6 +319,7 @@ class SimulatedHeiConnect(HeiConnectBase):
         if command_name == "IN_PV_4":
             return f"IN_PV_4 {self._temperature_hotplate + 25:g}"
         if command_name == "IN_PV_5":
+            # Stays 0 while stirring is off: the driver reports is-on as "speed > 0"
             speed = self._speed_setpoint if self._stirring_on else 0
             return f"IN_PV_5 {speed:g}"
         if command_name == "IN_SP_1":

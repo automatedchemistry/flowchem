@@ -45,10 +45,15 @@ class TemperatureControl(FlowchemComponent):
         )
 
         self._limits = temp_limits
+        self._setpoint: pint.Quantity | None = None
 
     async def set_temperature(self, temp: str) -> pint.Quantity | bool:
         """Set the target temperature to the given string in "magnitude and unit" format."""
-        if temp.isnumeric():
+        try:
+            float(temp)  # A bare number such as "20", "20.5" or "-10"
+        except ValueError:
+            pass
+        else:
             temp = temp + "°C"
             logger.warning("No units provided to set_temperature, assuming Celsius.")
         set_t: pint.Quantity = ureg.Quantity(temp)
@@ -66,6 +71,7 @@ class TemperatureControl(FlowchemComponent):
                 f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
                 f"Setting to {self._limits[1]} instead.",
             )
+        self._setpoint = set_t
         return set_t
 
     async def get_temperature(self) -> float:
@@ -97,10 +103,12 @@ class TemperatureControl(FlowchemComponent):
             return ReachabilityStatus.OFFLINE
 
     async def get_temperature_setpoint(self) -> float:
-        """Return temperature in Celsius."""
-        logger.error(
-            "Temperature setpoint endpoint is not implemented for component '{}' on device '{}'",
-            self.name,
-            self.hw_device.name,
-        )
-        return -1
+        """Return the last temperature setpoint accepted by set_temperature, in Celsius."""
+        if self._setpoint is None:
+            logger.error(
+                "No temperature setpoint has been set yet for component '{}' on device '{}'",
+                self.name,
+                self.hw_device.name,
+            )
+            return -1
+        return self._setpoint.m_as("°C")

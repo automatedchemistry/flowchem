@@ -66,14 +66,15 @@ class MansonPowerSupply(FlowchemDevice):
     def _format_voltage(voltage_value: str) -> str:
         """Format a voltage in the format the power supply understands."""
         voltage: pint.Quantity = ureg.Quantity(voltage_value)
-        # Zero fill by left pad with zeros, up to three digits
-        return str(voltage.m_as("V") * 10).zfill(3)
+        # Three integer digits in 0.1 V, e.g. 12.5 V -> "125"
+        return f"{round(voltage.m_as('V') * 10):03d}"
 
     async def _format_amperage(self, amperage_value: str) -> str:
         """Format a current intensity in the format the power supply understands."""
         current: pint.Quantity = ureg.Quantity(amperage_value)
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
-        return str(current.m_as("A") * multiplier).zfill(3)
+        # Three integer digits in 0.01 A or 0.1 A, e.g. 1.5 A -> "150"
+        return f"{round(current.m_as('A') * multiplier):03d}"
 
     async def _send_command(
         self,

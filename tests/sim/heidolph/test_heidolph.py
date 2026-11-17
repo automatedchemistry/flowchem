@@ -42,6 +42,17 @@ class TestHeiConnectSim:
         sp = await temp_ctrl.get_temperature_setpoint()
         assert abs(sp - 80.0) < 0.1
 
+    async def test_temperature_follows_setpoint_before_and_during_heating(
+        self, temp_ctrl
+    ):
+        await temp_ctrl.set_temperature("80 degC")
+        assert await temp_ctrl.get_temperature() == 80.0
+
+        await temp_ctrl.power_on()
+        await temp_ctrl.set_temperature("120 degC")
+        assert await temp_ctrl.get_temperature() == 120.0
+        assert await temp_ctrl.is_target_reached()
+
     async def test_target_reached_after_power_on(self, temp_ctrl):
         await temp_ctrl.set_temperature("100 degC")
         await temp_ctrl.power_on()
@@ -78,6 +89,20 @@ class TestHeiConnectSim:
         await stirring.power_on()
         await stirring.power_off()
         assert not await stirring.is_on()
+
+    async def test_speed_follows_setpoint_only_while_stirring(self, stirring):
+        """The driver reports is-on as "speed > 0", so a stopped stirrer must read 0."""
+        await stirring.set_speed("300 rpm")
+        assert await stirring.get_speed() == 0.0
+
+        await stirring.power_on()
+        assert await stirring.get_speed() == 300.0
+
+        await stirring.set_speed("450 rpm")
+        assert await stirring.get_speed() == 450.0
+
+        await stirring.power_off()
+        assert await stirring.get_speed() == 0.0
 
     # Device control / status
 

@@ -13,8 +13,8 @@ class CVC3000Sim(CVC3000):
 
     State
     -----
-    _sim_pressure  : float   current pressure in mbar
-    _sim_setpoint  : float   pressure setpoint in mbar
+    _sim_setpoint  : float   pressure setpoint in mbar; the measured pressure equals it
+    _sim_running   : bool    pump started (START) or stopped (STOP)
     _sim_speed     : int     motor speed 0-100 %
     _sim_version   : str     firmware version string
     """
@@ -30,8 +30,8 @@ class CVC3000Sim(CVC3000):
             model="SimulatedCVC3000",
             serial_number="SIM-CVC",
         )
-        self._sim_pressure: float = 1013.0  # mbar (atmospheric)
-        self._sim_setpoint: float = 500.0  # mbar
+        self._sim_setpoint: float = 1013.0  # mbar (atmospheric)
+        self._sim_running: bool = False  # the driver configures "no autostart"
         self._sim_speed: int = 100
         self._sim_version: str = "CVC 3000 V3.10"
 
@@ -51,16 +51,21 @@ class CVC3000Sim(CVC3000):
             return "OK\r\n"
 
         if cmd == "IN_PV_1":
-            return f"{self._sim_pressure:.1f} mbar\r\n"
+            # The measured pressure follows the setpoint instantly
+            return f"{self._sim_setpoint:.1f} mbar\r\n"
 
         if cmd.startswith("OUT_SP_2 "):
             self._sim_speed = int(cmd.split()[-1])
             return "OK\r\n"
 
+        if cmd in ("START", "STOP"):
+            self._sim_running = cmd == "START"
+            return "OK\r\n"
+
         if cmd == "IN_STAT":
-            # Format: 6-char status string: pump_on, inline_valve, coolant, vent, mode, state
-            # "100020" → pump on, inline open, coolant closed, vent closed, AUTO mode, VACUUM_REACHED
-            return "100020\r\n"
+            # 6 digits: pump on, inline valve, coolant valve, vent valve, control mode, state.
+            # Mode 2 = VAC_CONTROL; state 2 = VACUUM_REACHED, since the pressure equals the setpoint.
+            return f"{int(self._sim_running)}00022\r\n"
 
         # Configuration commands — just acknowledge
         if cmd in ("CVC 3", "STORE", "ECHO 1", "REMOTE 1", "OUT_CFG 00001"):

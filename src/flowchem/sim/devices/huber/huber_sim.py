@@ -78,12 +78,12 @@ class HuberChillerSim(HuberChiller):
 
         # Internal temperature  → code 0x01 = "01"
         if code == "01":
-            raw = int(self._sim_temp_cur * 100) & 0xFFFF
+            raw = round(self._sim_temp_cur * 100) & 0xFFFF
             return _huber_reply("01", raw)
 
         # Process temperature  → code 0x07 = "07"
         if code == "07":
-            raw = int(self._sim_temp_cur * 100) & 0xFFFF
+            raw = round(self._sim_temp_cur * 100) & 0xFFFF
             return _huber_reply("07", raw)
 
         # Min temperature  → code 0x30 = "30"
