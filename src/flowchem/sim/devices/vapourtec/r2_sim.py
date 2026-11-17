@@ -46,15 +46,16 @@ class R2Sim(FlowchemDevice):
     _sim_pressure  : tuple  (pumpA_mbar, pumpB_mbar, sys_mbar)
     _sim_running   : bool
     _sim_uv        : int    UV intensity %
-    _sim_valves    : int    valve bitmap
+    _sim_valves    : int    valve bitmap, bit n = position of valve n
+    _intensity     : int    last UV150 intensity %, read by UV150PhotoReactor (as on the real R2)
     """
 
     def __init__(
         self,
         name: str = "",
         rt_temp: float = 25.0,
-        min_temp=None,
-        max_temp=None,
+        min_temp: float | list[float] = -40,
+        max_temp: float | list[float] = 80,
         min_pressure: float = 1000,
         max_pressure: float = 50000,
         **config,
@@ -75,6 +76,15 @@ class R2Sim(FlowchemDevice):
         self._sim_running: bool = False
         self._sim_uv: int = 0
         self._sim_valves: int = 0
+        self._intensity: int = 0
+
+        # Per-channel reactor limits in °C, given as one value or one per channel
+        if not isinstance(min_temp, list):
+            min_temp = [min_temp] * 4
+        if not isinstance(max_temp, list):
+            max_temp = [max_temp] * 4
+        self._min_t = [float(t) for t in min_temp]
+        self._max_t = [float(t) for t in max_temp]
         logger.info(f"[SIM] R2 '{name}' initialized.")
 
     @classmethod
@@ -98,10 +108,6 @@ class R2Sim(FlowchemDevice):
             R4Reactor,
         )
 
-        min_t: pint.Quantity = ureg.Quantity("-40 degC")
-        max_t: pint.Quantity = ureg.Quantity("80 degC")
-        temp_range = TempRange(min=min_t, max=max_t)
-
         self.components.extend(
             [
                 R2MainSwitch("Power", cast(Any, self)),
@@ -120,6 +126,10 @@ class R2Sim(FlowchemDevice):
             ]
         )
         for n in range(4):
+            temp_range = TempRange(
+                min=ureg.Quantity(self._min_t[n], "degC"),
+                max=ureg.Quantity(self._max_t[n], "degC"),
+            )
             self.components.append(
                 R4Reactor(f"reactor-{n+1}", cast(Any, self), n, temp_range)
             )
@@ -223,7 +233,12 @@ class R2Sim(FlowchemDevice):
         self._sim_uv = power
 
     async def trigger_key_press(self, keycode: str):
-        pass
+        """Move a valve: the R2 components send keycode = valve_code * 2 + position (0 or 1)."""
+        valve_code, position = divmod(int(keycode), 2)
+        if position:
+            self._sim_valves |= 1 << valve_code
+        else:
+            self._sim_valves &= ~(1 << valve_code)
 
     async def power_on(self):
         self._sim_running = True
@@ -237,6 +252,17 @@ class R2Sim(FlowchemDevice):
 
     async def get_pressure_history(self):
         return self._sim_pressure
+
+    async def pooling(self) -> dict:
+        """Snapshot of run state, valves and pressures, with the keys of R2.pooling()."""
+        pump_a, pump_b, system = self._sim_pressure
+        return {
+            "RunState_code": "1" if self._sim_running else "0",
+            "allValve": f"{self._sim_valves:05b}",
+            "pumpA_P": pump_a,
+            "pumpB_P": pump_b,
+            "sysP (mbar)": system,
+        }
 
     async def get_state(self) -> str:
         return "Running" if self._sim_running else "Off"

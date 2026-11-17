@@ -43,9 +43,21 @@ class TestCVC3000Sim:
         status = await cvc3000.status()
         assert isinstance(status, ProcessStatus)
 
-    async def test_status_pump_on(self, cvc3000):
-        status = await cvc3000.status()
-        assert status.is_pump_on is True
+    async def test_pump_status_follows_power_on_off(self, pressure_ctrl):
+        cvc3000 = pressure_ctrl.hw_device
+        assert (await cvc3000.status()).is_pump_on is False  # driver sets no autostart
+
+        await pressure_ctrl.power_on()
+        assert (await cvc3000.status()).is_pump_on is True
+
+        await pressure_ctrl.power_off()
+        assert (await cvc3000.status()).is_pump_on is False
+
+    async def test_pressure_follows_setpoint_and_reaches_target(self, pressure_ctrl):
+        await pressure_ctrl.set_pressure("200 mbar")
+        assert await pressure_ctrl.get_pressure() == 200.0
+        assert await pressure_ctrl.is_target_reached()
+        assert await pressure_ctrl.is_idle()
 
     async def test_component_set_pressure(self, pressure_ctrl):
         await pressure_ctrl.set_pressure("300 mbar")

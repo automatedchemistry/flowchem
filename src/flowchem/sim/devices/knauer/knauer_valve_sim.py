@@ -26,7 +26,8 @@ class KnauerValveSim(SimulatedKnauerEthernetDevice, KnauerValve):
     ):
         super().__init__(ip_address=ip_address, mac_address=mac_address, **kwargs)
         self._sim_valve_type: str = valve_type  # "LI" | "6" | "12" | "16"
-        self._sim_position: str = "1"
+        # Injection valves report L (load) / I (inject); distribution valves a port number
+        self._sim_position: str = "L" if valve_type == "LI" else "1"
 
     def _handle_command(self, message: str) -> str:
         msg = message.strip()

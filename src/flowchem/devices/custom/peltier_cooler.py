@@ -517,6 +517,8 @@ class PeltierCooler(FlowchemDevice):
         await self._set_state_dependant_parameters(temperature.m_as("°C"))
 
     async def _set_temperature(self, temperature: float):
+        # The controller works in 0.01 °C, so compare its echo with the value actually sent.
+        temperature = round(temperature, 2)
         reply = await self.send_command_and_read_reply(
             PeltierCommands.SET_TEMPERATURE, round(temperature * 100)
         )

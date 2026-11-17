@@ -214,20 +214,11 @@ class SwitchBoxRelay(MultiChannelRelay):
                 - None → If the channel index is invalid or not part of this port.
         """
         ch = int(channel)
+        if ch > 8:  # Global channel (9-32): map it to this port's channel (1-8)
+            ch -= 8 * "abcd".index(self.identify)
         if not 0 < ch <= 8:
             logger.error(
-                f"There is not channel {ch} in device {self.name} at port-{self.identify}!"
-            )
-            return None
-        if ch > 8:
-            if 8 < ch <= 16 and self.identify == "b":
-                ch = ch - 8
-            elif 16 < ch <= 24 and self.identify == "c":
-                ch = ch - 16
-            elif 24 < ch <= 32 and self.identify == "d":
-                ch = ch - 24
-            logger.error(
-                f"There is not channel {ch} in device {self.hw_device.name} at port-{self.identify}!"
+                f"There is not channel {channel} in device {self.hw_device.name} at port-{self.identify}!"
             )
             return None
         asw = await self.hw_device.get_relay_channels()

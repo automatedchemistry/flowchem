@@ -16,6 +16,10 @@ Adding a new device
    FlowchemDevice directly when the real __init__ calls the SDK).
 3. Override ``from_config`` to skip serial/network/SDK init.
 4. Add an entry to ``_REGISTRY`` below.
+5. Keep the simulated state consistent: every setter immediately updates what
+   its getters read (a measured value equals its setpoint at once, so
+   target-reached is True), and power on/off updates the on/off status.
+   Add the device's set/get pairs to ``tests/sim/test_sim_round_trip.py``.
 """
 
 from __future__ import annotations

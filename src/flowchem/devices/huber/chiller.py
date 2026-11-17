@@ -129,7 +129,7 @@ class HuberChiller(FlowchemDevice):
 
     async def get_temperature(self) -> float:
         """Get temperature. Process preferred, otherwise internal."""
-        if process_t := await self.process_temperature():
+        if (process_t := await self.process_temperature()) is not None:
             return process_t
         return await self.internal_temperature()  # type: ignore
 
@@ -146,7 +146,7 @@ class HuberChiller(FlowchemDevice):
         """Trivially implemented as delta(currentT-setT) < 1°C."""
         current_t = await self.get_temperature()
         set_t = await self.get_temperature_setpoint()
-        if set_t:
+        if set_t is not None:
             return abs(current_t - set_t) < 1
         return False
 
@@ -186,7 +186,7 @@ class HuberChiller(FlowchemDevice):
             ureg.Quantity("-151 °C") <= temp <= ureg.Quantity("327 °C")
         ), "Protocol temperature limits"
         # Hexadecimal two's complement
-        return f"{int(temp.m_as('°C') * 100) & 65535:04X}"
+        return f"{round(temp.m_as('°C') * 100) & 65535:04X}"
 
     @staticmethod
     def _int_to_string(number: int) -> str:

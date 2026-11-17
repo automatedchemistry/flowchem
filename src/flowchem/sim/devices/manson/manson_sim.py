@@ -60,8 +60,8 @@ class MansonPowerSupplySim(MansonPowerSupply):
 
         if cmd == "GETD":
             # Format: VVVVCCCCM  (voltage ×100, current ×100, mode 0=CV 1=CC)
-            v = int(self._sim_voltage * 100)
-            c = int(self._sim_current * 100)
+            v = round(self._sim_voltage * 100)
+            c = round(self._sim_current * 100)
             return f"{v:04d}{c:04d}0"
 
         if cmd == "GMAX":
@@ -71,8 +71,8 @@ class MansonPowerSupplySim(MansonPowerSupply):
             return f"{v:03d}{c:03d}"
 
         if cmd == "GETS":
-            v = int(self._sim_voltage * 10)
-            c = int(self._sim_current * 10)
+            v = round(self._sim_voltage * 10)
+            c = round(self._sim_current * 10)
             return f"{v:03d}{c:03d}"
 
         if cmd.startswith("VOLT"):
@@ -90,8 +90,8 @@ class MansonPowerSupplySim(MansonPowerSupply):
             # Three preset lines
             lines = []
             for _ in range(3):
-                v = int(self._sim_voltage * 10)
-                c = int(self._sim_current * 10)
+                v = round(self._sim_voltage * 10)
+                c = round(self._sim_current * 10)
                 lines.append(f"{v:03d}{c:03d}")
             return "\r".join(lines)
 
